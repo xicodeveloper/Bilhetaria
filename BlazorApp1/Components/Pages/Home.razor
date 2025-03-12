@@ -1,7 +1,26 @@
 ﻿@page "/"
+@using BlazorApp1.Services.Movies
 
 <PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
-
+<h1>@Titulo</h1>
+<div>
+    <img src="@Image"/>
+</div>
 Welcome to your new app.
+@code{
+    string APIlink = "https://api.themoviedb.org/3/movie/popular";
+    string LinkImage = "https://image.tmdb.org/t/p/original";
+    string Titulo;
+    string Image;
+    protected override Task OnInitializedAsync()
+    {
+        var deserializer = new MovieDeserializer();
+        var response = deserializer.FetchPopularMovies(APIlink);
+        string imageName = response.Results[0].BackdropPath;
+        Image =  LinkImage + imageName;
+        Titulo = response.Results[0].Title;
+        return base.OnInitializedAsync();
+    }
+
+}

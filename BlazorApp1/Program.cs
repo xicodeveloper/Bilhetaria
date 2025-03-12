@@ -1,4 +1,9 @@
 using BlazorApp1.Components;
+using DotNetEnv;
+
+//carregar o fichero .env
+Env.Load();
+
 
 var builder = WebApplication.CreateBuilder(args);
 
