@@ -1,23 +1,49 @@
 ﻿@inherits LayoutComponentBase
 
 <div class="page">
-    <div class="sidebar">
-        <NavMenu/>
-    </div>
-
     <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+        <div class="top-row navbar cinematic-navbar">
+            <div class="navbar-container">
+                <!-- Logo -->
+                <div class="navbar-brand">
+                    <a href="/">
+                        <i class="fas fa-film logo-icon"></i>
+                        SkyCinema
+                    </a>
+                </div>
+
+                <!-- Menu Central -->
+                <nav class="nav-menu">
+                    <a href="/" class="nav-link">Home</a>
+                    <a href="/movies" class="nav-link">Filmes</a>
+                    <a href="/schedule" class="nav-link">Sessões</a>
+                    <a href="/about" class="nav-link">Sobre</a>
+                </nav>
+
+                <!-- Controles Direita -->
+                <div class="navbar-controls">
+                    <div class="search-container">
+                        <input type="text" class="search-input" placeholder="Pesquisar filmes..." />
+                        <i class="fas fa-search search-icon"></i>
+                    </div>
+
+                    <div class="auth-links">
+                        <a href="/login" class="auth-link">Entrar</a>
+                        <a href="/register" class="auth-link">Registar</a>
+                    </div>
+
+                    <div class="cart-container">
+                        <a href="/carrinho" class="cart-link">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span class="cart-badge">3</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <article class="content px-4">
             @Body
         </article>
     </main>
-</div>
-
-<div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
-    <span class="dismiss">🗙</span>
 </div>
