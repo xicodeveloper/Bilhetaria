@@ -1,26 +1,80 @@
 ﻿@page "/"
 @using BlazorApp1.Services.Movies
+@inject IConfiguration Configuration
+@implements IDisposable
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Filmes Populares</PageTitle>
 
-<h1>@Titulo</h1>
-<div>
-    <img src="@Image"/>
-</div>
-Welcome to your new app.
-@code{
-    string APIlink = "https://api.themoviedb.org/3/movie/popular";
-    string LinkImage = "https://image.tmdb.org/t/p/original";
-    string Titulo;
-    string Image;
-    protected override Task OnInitializedAsync()
+<div class="movies-container">
+    <h1 class="main-title">🎬 Filmes Populares</h1>
+    
+    @if (_movies == null)
     {
-        var deserializer = new MovieDeserializer();
-        var response = deserializer.FetchPopularMovies(APIlink);
-        string imageName = response.Results[0].BackdropPath;
-        Image =  LinkImage + imageName;
-        Titulo = response.Results[0].Title;
-        return base.OnInitializedAsync();
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>Carregando filmes...</p>
+        </div>
+    }
+    else
+    {
+        <div class="movies-grid">
+            @foreach (var movie in _movies)
+            {
+                <div class="movie-card">
+                    <img src="@(LinkImage + movie.PosterPath)" 
+                         class="movie-poster" 
+                         alt="@movie.Title">
+                    
+                    <div class="movie-details">
+                        <h3 class="movie-title">@movie.Title</h3>
+                        
+                        <div class="movie-info">
+                            <span class="release-date">
+                                📅 @movie.ReleaseDate.ToString("dd/MM/yyyy")
+                            </span>
+                            <span class="rating">
+                                ⭐ @movie.VoteAverage.ToString("0.0")
+                            </span>
+                        </div>
+                        
+                        <p class="movie-overview">@movie.Overview.Truncate(150)</p>
+                        
+                        <div class="movie-stats">
+                            <span class="genre-count">
+                                🏷️ @movie.GenreIds.Count gêneros
+                            </span>
+                            <span class="votes">
+                                👍 @movie.VoteCount.ToString("N0") votos
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private string ApIlink => $"{Configuration["TmdbApi:BaseUrl"]}/movie/popular";
+    private string LinkImage => Configuration["TmdbApi:ImageBaseUrl"]?? string.Empty;
+    private List<Film>? _movies;
+    private MovieDeserializer deserializer = new MovieDeserializer();  //aqui é feito para converter JSON para objeto
+    
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var response = deserializer.FetchPopularMovies(ApIlink);
+            _movies = response.Results;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro: {ex.Message}");
+        }
     }
 
+    public void Dispose()
+    {
+        deserializer?.Dispose();
+    }
 }
