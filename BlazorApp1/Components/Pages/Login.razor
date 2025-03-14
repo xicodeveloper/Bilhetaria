@@ -1,0 +1,20 @@
+@page "/login"
+
+<PageTitle>Login</PageTitle>
+
+<div class="login-container">
+    <h1>Login</h1>
+    <form method="post">
+        <div class="input-group">
+            <label for="username">Nome de utilizador</label>
+            <input type="text" id="username" name="username" required>
+        </div>
+        <div class="input-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        <button type="submit" class="btn">Login</button>
+    </form>
+    <p class="register-link">Não tem uma conta? <a href="/register">Regista-se</a></p>
+</div>
+
