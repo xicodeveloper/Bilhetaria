@@ -1,7 +1,8 @@
 using BlazorApp1.Components;
 using DotNetEnv;
 using MySql.Data.MySqlClient;
-using BlazorApp1.Services.RegLogin; // Ensure this using statement is present
+using BlazorApp1.Services.RegLogin;
+using Microsoft.AspNetCore.Components.Authorization; // Ensure this using statement is present
 
 // ... other code
 
@@ -14,6 +15,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Configurar conexão MySQL
 
 builder.Services.AddScoped<Sign>();
+builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
+
 try
 {
     using var connection = new MySqlConnection("Server=localhost;port=3306;database=ticketzone;Uid=root;Pwd=''");

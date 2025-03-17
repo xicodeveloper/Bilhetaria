@@ -1,20 +1,102 @@
 @page "/login"
+@using BlazorApp1.Services.RegLogin
+@using Microsoft.AspNetCore.Components.Authorization
+@inject Sign AuthService
+@inject NavigationManager Navigator
+@inject AuthenticationStateProvider AuthStateProvider
 
-<PageTitle>Login</PageTitle>
+<EditForm Model="Model" OnValidSubmit="HandleValidSubmit" FormName="user-login">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    
+    <div class="form-group">
+        <label>Nome de utilizador</label>
+        <InputText @bind-Value="Model!.Username" class="form-control" />
+    </div>
 
-<div class="login-container">
-    <h1>Login</h1>
-    <form method="post">
-        <div class="input-group">
-            <label for="username">Nome de utilizador</label>
-            <input type="text" id="username" name="username" required>
+    <div class="form-group">
+        <label>Password</label>
+        <InputText type="password" @bind-Value="Model!.Password" class="form-control" />
+    </div>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger">
+            @errorMessage
+            @if (showDetails)
+            {
+                <div class="mt-2 small">@errorDetails</div>
+            }
         </div>
-        <div class="input-group">
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" required>
-        </div>
-        <button type="submit" class="btn">Login</button>
-    </form>
-    <p class="register-link">Não tem uma conta? <a href="/register">Regista-se</a></p>
-</div>
+    }
+    <button type="submit" class="btn btn-primary">Login</button>
+    <div class="mt-3">
+        Não tem conta? <a href="/register">Criar nova conta</a>
+    </div>
+</EditForm>
 
+@code {
+    [SupplyParameterFromForm]
+    private LoginModel? Model { get; set; }
+
+    private string errorMessage = string.Empty;
+    private string errorDetails = string.Empty;
+    private bool showDetails = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Model ??= new();
+        
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        if (authState.User.Identity.IsAuthenticated)
+        {
+            Navigator.NavigateTo("/");
+            Console.WriteLine("User is authenticated");
+        }
+        Console.WriteLine(authState.User.Identity.IsAuthenticated);
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        errorMessage = string.Empty;
+        errorDetails = string.Empty;
+        showDetails = false;
+
+        try
+        {
+            Console.WriteLine("Username: " + Model!.Username);
+            Console.WriteLine("Password: " + Model!.Password);
+            
+            var result = await AuthService.ValidateLogin(Model!.Username, Model.Password);
+            Console.WriteLine("Codigo validado pela bd: " + result.Success);
+
+            if (!result.Success || result.ClaimsPrincipal == null)
+            {
+                errorMessage = "Credenciais inválidas!";
+                return;
+            }
+            
+            // Atualiza o estado de autenticação
+            if (AuthStateProvider is CustomAuthStateProvider customProvider)
+            {
+                customProvider.SetAuthenticationState(result.ClaimsPrincipal);
+            }
+
+            
+        }
+        catch (ApplicationException ex)
+        {
+            errorMessage = "Erro no login";
+            errorDetails = ex.Message;
+            showDetails = true;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Erro inesperado";
+            errorDetails = ex.Message;
+            showDetails = true;
+        }
+    }
+
+
+}

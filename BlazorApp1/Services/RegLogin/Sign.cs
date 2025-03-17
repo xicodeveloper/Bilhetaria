@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using MySql.Data.MySqlClient;
 using System.Threading.Tasks;
 using BlazorApp1.Services;
@@ -84,19 +85,39 @@ namespace BlazorApp1.Services.RegLogin
         }
 
         // Verifica as credenciais de login
-        public async Task<bool> ValidateLogin(string username, string password)
+        public async Task<AuthResult> ValidateLogin(string username, string password)
         {
-            await using var connection = new MySqlConnection(_connectionString);
-            await connection.OpenAsync();
+            var user = await FindUser(username);
+    
+            if (user == null)
+            {
+                Console.WriteLine("Utilizador não encontrado");
+                return new AuthResult { Success = false };
+            }
 
-            const string query = "SELECT COUNT(*) FROM users WHERE username = @username AND password = @password";
+            bool isPasswordValid = BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
+    
+            if (!isPasswordValid)
+            {
+                Console.WriteLine("Password incorreta");
+                return new AuthResult { Success = false };
+            }
 
-            await using var command = new MySqlCommand(query, connection);
-            command.Parameters.AddWithValue("@username", username);
-            command.Parameters.AddWithValue("@password", password);
+            // Cria claims de autenticação
+            var claims = new List<Claim>
+            {
+                new(ClaimTypes.Name, user.Username),
+                new(ClaimTypes.Email, user.Email)
+            };
 
-            var result = (long)await command.ExecuteScalarAsync();
-            return result > 0;
+            var identity = new ClaimsIdentity(claims, "Cookies");
+            var principal = new ClaimsPrincipal(identity);
+    
+            return new AuthResult 
+            { 
+                Success = true,
+                ClaimsPrincipal = principal
+            };
         }
     }
 }
