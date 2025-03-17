@@ -1,28 +1,50 @@
 @page "/register"
+@using BlazorApp1.Services.RegLogin
+@inject Sign AuthService
+@inject NavigationManager Navigator
 
-<PageTitle>Registro</PageTitle>
+<EditForm Model="@model" OnInvalidSubmit="@Invalid" OnValidSubmit="@HandleRegistration" FormName="registerForm">
+    <DataAnnotationsValidator />
+    
+    <div class="form-group">
+        <label>Username</label>
+        <InputText @bind-Value="model.Username" class="form-control" />
+    </div>
+    
+    <div class="form-group">
+        <label>Password</label>
+        <InputText type="password" @bind-Value="model.Password" class="form-control" />
+    </div>
+    
+    <button type="submit" class="btn btn-primary">Register</button>
+</EditForm>
 
-<div class="register-container">
-    <h1>Registo</h1>
-    <form method="post">
-        <div class="input-group">
-            <label for="username">Nome de Usuário</label>
-            <input type="text" id="username" required>
-        </div>
-        <div class="input-group">
-            <label for="email">E-mail</label>
-            <input type="email" id="email" required>
-        </div>
-        <div class="input-group">
-            <label for="password">Password</label>
-            <input type="password" id="password" required>
-        </div>
-        <div class="input-group">
-            <label for="confirm-password">Confirmar Senha</label>
-            <input type="password" id="confirm-password" required>
-            <span class="error-message" id="password-error"></span>
-        </div>
-        <button type="submit" class="btn">Registrar</button>
-    </form>
-    <p class="login-link">Já tem uma conta? <a href="/login">Faça login</a></p>
-</div>
+@code {
+    private Registration model = new();
+    private string errorMessage;
+
+    private async Task HandleRegistration()
+    {
+        if (await AuthService.CheckUsernameExists(model.Username))
+        {
+            errorMessage = "Username already taken!";
+            return;
+        }
+
+        await AuthService.CreateUser(model.Username, model.Password, model.Id, model.Email);
+        Navigator.NavigateTo("/login");
+    }
+
+    private async Task Invalid()
+    {
+        /*Console.WriteLine("FALHOU");
+         Sign db = new Sign();
+        db.CreateUser("Joao", "teste", 1, "teste@gmail.com");
+        var user = await db.FindUser("ooo");
+        if (user != null)
+        {
+            Console.WriteLine($"Usuário encontrado: {user.Username}");
+        }*/
+    }
+
+}
