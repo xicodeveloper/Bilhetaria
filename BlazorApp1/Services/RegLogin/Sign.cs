@@ -1,6 +1,9 @@
 using MySql.Data.MySqlClient;
 using System.Threading.Tasks;
 using BlazorApp1.Services;
+using Org.BouncyCastle.Crypto.Generators;
+using BCrypt.Net;
+
 namespace BlazorApp1.Services.RegLogin
 {
     public class Sign
@@ -23,19 +26,28 @@ namespace BlazorApp1.Services.RegLogin
         }
 
         // Cria um novo utilizador
-        public async Task CreateUser(string username, string password, int id, string email)
+        public async Task CreateUser(string username, string password, string email)
         {
-            await using var connection = new MySqlConnection(_connectionString);
-            await connection.OpenAsync();
+            try
+            {
+                await using var connection = new MySqlConnection(_connectionString);
+                await connection.OpenAsync();
 
-            const string query = "INSERT INTO users (username, password, id, email) VALUES (@username, @password, @id, @email)";
+                const string query = @"INSERT INTO users
+                             (username, password, email)
+                             VALUES (@username, @password, @email)";
 
-            await using var command = new MySqlCommand(query, connection);
-            command.Parameters.AddWithValue("@username", username);
-            command.Parameters.AddWithValue("@password", password);
-            command.Parameters.AddWithValue("@id", id);
-            command.Parameters.AddWithValue("@email", email);
-            await command.ExecuteNonQueryAsync();
+                await using var command = new MySqlCommand(query, connection);
+                command.Parameters.AddWithValue("@username", username);
+                command.Parameters.AddWithValue("@password", BCrypt.Net.BCrypt.HashPassword(password));
+                command.Parameters.AddWithValue("@email", email);
+
+                await command.ExecuteNonQueryAsync();
+            }
+            catch (MySqlException ex)
+            {
+                throw new ApplicationException("Erro no banco de dados: " + ex.Message, ex);
+            }
         }
 
         public async Task<User> FindUser(string usernameOrEmail)
@@ -43,13 +55,13 @@ namespace BlazorApp1.Services.RegLogin
             await using var connection = new MySqlConnection(_connectionString);
             await connection.OpenAsync();
 
-            const string query = @"SELECT 
-                            id, 
-                            username, 
-                            email, 
-                            password 
+            const string query = @"SELECT
+                            id,
+                            username,
+                            email,
+                            password
                           FROM users
-                          WHERE username = @identifier 
+                          WHERE username = @identifier
                              OR email = @identifier
                           LIMIT 1";
 
