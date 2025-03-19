@@ -23,21 +23,11 @@ namespace BlazorApp1.Services.RegLogin
 
         public override async Task<AuthenticationState> GetAuthenticationStateAsync()
         {
-            try
-            {
-                var authResult = await _authService.GetPersistedUserAsync();
-                
-                if (authResult?.Success == true && authResult.ClaimsPrincipal != null)
-                {
-                    return new AuthenticationState(authResult.ClaimsPrincipal);
-                }
-            }
-            catch
-            {
-                
-            }
+            var context = _httpContextAccessor.HttpContext;
             
-            return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
+            var principal = context?.User ?? new ClaimsPrincipal();
+        
+            return new AuthenticationState(principal);
         }
 
         public async Task UpdateAuthenticationStateAsync(ClaimsPrincipal principal)

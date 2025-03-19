@@ -11,5 +11,6 @@ namespace BlazorApp1.Services.RegLogin
         Task<AuthResult> GetPersistedUserAsync();
         Task PersistUserAsync(ClaimsPrincipal user);
         Task ClearPersistedUserAsync();
+        Task LogoutAsync();
     }
 }

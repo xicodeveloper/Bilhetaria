@@ -27,15 +27,34 @@
         </tbody>
     </table>
 }
+else
+{
+    <div class="alert alert-warning">Nenhuma claim encontrada</div>
+}
 
 @code {
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    private List<Claim> claims = new();
+
+    protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        Console.WriteLine("Claims no cliente:");
-        foreach (var claim in authState.User.Claims)
+        await LoadClaims();
+    }
+
+    private async Task LoadClaims()
+    {
+        try
         {
-            Console.WriteLine($"{claim.Type}: {claim.Value}");
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            claims = authState.User.Claims.ToList();
+            
+            // Forçar atualização da UI
+            StateHasChanged();
+            
+     
+        }
+        catch (Exception ex)
+        {
+            
         }
     }
 }

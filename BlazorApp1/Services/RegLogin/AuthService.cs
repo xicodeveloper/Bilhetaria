@@ -167,25 +167,47 @@ public class AuthService : IAuthService
             
             return new AuthResult { Success = false };
         }
-
-        public async Task PersistUserAsync(ClaimsPrincipal user)
+        
+        public async Task PersistUserAsync(ClaimsPrincipal principal)
         {
             var context = _httpContextAccessor.HttpContext;
+    
+            if (context == null)
+            {
+                Console.WriteLine("HttpContext nulo durante persistência!");
+                return;
+            }
+
+            // Adicione este log para verificar as claims antes de persistir
+            Console.WriteLine("\nClaims antes de persistir no cookie:");
+            foreach (var claim in principal.Claims)
+            {
+                Console.WriteLine($"{claim.Type}: {claim.Value}");
+            }
+
             await context.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme,
-                user,
+                principal,
                 new AuthenticationProperties
                 {
                     IsPersistent = true,
                     ExpiresUtc = DateTimeOffset.UtcNow.AddDays(30)
                 });
         }
-
         public async Task ClearPersistedUserAsync()
         {
             var context = _httpContextAccessor.HttpContext;
             await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         }
+        public async Task LogoutAsync()
+        {
+            var context = _httpContextAccessor.HttpContext;
+            if (context != null)
+            {
+                await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            }
+        }
     }
+
     }
 

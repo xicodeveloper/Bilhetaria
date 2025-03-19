@@ -73,10 +73,11 @@
 
             if (AuthStateProvider is CustomAuthStateProvider customProvider)
             {
-                // Verifique se o ClaimsPrincipal está correto
-                if (result.ClaimsPrincipal.Identity?.IsAuthenticated ?? false)
+
+                if (AuthStateProvider is CustomAuthStateProvider provider)
                 {
-                    await customProvider.UpdateAuthenticationStateAsync(result.ClaimsPrincipal);
+                    await provider.UpdateAuthenticationStateAsync(result.ClaimsPrincipal);
+                    await AuthStateProvider.GetAuthenticationStateAsync(); // Forçar atualização
                     HttpContextAccessor.HttpContext.Response.Redirect("/debug");
                 }
                 else
