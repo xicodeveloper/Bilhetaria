@@ -16,6 +16,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddScoped<Sign>();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
+builder.Services.AddHttpContextAccessor();
+
+
 
 try
 {
