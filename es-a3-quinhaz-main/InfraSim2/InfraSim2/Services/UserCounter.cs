@@ -18,6 +18,6 @@ public class UserCounter
             Counter += step;
             OnCounterChanged?.Invoke(); // Notifica a UI que o valor mudou
             await Task.Delay(delay);
-        }
+        } 
     }
-}
+} 
