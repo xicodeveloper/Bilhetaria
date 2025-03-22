@@ -1,0 +1,30 @@
+.dashboard-container { /*container-pai*/
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 300px;
+    height: 200px;
+    width: 70%;
+    height: 100vh;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    position: relative;
+}
+
+.control-container {
+    width: 30%; 
+    background: #f5f5f5;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.server-container {
+    width: 65%;
+    padding: 20px;
+    border-radius: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}

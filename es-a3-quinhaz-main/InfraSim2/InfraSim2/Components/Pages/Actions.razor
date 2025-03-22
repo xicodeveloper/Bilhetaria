@@ -1,0 +1,23 @@
+@page "/Actions"
+
+<link href="Actions.razor.css" rel="stylesheet">
+
+<div class="div-container">
+    <button class="round-button green-button" @onclick="OnStartPressed">Start</button>
+    <button class="round-button grey-button" @onclick="OnAddServer">Add Server</button>
+</div>
+
+@code {
+    [Parameter] public EventCallback StartPressed { get; set; }
+    [Parameter] public EventCallback AddServer { get; set; }
+
+    private async Task OnStartPressed()
+    {
+        await StartPressed.InvokeAsync();
+    }
+
+    private async Task OnAddServer()
+    {
+        await AddServer.InvokeAsync();
+    }
+}
