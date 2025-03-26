@@ -1,25 +1,40 @@
 using BlazorApp1.Components;
-using DotNetEnv;
-using MySql.Data.MySqlClient;
 using BlazorApp1.Services.RegLogin;
-using Microsoft.AspNetCore.Components.Authorization; // Ensure this using statement is present
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Components.Authorization;
+using MySql.Data.MySqlClient;
+using DotNetEnv;
 
-// ... other code
-
-
-//carregar o fichero .env
 Env.Load();
 
-// Add services to the container.
 var builder = WebApplication.CreateBuilder(args);
-// Configurar conexão MySQL
 
-builder.Services.AddScoped<Sign>();
-builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
+// 1. Configuração única da autenticação
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+})
+.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+{
+    options.Cookie.Name = "auth_token";
+    options.LoginPath = "/login";
+    options.AccessDeniedPath = "/access-denied";
+    options.ExpireTimeSpan = TimeSpan.FromDays(30);
+});
 
+// 2. Configuração da autorização
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("Authenticated", policy =>
+        policy.RequireAuthenticatedUser());
+});
+
+// 3. Configuração do MySQL
+var connectionString = "Server=localhost;Port=3306;Database=ticketzone;Uid=root;Pwd=;";
 try
 {
-    using var connection = new MySqlConnection("Server=localhost;port=3306;database=ticketzone;Uid=root;Pwd=''");
+    using var connection = new MySqlConnection(connectionString);
     connection.Open();
     Console.WriteLine("✅ Conexão MySQL estabelecida com sucesso!");
 }
@@ -28,8 +43,16 @@ catch (Exception ex)
     Console.WriteLine($"❌ Erro ao conectar ao MySQL: {ex.Message}");
 }
 
+// 4. Registro dos serviços
+builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddHttpContextAccessor();
+
+// 5. Configuração do Blazor
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+// 6. Configuração do Kestrel
 builder.WebHost.UseUrls("https://localhost:7193", "http://localhost:5212");
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
@@ -39,22 +62,21 @@ builder.WebHost.ConfigureKestrel(serverOptions =>
 
 var app = builder.Build();
 
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
-// Configure the HTTP request pipeline.
+// 7. Ordem CORRETA dos middlewares
+app.UseAuthentication();
+app.UseAuthorization();
+
+// Configuração do pipeline
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
-
-
+app.UseStaticFiles();
 app.UseAntiforgery();
 
-app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 

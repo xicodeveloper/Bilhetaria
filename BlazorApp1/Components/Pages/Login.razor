@@ -1,9 +1,10 @@
+
 @page "/login"
 @using BlazorApp1.Services.RegLogin
 @using Microsoft.AspNetCore.Components.Authorization
-@inject Sign AuthService
-@inject NavigationManager Navigator
+@inject IAuthService AuthService
 @inject AuthenticationStateProvider AuthStateProvider
+@inject IHttpContextAccessor HttpContextAccessor
 
 <EditForm Model="Model" OnValidSubmit="HandleValidSubmit" FormName="user-login">
     <DataAnnotationsValidator />
@@ -36,8 +37,7 @@
 </EditForm>
 
 @code {
-    [SupplyParameterFromForm]
-    private LoginModel? Model { get; set; }
+    [SupplyParameterFromForm] private LoginModel? Model { get; set; } = new();
 
     private string errorMessage = string.Empty;
     private string errorDetails = string.Empty;
@@ -45,58 +45,54 @@
 
     protected override async Task OnInitializedAsync()
     {
-        Model ??= new();
-        
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        if (authState.User.Identity.IsAuthenticated)
+        if (authState.User.Identity?.IsAuthenticated ?? false)
         {
-            Navigator.NavigateTo("/");
-            Console.WriteLine("User is authenticated");
+            HttpContextAccessor.HttpContext.Response.Redirect("/");
         }
-        Console.WriteLine(authState.User.Identity.IsAuthenticated);
     }
 
     private async Task HandleValidSubmit()
     {
-        errorMessage = string.Empty;
-        errorDetails = string.Empty;
-        showDetails = false;
-
         try
         {
-            Console.WriteLine("Username: " + Model!.Username);
-            Console.WriteLine("Password: " + Model!.Password);
-            
-            var result = await AuthService.ValidateLogin(Model!.Username, Model.Password);
-            Console.WriteLine("Codigo validado pela bd: " + result.Success);
+            var result = await AuthService.LoginAsync(Model!.Username, Model.Password);
+
+            // Adicione verificação de null
+            if (result == null)
+            {
+                errorMessage = "Erro na resposta do servidor";
+                return;
+            }
 
             if (!result.Success || result.ClaimsPrincipal == null)
             {
                 errorMessage = "Credenciais inválidas!";
                 return;
             }
-            
-            // Atualiza o estado de autenticação
+
             if (AuthStateProvider is CustomAuthStateProvider customProvider)
             {
-                customProvider.SetAuthenticationState(result.ClaimsPrincipal);
-            }
 
-            
-        }
-        catch (ApplicationException ex)
-        {
-            errorMessage = "Erro no login";
-            errorDetails = ex.Message;
-            showDetails = true;
+                if (AuthStateProvider is CustomAuthStateProvider provider)
+                {
+                    await provider.UpdateAuthenticationStateAsync(result.ClaimsPrincipal);
+                    await AuthStateProvider.GetAuthenticationStateAsync(); // Forçar atualização
+                    HttpContextAccessor.HttpContext.Response.Redirect("/debug");
+                }
+                else
+                {
+                    errorMessage = "Autenticação incompleta";
+                }
+            }
         }
         catch (Exception ex)
         {
             errorMessage = "Erro inesperado";
             errorDetails = ex.Message;
+            Console.WriteLine(ex.StackTrace);
             showDetails = true;
         }
     }
-
-
+}
 }
