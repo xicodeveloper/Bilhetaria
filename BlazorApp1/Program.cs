@@ -1,9 +1,13 @@
 using BlazorApp1.Components;
+using BlazorApp1.Services.DataBase;
+using BlazorApp1.Services.Movies;
 using BlazorApp1.Services.RegLogin;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
 using MySql.Data.MySqlClient;
 using DotNetEnv;
+using Microsoft.EntityFrameworkCore;
+
 
 Env.Load();
 
@@ -31,17 +35,21 @@ builder.Services.AddAuthorization(options =>
 });
 
 // 3. Configuração do MySQL
-var connectionString = "Server=localhost;Port=3306;Database=ticketzone;Uid=root;Pwd=;";
 try
 {
-    using var connection = new MySqlConnection(connectionString);
-    connection.Open();
-    Console.WriteLine("✅ Conexão MySQL estabelecida com sucesso!");
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    {
+        options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+    });
+    Console.WriteLine("Conexão com o banco de dados estabelecida");
 }
-catch (Exception ex)
+catch (Exception error)
 {
-    Console.WriteLine($"❌ Erro ao conectar ao MySQL: {ex.Message}");
+    Console.WriteLine("Erro ao conectar com o banco de dados: "+ error.StackTrace);
 }
+builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<MovieDeserializer>();
 
 // 4. Registro dos serviços
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();

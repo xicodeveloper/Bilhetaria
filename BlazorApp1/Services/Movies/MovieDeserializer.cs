@@ -1,10 +1,10 @@
 using Newtonsoft.Json;
 using System;
 using System.Net.Http;
-
+using Microsoft.EntityFrameworkCore;
 namespace BlazorApp1.Services.Movies;
 
-public class MovieDeserializer : IDisposable
+public class MovieDeserializer :  IDisposable
 {
     private HttpClient? _httpClient;
 
@@ -28,4 +28,5 @@ public class MovieDeserializer : IDisposable
     {
         _httpClient?.Dispose();
     }
+
 }
