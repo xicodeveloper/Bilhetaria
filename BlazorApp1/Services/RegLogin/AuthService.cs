@@ -15,15 +15,31 @@ public class AuthService : IAuthService
     {
         private readonly ApplicationDbContext _context;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly VerificationService _verificationService;
 
         public AuthService(
             ApplicationDbContext context,
-            IHttpContextAccessor httpContextAccessor)
+            IHttpContextAccessor httpContextAccessor,
+            VerificationService verificationService)
         {
             _context = context;
             _httpContextAccessor = httpContextAccessor;
+            _verificationService = verificationService;
         }
+        public async Task<bool> VerifyUserAsync(string email, string code)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            if (user == null) return false;
 
+            if (_verificationService.ValidateCode(email, code))
+            {
+                user.IsSucess = true;
+                Console.WriteLine(user.IsSucess);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            return false;
+        }
             public async Task<bool> CheckUsernameExists(string username)
             {
                 return await _context.Users
@@ -32,16 +48,21 @@ public class AuthService : IAuthService
 
             public async Task CreateUser(string username, string password, string email)
             {
-                var user = new User // Using parameterless constructor
+                var user = new User
                 {
                     Username = username,
                     Email = email,
-                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(password)
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
+                    IsSucess = false 
                 };
-
+    
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
+    
+                await _verificationService.SendVerificationCodeAsync(email); // Enviar código após criar usuário
             }
+
+// Crie um endpoint temporário para teste
 
         public async Task<AuthResult> LoginAsync(string username, string password)
         {

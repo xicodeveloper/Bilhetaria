@@ -1,0 +1,87 @@
+@page "/confirmar-email"
+@using System.ComponentModel.DataAnnotations
+@using BlazorApp1.Services.RegLogin
+@using Microsoft.AspNetCore.Components.Forms
+@inject IAuthService AuthService
+@inject IHttpContextAccessor HttpContextAccessor
+
+<EditForm Model="confirmationModel" OnValidSubmit="@HandleConfirmation" FormName="confirm-email">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    
+    <div class="form-group">
+        <label>E-mail</label>
+        <InputText @bind-Value="confirmationModel!.Email" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label>Código de Confirmação</label>
+        <InputText @bind-Value="confirmationModel!.Code" class="form-control" />
+    </div>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger">
+            @errorMessage
+            @if (showDetails)
+            {
+                <div class="mt-2 small">@errorDetails</div>
+            }
+        </div>
+    }
+
+    <button type="submit" class="btn btn-primary">Confirmar</button>
+    
+    <div class="mt-3">
+        Não recebeu o código? <a href="/reenviar-codigo">Reenviar código</a>
+    </div>
+</EditForm>
+
+@code {
+    [SupplyParameterFromForm]
+    private ConfirmationModel? confirmationModel { get; set; } = new();
+
+    private string errorMessage = string.Empty;
+    private string errorDetails = string.Empty;
+    private bool showDetails = false;
+
+    private async Task HandleConfirmation()
+    {
+        try
+        {
+            var success = await AuthService.VerifyUserAsync(
+                confirmationModel!.Email,
+                confirmationModel.Code
+            );
+
+            if (success)
+            {
+                HttpContextAccessor.HttpContext.Response.Redirect("/login");
+            }
+            else
+            {
+                errorMessage = "Código inválido ou expirado!";
+                errorDetails = "Verifique o código digitado ou solicite um novo código";
+                showDetails = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Erro na confirmação do e-mail";
+            errorDetails = ex.Message;
+            showDetails = true;
+            Console.WriteLine(ex.StackTrace);
+        }
+    }
+
+    public class ConfirmationModel
+    {
+        [Required(ErrorMessage = "E-mail é obrigatório")]
+        [EmailAddress(ErrorMessage = "Formato de e-mail inválido")]
+        public string Email { get; set; }
+
+        [Required(ErrorMessage = "Código de confirmação é obrigatório")]
+        [StringLength(6, ErrorMessage = "O código deve ter 6 dígitos", MinimumLength = 6)]
+        public string Code { get; set; }
+    }
+}

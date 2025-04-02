@@ -54,6 +54,10 @@ builder.Services.AddScoped<MovieDeserializer>();
 // 4. Registro dos serviços
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<VerificationService>();
+builder.Services.AddScoped<EmailService>();  // Registrar o EmailService
+
+
 builder.Services.AddHttpContextAccessor();
 
 // 5. Configuração do Blazor

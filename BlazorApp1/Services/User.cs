@@ -13,6 +13,8 @@ namespace BlazorApp1.Services
         public string Username { get; set; }
         public string Email { get; set; }
         public string PasswordHash { get; set; }
+        
+        public bool IsSucess { get; set; }
 
         // Parameterless constructor REQUIRED for Entity Framework
         public User()

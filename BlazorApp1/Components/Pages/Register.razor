@@ -58,7 +58,9 @@
                 return;
             }
             await AuthService.CreateUser(Model!.Username, Model.Password, Model.Email);
-            HttpContextAccessor.HttpContext.Response.Redirect("/login");
+            var encodedEmail = Uri.EscapeDataString(Model.Email);
+            HttpContextAccessor.HttpContext.Response.Redirect($"/confirmar-email?email={encodedEmail}");
+
         }
         catch (Exception ex)
         {
