@@ -44,6 +44,10 @@ public class AuthService : IAuthService
             {
                 return await _context.Users
                     .AnyAsync(u => u.Username == username);
+            }    public async Task<bool> CheckEmailExists(string email)
+            {
+                return await _context.Users
+                    .AnyAsync(u => u.Email == email);
             }
 
             public async Task CreateUser(string username, string password, string email)
