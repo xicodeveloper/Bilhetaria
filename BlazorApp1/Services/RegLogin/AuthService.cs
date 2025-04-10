@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using BlazorApp1.Services.DataBase;
 using MySql.Data.MySqlClient;
 using BlazorApp1.Services.RegLogin;
 using Microsoft.AspNetCore.Authentication;
@@ -12,52 +13,60 @@ namespace BlazorApp1.Services.RegLogin
 
 public class AuthService : IAuthService
     {
-        private readonly string _connectionString;
+        private readonly ApplicationDbContext _context;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly VerificationService _verificationService;
 
-        public  AuthService(IConfiguration configuration, IHttpContextAccessor _httpContextAccessor)
+        public AuthService(
+            ApplicationDbContext context,
+            IHttpContextAccessor httpContextAccessor,
+            VerificationService verificationService)
         {
-            _connectionString = "Server=localhost;Port=3306;Database=ticketzone;Uid=root;Pwd=;";
-            _httpContextAccessor= _httpContextAccessor;
+            _context = context;
+            _httpContextAccessor = httpContextAccessor;
+            _verificationService = verificationService;
         }
-
-        public async Task<bool> CheckUsernameExists(string username)
+        public async Task<bool> VerifyUserAsync(string email, string code)
         {
-            await using var connection = new MySqlConnection(_connectionString);
-            await connection.OpenAsync();
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            if (user == null) return false;
 
-            const string query = "SELECT COUNT(*) FROM users WHERE username = @username";
-            
-            await using var command = new MySqlCommand(query, connection);
-            command.Parameters.AddWithValue("@username", username);
-
-            var result = (long)await command.ExecuteScalarAsync();
-            return result > 0;
-        }
-
-        public async Task CreateUser(string username, string password, string email)
-        {
-            try
+            if (_verificationService.ValidateCode(email, code))
             {
-                await using var connection = new MySqlConnection(_connectionString);
-                await connection.OpenAsync();
-
-                const string query = @"INSERT INTO users
-                             (username, password, email)
-                             VALUES (@username, @password, @email)";
-
-                await using var command = new MySqlCommand(query, connection);
-                command.Parameters.AddWithValue("@username", username);
-                command.Parameters.AddWithValue("@password",  BCrypt.Net.BCrypt.HashPassword(password));
-                command.Parameters.AddWithValue("@email", email);
-
-                await command.ExecuteNonQueryAsync();
+                user.IsSucess = true;
+                Console.WriteLine(user.IsSucess);
+                await _context.SaveChangesAsync();
+                return true;
             }
-            catch (MySqlException ex)
-            {
-                throw new ApplicationException("Erro no banco de dados: " + ex.Message, ex);
-            }
+            return false;
         }
+            public async Task<bool> CheckUsernameExists(string username)
+            {
+                return await _context.Users
+                    .AnyAsync(u => u.Username == username);
+            }    public async Task<bool> CheckEmailExists(string email)
+            {
+                return await _context.Users
+                    .AnyAsync(u => u.Email == email);
+            }
+
+            public async Task CreateUser(string username, string password, string email)
+            {
+                var user = new User
+                {
+                    Username = username,
+                    Email = email,
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
+                    IsSucess = false 
+                };
+    
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+    
+                await _verificationService.SendVerificationCodeAsync(email); // Enviar código após criar usuário
+            }
+
+// Crie um endpoint temporário para teste
 
         public async Task<AuthResult> LoginAsync(string username, string password)
         {
@@ -119,37 +128,10 @@ public class AuthService : IAuthService
                 };
             }
         }
-        private async Task<User?> FindUser(string identifier)
+        public async Task<User> FindUser(string usernameOrEmail)
         {
-            await using var connection = new MySqlConnection(_connectionString);
-            await connection.OpenAsync();
-
-            const string query = @"SELECT
-                            id,
-                            username,
-                            email,
-                            password
-                          FROM users
-                          WHERE username = @identifier
-                             OR email = @identifier
-                          LIMIT 1";
-
-            await using var command = new MySqlCommand(query, connection);
-            command.Parameters.AddWithValue("@identifier", identifier);
-
-            await using var reader = await command.ExecuteReaderAsync();
-
-            if (await reader.ReadAsync())
-            {
-                return new User(
-                    reader.GetInt32(reader.GetOrdinal("id")),
-                    reader.GetString(reader.GetOrdinal("username")),
-                    reader.GetString(reader.GetOrdinal("email")),
-                    reader.GetString(reader.GetOrdinal("password"))
-                );
-            }
-
-            return null;
+            return await _context.Users
+                .FirstOrDefaultAsync(u => u.Username == usernameOrEmail || u.Email == usernameOrEmail);
         }
         public async Task<AuthResult> GetPersistedUserAsync()
         {

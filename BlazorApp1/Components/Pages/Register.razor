@@ -57,8 +57,15 @@
                 errorMessage = "Nome de utilizador já está em uso!";
                 return;
             }
+            if(await AuthService.CheckEmailExists(Model!.Email))
+            {
+                errorMessage = "Email já está em uso!";
+                return;
+            }
             await AuthService.CreateUser(Model!.Username, Model.Password, Model.Email);
-            HttpContextAccessor.HttpContext.Response.Redirect("/login");
+            var encodedEmail = Uri.EscapeDataString(Model.Email);
+            HttpContextAccessor.HttpContext.Response.Redirect($"/confirmar-email?email={encodedEmail}");
+
         }
         catch (Exception ex)
         {

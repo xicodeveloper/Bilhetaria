@@ -1,17 +1,32 @@
-using BlazorApp1.Services;
-// Classe de modelo
-public class User
-{
-    public int Id { get; }
-    public string Username { get; }
-    public string Email { get; }
-    public string PasswordHash { get; }
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-    public User(int id, string username, string email, string passwordHash)
+namespace BlazorApp1.Services
+{
+
+    public class User
     {
-        Id = id;
-        Username = username;
-        Email = email;
-        PasswordHash = passwordHash;
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int Id { get; set; }
+
+        public string Username { get; set; }
+        public string Email { get; set; }
+        public string PasswordHash { get; set; }
+        
+        public bool IsSucess { get; set; }
+
+        // Parameterless constructor REQUIRED for Entity Framework
+        public User()
+        {
+        }
+
+        // Optional constructor for convenience
+        public User(string username, string email, string passwordHash)
+        {
+            Username = username;
+            Email = email;
+            PasswordHash = passwordHash;
+        }
     }
 }
