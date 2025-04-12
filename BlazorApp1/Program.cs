@@ -27,6 +27,11 @@ builder.Services.AddAuthentication(options =>
     options.ExpireTimeSpan = TimeSpan.FromDays(30);
 });
 
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("VerifiedEmail", policy => 
+        policy.RequireClaim("EmailConfirmed", "true"));
+});
 // 2. Configuração da autorização
 builder.Services.AddAuthorization(options =>
 {

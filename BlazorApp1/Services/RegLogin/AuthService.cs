@@ -33,18 +33,21 @@ public class AuthService : IAuthService
 
             if (_verificationService.ValidateCode(email, code))
             {
-                user.IsSucess = true;
-                Console.WriteLine(user.IsSucess);
+                user.IsSucess = true; 
+                Console.WriteLine("User success: " + user.IsSucess);
                 await _context.SaveChangesAsync();
                 return true;
             }
             return false;
         }
-            public async Task<bool> CheckUsernameExists(string username)
+
+
+        public async Task<bool> CheckUsernameExists(string username)
             {
                 return await _context.Users
                     .AnyAsync(u => u.Username == username);
-            }    public async Task<bool> CheckEmailExists(string email)
+            }    
+        public async Task<bool> CheckEmailExists(string email)
             {
                 return await _context.Users
                     .AnyAsync(u => u.Email == email);
@@ -72,28 +75,11 @@ public class AuthService : IAuthService
         {
             try
             {
-                Console.WriteLine($"Iniciando login para: {username}");
-        
                 var user = await FindUser(username);
-                Console.WriteLine($"Usuário encontrado: {user != null}");
-
-                if (user == null)
+        
+                if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
                 {
-                    Console.WriteLine("Usuário não encontrado no banco de dados");
-                    return new AuthResult { Success = false };
-                }
-
-                Console.WriteLine($"Dados do usuário encontrado:");
-                Console.WriteLine($"ID: {user.Id}");
-                Console.WriteLine($"Username: {user.Username}");
-                Console.WriteLine($"Email: {user.Email}");
-
-                bool isPasswordValid = BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
-                Console.WriteLine($"Senha válida: {isPasswordValid}");
-
-                if (!isPasswordValid)
-                {
-                    return new AuthResult { Success = false };
+                    return new AuthResult { Success = false, ErrorMessage = "Credenciais inválidas" };
                 }
 
                 var claims = new List<Claim>
@@ -103,10 +89,10 @@ public class AuthService : IAuthService
                     new(ClaimTypes.NameIdentifier, user.Id.ToString())
                 };
 
-                Console.WriteLine("\nClaims geradas:");
-                foreach (var claim in claims)
+                // Adicione aqui a verificação do status de confirmação
+                if (user.IsSucess)
                 {
-                    Console.WriteLine($"{claim.Type}: {claim.Value}");
+                    claims.Add(new Claim("EmailConfirmed", "true"));
                 }
 
                 var identity = new ClaimsIdentity(claims, "Cookies");
@@ -120,7 +106,6 @@ public class AuthService : IAuthService
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Erro durante o login: {ex}");
                 return new AuthResult 
                 { 
                     Success = false,
@@ -132,54 +117,6 @@ public class AuthService : IAuthService
         {
             return await _context.Users
                 .FirstOrDefaultAsync(u => u.Username == usernameOrEmail || u.Email == usernameOrEmail);
-        }
-        public async Task<AuthResult> GetPersistedUserAsync()
-        {
-            var context = _httpContextAccessor.HttpContext;
-            var result = await context.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            
-            if (result.Succeeded && result.Principal != null)
-            {
-                return new AuthResult 
-                { 
-                    Success = true,
-                    ClaimsPrincipal = result.Principal
-                };
-            }
-            
-            return new AuthResult { Success = false };
-        }
-        
-        public async Task PersistUserAsync(ClaimsPrincipal principal)
-        {
-            var context = _httpContextAccessor.HttpContext;
-    
-            if (context == null)
-            {
-                Console.WriteLine("HttpContext nulo durante persistência!");
-                return;
-            }
-
-            // Adicione este log para verificar as claims antes de persistir
-            Console.WriteLine("\nClaims antes de persistir no cookie:");
-            foreach (var claim in principal.Claims)
-            {
-                Console.WriteLine($"{claim.Type}: {claim.Value}");
-            }
-
-            await context.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme,
-                principal,
-                new AuthenticationProperties
-                {
-                    IsPersistent = true,
-                    ExpiresUtc = DateTimeOffset.UtcNow.AddDays(30)
-                });
-        }
-        public async Task ClearPersistedUserAsync()
-        {
-            var context = _httpContextAccessor.HttpContext;
-            await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         }
         public async Task LogoutAsync()
         {

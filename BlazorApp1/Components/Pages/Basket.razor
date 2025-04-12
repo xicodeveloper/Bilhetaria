@@ -1,0 +1,63 @@
+@page "/basket"
+@using BlazorApp1.Services.OrderFiles
+@inject IHttpContextAccessor HttpContextAccessor
+
+<h1>Basket</h1>
+
+@if (order != null)
+{
+    <p>Order Number: @order.Number</p>
+    <p>Order Date: @order.Date.ToString("dd/MM/yyyy")</p>
+    
+    @if (order.ShippingAddress != null)
+    {
+        <p>
+            Shipping Address: @order.ShippingAddress.Street @order.ShippingAddress.Number,
+            @order.ShippingAddress.ZipCode @order.ShippingAddress.City,
+            @order.ShippingAddress.Country
+        </p>
+    }
+
+    @if (order.Basket?.Items?.Any() == true)
+    {
+        <div class="basket-items">
+            <h3>Items (@order.Basket.TotalItems):</h3>
+            @foreach (var item in order.Basket.Items)
+            {
+                <div class="item">
+                    <p>@item.MovieTitle</p>
+                    <p>Quantity: @item.Quantity</p>
+                    <p>Type: @item.Type.ToString()</p>
+                    @if (item.ScreeningDate.HasValue)
+                    {
+                        <p>Screening: @item.ScreeningDate.Value.ToString("dd/MM/yyyy HH:mm")</p>
+                    }
+                </div>
+            }
+        </div>
+    }
+}
+
+@code {
+    private Order order; // Component-level field
+
+    protected override void OnInitialized()
+    {
+        // Remove 'var' to use the component field
+        order = OrderBuilder.Empty()
+            .WithNumber(1234)
+            .WithCreatedOn(DateTime.Now)
+            .WithBasket(b => b
+                .WithPhysicalTicket(1, "Movie Title 1", 2, DateTime.Now.AddDays(3))
+                .WithPhysicalTicket(2, "Movie Title 2", 1, DateTime.Now.AddDays(5))
+            )
+            .WithShippingAddress(a => a
+                    .WithStreet("Movie Street 123")
+                    .WithCity("Cinema City")
+                    .WithZipCode("1234-567")
+                    .WithCountry("Portugal")
+                    .WithNumber(7) // Add missing number
+            )
+            .Build();
+    }
+}

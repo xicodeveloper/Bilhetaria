@@ -1,6 +1,8 @@
 
 @page "/login"
+@attribute [AllowAnonymous]
 @using BlazorApp1.Services.RegLogin
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
 @inject IAuthService AuthService
 @inject AuthenticationStateProvider AuthStateProvider
@@ -76,6 +78,7 @@
 
                 if (AuthStateProvider is CustomAuthStateProvider provider)
                 {
+                    
                     await provider.UpdateAuthenticationStateAsync(result.ClaimsPrincipal);
                     await AuthStateProvider.GetAuthenticationStateAsync(); // Forçar atualização
                     HttpContextAccessor.HttpContext.Response.Redirect("/debug");
