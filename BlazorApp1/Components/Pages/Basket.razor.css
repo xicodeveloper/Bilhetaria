@@ -1,0 +1,165 @@
+
+    /* ========== ESTILOS GERAIS ========== */
+.basket-container {
+
+    max-width: 1200px;
+    margin: 4rem auto;
+    padding: 2rem;
+    background: rgba(0, 0, 0, 0.85);
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+}
+
+h1 {
+    color: #F5F5F5;
+    font-family: Poppins;
+    font-size: 2.5rem;
+    margin-bottom: 2rem;
+}
+
+/* ========== ITENS DO CARRINHO ========== */
+.basket-items {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.item-card {
+    background: linear-gradient(90deg, rgba(40, 40, 40, 0.8) 0%, rgba(25, 25, 25, 0.8) 100%);
+    border-radius: 10px;
+    padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.item-title {
+    color: #F5F5F5;
+    font-family: Poppins;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.item-type {
+    color: #F3A529;
+    font-family: Poppins;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+}
+
+.item-price {
+    color: #FFF;
+    font-family: Poppins;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.quantity-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.quantity-btn {
+    background: #F3A529;
+    color: #000;
+    border: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.quantity-display {
+    color: #FFF;
+    font-family: Poppins;
+    font-size: 1.1rem;
+}
+
+/* ========== TOTAL E AÇÕES ========== */
+.total-section {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.clear-btn {
+    background: none;
+    border: 1px solid #FF6060;
+    color: #FF6060;
+    padding: 0.8rem 2rem;
+    border-radius: 25px;
+    cursor: pointer;
+    font-family: Poppins;
+    transition: all 0.3s ease;
+}
+
+.clear-btn:hover {
+    background: rgba(255, 96, 96, 0.1);
+}
+
+.checkout-box {
+    text-align: right;
+}
+
+.total-price {
+    color: #FFF;
+    font-family: Poppins;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.checkout-btn {
+    background: #F3A529;
+    color: #000;
+    padding: 1rem 3rem;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-family: Poppins;
+    font-weight: 700;
+    transition: all 0.3s ease;
+}
+
+.checkout-btn:hover {
+    background: #ff9900;
+}
+
+/* ========== RESPONSIVIDADE ========== */
+@media (max-width: 768px) {
+    .basket-container {
+        padding: 1rem;
+        margin: 1rem;
+    }
+
+    .item-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .total-section {
+        flex-direction: column;
+        gap: 1.5rem;
+        align-items: flex-start;
+    }
+
+    .checkout-box {
+        text-align: left;
+        width: 100%;
+    }
+
+    .checkout-btn {
+        width: 100%;
+    }
+}

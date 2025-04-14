@@ -1,58 +1,72 @@
 ﻿@inherits LayoutComponentBase
 @inject IHttpContextAccessor HttpContextAccessor
 
-<div class="page">
-    <main>
-        <div class="top-row navbar cinematic-navbar">
-            <div class="navbar-container">
-                <!-- Logo -->
-                <div class="navbar-brand">
-                    <a href="/">
-                        <i class="fas fa-film logo-icon"></i>
-                        SkyCinema
-                    </a>
-                </div>
+<div class="cinematic-navbar">
+    <div class="navbar-container">
+        <!-- Voltar + Logo -->
+        <div class="navbar-brand">
+            <br>
+            <a href="/" class="back-link">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
+                          stroke="white"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"/>
+                    <path d="M12 8L8 12L12 16"
+                          stroke="white"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"/>
+                    <path d="M16 12H8"
+                          stroke="white"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"/>
+                </svg>
+                VOLTAR
+            </a>
+            <h1 class="cinuma-title"><a href="/">CinUma</a></h1>
+            <h2 ><a href="/basket">Carrinho</a></h2>
+            <h2 ><a href="/bilhetes">Bilhetes</a></h2>
 
-                <!-- Menu Central -->
-                <nav class="nav-menu">
-                    <a href="/" class="nav-link">Home</a>
-                    <a href="/movies" class="nav-link">Filmes</a>
-                    <a href="/schedule" class="nav-link">Sessões</a>
-                    <a href="/about" class="nav-link">Sobre</a>
-                </nav>
-
-                <!-- Controles Direita -->
-                <div class="navbar-controls">
-                    <div class="search-container">
-                        <input type="text" class="search-input" placeholder="Pesquisar filmes..." />
-                        <i class="fas fa-search search-icon"></i>
-                    </div>
-
-                    <div class="auth-links">
-                        <a href="/login" class="auth-link">Entrar</a>
-                        <a href="/register" class="auth-link">Registar</a>
-                    </div>
-
-                    <div class="cart-container">
-                        <a href="/carrinho" class="cart-link">
-                            <i class="fas fa-shopping-cart"></i>
-                            <span class="cart-badge">3</span>
-                        </a>
-                    </div>
-                    <AuthorizeView>
-                        <Authorized>
-                            <button class="btn btn-danger" onclick="window.location.href='/logout';">Sair</button>
-                        </Authorized>
-                    </AuthorizeView>
-                </div>
+            <div class="search-container">
+                <input
+                    type="text"
+                    class="search-input"
+                    placeholder="titulos, séries e genêros"
+                />
+                <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z"
+                          stroke="white"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"/>
+                    <path d="M20.9999 21L16.6499 16.65"
+                          stroke="white"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"/>
+                </svg>
             </div>
         </div>
 
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
+        <!-- Perfil do Usuário -->
+        <div class="user-profile">
+            <span class="username"><a href="/editProfile">Xico Engenheiro</a></span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none">
+                <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21"
+                      stroke="#F3A529"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"/>
+                <path d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z"
+                      stroke="#F3A529"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"/>
+            </svg>
+        </div>
+    </div>
 </div>
-@code {
-
-}
+@Body
