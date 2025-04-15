@@ -1,7 +1,7 @@
 /* Estilos gerais */
 .movie-container {
     max-width: 1200px;
-    margin: 0 auto;
+    margin-top: 30%;
     color: white;
     font-family: 'Arial', sans-serif;
 }

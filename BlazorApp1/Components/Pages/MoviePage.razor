@@ -7,6 +7,7 @@
 @using System.Threading
 @using Microsoft.Extensions.Configuration
 @using BlazorApp1.Services.Models
+@inject IJSRuntime JS
 @using Microsoft.AspNetCore.Components
 <div class="movie-container">
     @if (_movie == null)
@@ -19,6 +20,7 @@
     else
     {
         <div class="movie-header">
+            
             <div class="header-content">
                 <div class="header-actors">
                     @if (_credits?.Cast != null)
@@ -37,7 +39,6 @@
                     <h1>@_movie.Title.ToUpper()</h1>
                     <div class="action-buttons">
                         <button class="btn-trailer" @onclick="OpenTrailer">TRAILER</button>
-                        <button class="btn-similar" @onclick="ShowSimilar">Títulos semelhantes</button>
                     </div>
                 </div>
             </div>
@@ -91,29 +92,67 @@
     private CreditsResponse _credits;
     private KeywordsResponse _keywords;
     private string _trailerUrl;
-
+    private string _linkImage => Configuration["TmdbApi:ImageBaseUrl"] ?? string.Empty;
     protected override async Task OnInitializedAsync()
     {
+       
         var apiKey = Environment.GetEnvironmentVariable("API_KEY");
         if (string.IsNullOrEmpty(apiKey))
         {
             throw new InvalidOperationException("API key não configurada no ambiente.");
         }
-        
+
         var baseUrl = Configuration["TmdbApi:BaseUrl"];
 
         try
         {
+            // Carregar dados principais
             _movie = await Http.GetFromJsonAsync<MovieDetails>($"{baseUrl}/movie/{Id}?api_key={apiKey}&language=pt-PT");
             _credits = await Http.GetFromJsonAsync<CreditsResponse>($"{baseUrl}/movie/{Id}/credits?api_key={apiKey}");
             _keywords = await Http.GetFromJsonAsync<KeywordsResponse>($"{baseUrl}/movie/{Id}/keywords?api_key={apiKey}");
-
             var videos = await Http.GetFromJsonAsync<VideosResponse>($"{baseUrl}/movie/{Id}/videos?api_key={apiKey}");
-            _trailerUrl = videos?.Results.FirstOrDefault(v => v.Type == "Trailer")?.GetUrl();
+            Console.WriteLine($"Vídeos encontrados: {videos?.Results?.Count ?? 0}");
+
+            if (videos?.Results != null)
+            {
+                foreach (var video in videos.Results)
+                {
+                    Console.WriteLine($"Video: {video.Type} | Key: {video.Key}");
+                }
+            }
+            // Carregar vídeos e encontrar trailer do YouTube
+             videos = await Http.GetFromJsonAsync<VideosResponse>($"{baseUrl}/movie/{Id}/videos?api_key={apiKey}");
+            var trailer = videos?.Results
+                .FirstOrDefault(v => v.Type.Equals("Trailer", StringComparison.OrdinalIgnoreCase) 
+                                    );
+            
+            _trailerUrl = trailer != null 
+                ? $"https://www.youtube.com/watch?v={trailer.Key}" 
+                : null;
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Erro ao carregar dados do filme: {ex.Message}");
+            Console.Error.WriteLine($"Erro ao carregar dados: {ex.Message}");
+        }
+    }
+
+    private async Task OpenTrailer()
+    {
+        try
+        {
+            if (!string.IsNullOrEmpty(_trailerUrl))
+            {
+                await JS.InvokeVoidAsync("window.open", _trailerUrl, "_blank");  // Correção do nome JS
+            }
+            else
+            {
+                Console.WriteLine("Trailer não disponível.");
+                // Opcional: Mostrar mensagem para o usuário
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Erro ao abrir trailer: {ex.Message}");
         }
     }
 
@@ -123,19 +162,9 @@
         return $"{ts.Hours}h {ts.Minutes}min";
     }
 
-    private void OpenTrailer()
-    {
-        if (!string.IsNullOrEmpty(_trailerUrl) && HttpContextAccessor.HttpContext != null)
-        {
-            HttpContextAccessor.HttpContext.Response.Redirect(_trailerUrl);
-        }
-    }
 
-    private void ShowSimilar()
-    {
-        // Implementar a navegação ou lógica para mostrar filmes semelhantes
-        Console.WriteLine("Mostrar títulos semelhantes (a implementar)");
-    }
+
+
 
     public void Dispose()
     {
