@@ -20,6 +20,7 @@
         <div class="movies-grid">
             @foreach (var movie in _movies)
             {
+                <a href="movie/@movie.Id">
                 <div class="movie-card">
                     <img src="@(LinkImage + movie.PosterPath)" 
                          class="movie-poster" 
@@ -49,6 +50,7 @@
                         </div>
                     </div>
                 </div>
+                </a>
             }
         </div>
     }
@@ -77,4 +79,5 @@
     {
         deserializer?.Dispose();
     }
+}
 }

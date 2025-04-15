@@ -1,0 +1,182 @@
+@page "/movie/{Id:int}"
+@inject IConfiguration Configuration
+@inject HttpClient Http
+@inject IHttpContextAccessor HttpContextAccessor
+@implements IDisposable
+@using System.Threading
+@using Microsoft.Extensions.Configuration
+@using Microsoft.AspNetCore.Components
+<div class="movie-container">
+    @if (_movie == null)
+    {
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>Carregando filme...</p>
+        </div>
+    }
+    else
+    {
+        <div class="movie-header">
+            <div class="header-content">
+                <div class="header-actors">
+                    @if (_credits?.Cast != null)
+                    {
+                        @foreach (var actor in _credits.Cast.Take(2))
+                        {
+                            <h2>@actor.Name</h2>
+                        }
+                    }
+                </div>
+
+                <p class="tagline">@_movie.Tagline</p>
+                <div id="css-test-element" class="css-test"></div>
+
+                <div class="movie-title-section">
+                    <h1>@_movie.Title.ToUpper()</h1>
+                    <div class="action-buttons">
+                        <button class="btn-trailer" @onclick="OpenTrailer">TRAILER</button>
+                        <button class="btn-similar" @onclick="ShowSimilar">Títulos semelhantes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="movie-details">
+            <h2>@_movie.OriginalTitle</h2>
+
+            <div class="time-relevance">
+                <span>@FormatRuntime(_movie.Runtime)</span>
+                <span class="relevance">@((_movie.VoteAverage * 10).ToString("0"))% relevância</span>
+            </div>
+
+            <div class="purchase-options">
+                <button class="btn-rent">ALUGAR (2,49€)</button>
+                <button class="btn-buy">COMPRAR (4,49€)</button>
+                <button class="btn-tickets">BILHETES</button>
+            </div>
+
+            <button class="btn-favorite">FAVORITAR</button>
+
+            <div class="synopsis">
+                <p>@_movie.Overview</p>
+            </div>
+
+            <div class="cast-genre">
+                <p><strong>Elenco:</strong> @string.Join(", ", _credits?.Cast?.Take(5).Select(c => c.Name) ?? Enumerable.Empty<string>())</p>
+                <p><strong>Género:</strong> @string.Join(", ", _movie.Genres.Select(g => g.Name))</p>
+            </div>
+        </div>
+
+        <div class="keywords-section">
+            <div class="keywords">
+                @if (_keywords?.Keywords != null)
+                {
+                    @foreach (var keyword in _keywords.Keywords.Take(15))
+                    {
+                        <span>@keyword.Name.ToUpper()</span>
+                    }
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private MovieDetails _movie;
+    private CreditsResponse _credits;
+    private KeywordsResponse _keywords;
+    private string _trailerUrl;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var apiKey = Environment.GetEnvironmentVariable("API_KEY");
+        if (string.IsNullOrEmpty(apiKey))
+        {
+            throw new InvalidOperationException("API key não configurada no ambiente.");
+        }
+        
+        var baseUrl = Configuration["TmdbApi:BaseUrl"];
+
+        try
+        {
+            _movie = await Http.GetFromJsonAsync<MovieDetails>($"{baseUrl}/movie/{Id}?api_key={apiKey}&language=pt-PT");
+            _credits = await Http.GetFromJsonAsync<CreditsResponse>($"{baseUrl}/movie/{Id}/credits?api_key={apiKey}");
+            _keywords = await Http.GetFromJsonAsync<KeywordsResponse>($"{baseUrl}/movie/{Id}/keywords?api_key={apiKey}");
+
+            var videos = await Http.GetFromJsonAsync<VideosResponse>($"{baseUrl}/movie/{Id}/videos?api_key={apiKey}");
+            _trailerUrl = videos?.Results.FirstOrDefault(v => v.Type == "Trailer")?.GetUrl();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Erro ao carregar dados do filme: {ex.Message}");
+        }
+    }
+
+    private string FormatRuntime(int minutes)
+    {
+        var ts = TimeSpan.FromMinutes(minutes);
+        return $"{ts.Hours}h {ts.Minutes}min";
+    }
+
+    private void OpenTrailer()
+    {
+        if (!string.IsNullOrEmpty(_trailerUrl) && HttpContextAccessor.HttpContext != null)
+        {
+            HttpContextAccessor.HttpContext.Response.Redirect(_trailerUrl);
+        }
+    }
+
+    private void ShowSimilar()
+    {
+        // Implementar a navegação ou lógica para mostrar filmes semelhantes
+        Console.WriteLine("Mostrar títulos semelhantes (a implementar)");
+    }
+
+    public void Dispose()
+    {
+        // Libertar recursos se necessário
+    }
+
+    // Classes de modelo
+    public class MovieDetails
+    {
+        public int Id { get; set; }
+        public string Title { get; set; }
+        public string OriginalTitle { get; set; }
+        public string Overview { get; set; }
+        public string Tagline { get; set; }
+        public int Runtime { get; set; }
+        public double VoteAverage { get; set; }
+        public string BackdropPath { get; set; }
+        public List<Genre> Genres { get; set; }
+    }
+
+    public class CreditsResponse
+    {
+        public List<CastMember> Cast { get; set; }
+    }
+
+    public class KeywordsResponse
+    {
+        public List<Keyword> Keywords { get; set; }
+    }
+
+    public class VideosResponse
+    {
+        public List<Video> Results { get; set; }
+    }
+
+    public class Video
+    {
+        public string Key { get; set; }
+        public string Type { get; set; }
+        public string GetUrl() => $"https://www.youtube.com/watch?v={Key}";
+    }
+
+    public class Genre { public string Name { get; set; } }
+    public class CastMember { public string Name { get; set; } }
+    public class Keyword { public string Name { get; set; } }
+}
+
