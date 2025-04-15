@@ -149,7 +149,10 @@ h2 a, .cinuma-title a,  .username a{
 .search-icon:hover path {
     stroke: #F3A529;
 }
-
+.space{
+    margin: 0 1rem;
+    
+}
 /* Responsividade */
 @media (max-width: 768px) {
     .search-container {

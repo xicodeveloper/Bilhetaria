@@ -1,10 +1,12 @@
 @page "/movie/{Id:int}"
 @inject IConfiguration Configuration
 @inject HttpClient Http
+@inherits BlazorApp1.Components.Layout.MainLayout
 @inject IHttpContextAccessor HttpContextAccessor
 @implements IDisposable
 @using System.Threading
 @using Microsoft.Extensions.Configuration
+@using BlazorApp1.Services.Models
 @using Microsoft.AspNetCore.Components
 <div class="movie-container">
     @if (_movie == null)
@@ -66,21 +68,22 @@
                 <p><strong>Género:</strong> @string.Join(", ", _movie.Genres.Select(g => g.Name))</p>
             </div>
         </div>
-
         <div class="keywords-section">
             <div class="keywords">
                 @if (_keywords?.Keywords != null)
                 {
                     @foreach (var keyword in _keywords.Keywords.Take(15))
                     {
-                        <span>@keyword.Name.ToUpper()</span>
+                        <a href="/movie/@keyword.Id" class="keyword-link">
+                            @keyword.Name.ToUpper()
+                        </a>
+                        <br>
                     }
                 }
             </div>
         </div>
     }
 </div>
-
 @code {
     [Parameter] public int Id { get; set; }
 
@@ -138,45 +141,4 @@
     {
         // Libertar recursos se necessário
     }
-
-    // Classes de modelo
-    public class MovieDetails
-    {
-        public int Id { get; set; }
-        public string Title { get; set; }
-        public string OriginalTitle { get; set; }
-        public string Overview { get; set; }
-        public string Tagline { get; set; }
-        public int Runtime { get; set; }
-        public double VoteAverage { get; set; }
-        public string BackdropPath { get; set; }
-        public List<Genre> Genres { get; set; }
-    }
-
-    public class CreditsResponse
-    {
-        public List<CastMember> Cast { get; set; }
-    }
-
-    public class KeywordsResponse
-    {
-        public List<Keyword> Keywords { get; set; }
-    }
-
-    public class VideosResponse
-    {
-        public List<Video> Results { get; set; }
-    }
-
-    public class Video
-    {
-        public string Key { get; set; }
-        public string Type { get; set; }
-        public string GetUrl() => $"https://www.youtube.com/watch?v={Key}";
-    }
-
-    public class Genre { public string Name { get; set; } }
-    public class CastMember { public string Name { get; set; } }
-    public class Keyword { public string Name { get; set; } }
 }
-
