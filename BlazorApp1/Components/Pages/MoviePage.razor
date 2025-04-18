@@ -1,0 +1,173 @@
+@page "/movie/{Id:int}"
+@inject IConfiguration Configuration
+@inject HttpClient Http
+@inherits BlazorApp1.Components.Layout.MainLayout
+@inject IHttpContextAccessor HttpContextAccessor
+@implements IDisposable
+@using System.Threading
+@using Microsoft.Extensions.Configuration
+@using BlazorApp1.Services.Models
+@inject IJSRuntime JS
+@using Microsoft.AspNetCore.Components
+<div class="movie-container">
+    @if (_movie == null)
+    {
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>Carregando filme...</p>
+        </div>
+    }
+    else
+    {
+        <div class="movie-header">
+            
+            <div class="header-content">
+                <div class="header-actors">
+                    @if (_credits?.Cast != null)
+                    {
+                        @foreach (var actor in _credits.Cast.Take(2))
+                        {
+                            <h2>@actor.Name</h2>
+                        }
+                    }
+                </div>
+
+                <p class="tagline">@_movie.Tagline</p>
+                <div id="css-test-element" class="css-test"></div>
+
+                <div class="movie-title-section">
+                    <h1>@_movie.Title.ToUpper()</h1>
+                    <div class="action-buttons">
+                        <button class="btn-trailer" @onclick="OpenTrailer">TRAILER</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="movie-details">
+            <h2>@_movie.OriginalTitle</h2>
+
+            <div class="time-relevance">
+                <span>@FormatRuntime(_movie.Runtime)</span>
+                <span class="relevance">@((_movie.VoteAverage * 10).ToString("0"))% relevância</span>
+            </div>
+
+            <div class="purchase-options">
+                <button class="btn-rent">ALUGAR (2,49€)</button>
+                <button class="btn-buy">COMPRAR (4,49€)</button>
+                <button class="btn-tickets">BILHETES</button>
+            </div>
+
+            <button class="btn-favorite">FAVORITAR</button>
+
+            <div class="synopsis">
+                <p>@_movie.Overview</p>
+            </div>
+
+            <div class="cast-genre">
+                <p><strong>Elenco:</strong> @string.Join(", ", _credits?.Cast?.Take(5).Select(c => c.Name) ?? Enumerable.Empty<string>())</p>
+                <p><strong>Género:</strong> @string.Join(", ", _movie.Genres.Select(g => g.Name))</p>
+            </div>
+        </div>
+        <div class="keywords-section">
+            <div class="keywords">
+                @if (_keywords?.Keywords != null)
+                {
+                    @foreach (var keyword in _keywords.Keywords.Take(15))
+                    {
+                        <a href="/movie/@keyword.Id" class="keyword-link">
+                            @keyword.Name.ToUpper()
+                        </a>
+                        <br>
+                    }
+                }
+            </div>
+        </div>
+    }
+</div>
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private MovieDetails _movie;
+    private CreditsResponse _credits;
+    private KeywordsResponse _keywords;
+    private string _trailerUrl;
+    private string _linkImage => Configuration["TmdbApi:ImageBaseUrl"] ?? string.Empty;
+    protected override async Task OnInitializedAsync()
+    {
+       
+        var apiKey = Environment.GetEnvironmentVariable("API_KEY");
+        if (string.IsNullOrEmpty(apiKey))
+        {
+            throw new InvalidOperationException("API key não configurada no ambiente.");
+        }
+
+        var baseUrl = Configuration["TmdbApi:BaseUrl"];
+
+        try
+        {
+            // Carregar dados principais
+            _movie = await Http.GetFromJsonAsync<MovieDetails>($"{baseUrl}/movie/{Id}?api_key={apiKey}&language=pt-PT");
+            _credits = await Http.GetFromJsonAsync<CreditsResponse>($"{baseUrl}/movie/{Id}/credits?api_key={apiKey}");
+            _keywords = await Http.GetFromJsonAsync<KeywordsResponse>($"{baseUrl}/movie/{Id}/keywords?api_key={apiKey}");
+            var videos = await Http.GetFromJsonAsync<VideosResponse>($"{baseUrl}/movie/{Id}/videos?api_key={apiKey}");
+            Console.WriteLine($"Vídeos encontrados: {videos?.Results?.Count ?? 0}");
+
+            if (videos?.Results != null)
+            {
+                foreach (var video in videos.Results)
+                {
+                    Console.WriteLine($"Video: {video.Type} | Key: {video.Key}");
+                }
+            }
+            // Carregar vídeos e encontrar trailer do YouTube
+             videos = await Http.GetFromJsonAsync<VideosResponse>($"{baseUrl}/movie/{Id}/videos?api_key={apiKey}");
+            var trailer = videos?.Results
+                .FirstOrDefault(v => v.Type.Equals("Trailer", StringComparison.OrdinalIgnoreCase) 
+                                    );
+            
+            _trailerUrl = trailer != null 
+                ? $"https://www.youtube.com/watch?v={trailer.Key}" 
+                : null;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Erro ao carregar dados: {ex.Message}");
+        }
+    }
+
+    private async Task OpenTrailer()
+    {
+        try
+        {
+            if (!string.IsNullOrEmpty(_trailerUrl))
+            {
+                await JS.InvokeVoidAsync("window.open", _trailerUrl, "_blank");  // Correção do nome JS
+            }
+            else
+            {
+                Console.WriteLine("Trailer não disponível.");
+                // Opcional: Mostrar mensagem para o usuário
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Erro ao abrir trailer: {ex.Message}");
+        }
+    }
+
+    private string FormatRuntime(int minutes)
+    {
+        var ts = TimeSpan.FromMinutes(minutes);
+        return $"{ts.Hours}h {ts.Minutes}min";
+    }
+
+
+
+
+
+    public void Dispose()
+    {
+        // Libertar recursos se necessário
+    }
+}

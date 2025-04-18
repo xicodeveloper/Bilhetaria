@@ -1,39 +1,55 @@
+@layout EmptyLayout
 @page "/register"
+@using BlazorApp1.Components.Layout
 @using BlazorApp1.Services.RegLogin
 @inject IAuthService AuthService
 @inject IHttpContextAccessor HttpContextAccessor
-<EditForm Model="Model" OnValidSubmit="HandleValidSubmit" FormName="user-register">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
-    <div class="form-group">
-        <label>Username</label>
-        <InputText @bind-Value="Model!.Username" class="form-control" />
-    </div>
-    <div class="form-group">
-        <label>Email</label>
-        <InputText @bind-Value="Model!.Email" class="form-control" />
-    </div>
+<div class="page-container">
+    <img src="/img/popcorn.png" class="popcorn" alt="CinUMa Logo">
+    <div class="login-container">
+        <h1 class="title-login">CinUMa</h1>
+        <span class="subtitle-login">Aluga, Compra ou Assiste no Cinema... 
+ TUDO à distância de UM CLIQUE!</span>
 
-    <div class="form-group">
-        <label>Password</label>
-        <InputText type="password" @bind-Value="Model!.Password" class="form-control" />
-    </div>
-    @if (!string.IsNullOrEmpty(errorMessage))
-    {
-        <div class="alert alert-danger">
-            @errorMessage
-            @if (showDetails)
-            {
-                <div class="mt-2 small">@errorDetails</div>
-            }
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger">
+                @errorMessage
+                @if (showDetails)
+                {
+                    <div class="mt-2 small">@errorDetails</div>
+                }
+            </div>
+        }
+
+        <EditForm Model="Model" OnValidSubmit="HandleValidSubmit" FormName="user-register" class="loginform">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="form-group">
+                <label>Nome de utilizador</label>
+                <InputText @bind-Value="Model!.Username" class="form-control" placeholder="Username" />
+            </div>
+
+            <div class="form-group">
+                <label>Email</label>
+                <InputText @bind-Value="Model!.Email" class="form-control" placeholder="exemplo@email.com" />
+            </div>
+
+            <div class="form-group">
+                <label>Password</label>
+                <InputText type="password" @bind-Value="Model!.Password" class="form-control" placeholder="Password" />
+            </div>
+
+            <button type="submit" class="loginsub">Registar</button>
+        </EditForm>
+
+        <div class="mt-3">
+            <span>Já tem conta?</span>
+            <br><a href="/login">Iniciar Sessão</a>
         </div>
-    }
-    <button type="submit" class="btn btn-primary">Register</button>
-    <div class="mt-3">
-        Já tem conta? <a href="/login">Iniciar Sessão</a>
     </div>
-</EditForm>
-
+</div>
 @code {
     [SupplyParameterFromForm]
     private RegistrationModel? Model { get; set; }

@@ -1,0 +1,58 @@
+@page "/basket"
+@using BlazorApp1.Services.OrderFiles
+@inject IHttpContextAccessor HttpContextAccessor
+<div class="basket-container">
+    <h1>Carrinho</h1>
+    
+    <div class="basket-items">
+        <!-- Exemplo de item -->
+        <div class="item-card">
+            <div class="item-header">
+                <img src="img/padrinho.png" alt="Image of film not found"/>
+                <h3 class="item-title">The Godfather</h3>
+                <span class="item-price">3.50€</span>
+            </div>
+            <p class="item-type">Aluguer (Digital)</p>
+            <div class="quantity-controls">
+                <button class="quantity-btn">-</button>
+                <span class="quantity-display">1</span>
+                <button class="quantity-btn">+</button>
+            </div>
+        </div>
+        <div class="item-card">
+            <div class="item-header">
+                <img src="img/padrinho.png" alt="Image of film not found"/>
+                <h3 class="item-title">The Godfather</h3>
+                <span class="item-price">3.50€</span>
+            </div>
+            <p class="item-type">Aluguer (Digital)</p>
+            <div class="quantity-controls">
+                <button class="quantity-btn">-</button>
+                <span class="quantity-display">1</span>
+                <button class="quantity-btn">+</button>
+            </div>
+        </div>
+        <div class="item-card">
+            <div class="item-header">
+                <img src="img/padrinho.png" alt="Image of film not found"/>
+                <h3 class="item-title">The Godfather</h3>
+                <span class="item-price">3.50€</span>
+            </div>
+            <p class="item-type">Aluguer (Digital)</p>
+            <div class="quantity-controls">
+                <button class="quantity-btn">-</button>
+                <span class="quantity-display">1</span>
+                <button class="quantity-btn">+</button>
+            </div>
+        </div>
+        
+        <!-- Seção Total -->
+        <div class="total-section">
+            <button class="clear-btn">Limpar Carrinho</button>
+            <div class="checkout-box">
+                <p class="total-price">Total: 4.49€</p>
+                <button class="checkout-btn">Checkout</button>
+            </div>
+        </div>
+    </div>
+</div>
