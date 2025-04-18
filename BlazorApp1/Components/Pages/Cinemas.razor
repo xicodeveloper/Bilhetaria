@@ -1,0 +1,78 @@
+@page "/cinemas"
+@layout MainLayout
+@using BlazorApp1.Components.Layout
+@using BlazorApp1.Services.RegLogin
+@using System.Globalization
+@inject IAuthService AuthService
+@inject IHttpContextAccessor HttpContextAccessor
+@rendermode InteractiveServer
+
+<div class="page-container">
+    
+    <div class="container-cinemaPage">
+        <h1> Seleciona o horário</h1>
+        <div class="Select-Horario">
+            <div class="day-selector">
+                @foreach (var day in AvailableDays)
+                {
+                    <button class="day-button @(SelectedDay == day ? "activeButton" : " ")" @onclick="() => SelectDay(day)">
+                        @day
+                    </button>
+                }
+            </div>
+            
+
+            <h4>Resultados para: @SelectedDay</h4>
+
+            @if (AvailableShows.ContainsKey(SelectedDay))
+            {
+                <div>
+                    
+                    <ul>
+                        @foreach (var show in AvailableShows[SelectedDay])
+                        {
+                            <li><strong>@show.Cinema</strong> - @show.Time</li>
+                        }
+                    </ul>
+                </div>
+                
+            }
+            else
+            {
+                <h1>Não tem funções disponiveis.</h1>
+            }
+        </div>
+    </div>
+</div>
+
+
+@code {
+    private List<string> AvailableDays = new() { "Hoje", "Amanhã", "Sábado", "Domingo" };
+    private string SelectedDay = "Hoje";
+
+    private Dictionary<string, List<Show>> AvailableShows = new()
+    {
+        { "Hoje", new List<Show> { new("Cinema A", "18:00"), new("Cinema B", "20:00") } },
+        { "Amanhã", new List<Show> { new("Cinema A", "16:00"), new("Cinema C", "21:00") } },
+        { "Sábado", new List<Show> { new("Cinema B", "17:30") } },
+        { "Domingo", new List<Show>() } // sem funções
+    };
+
+    private void SelectDay(string day)
+    {
+        SelectedDay = day;
+        StateHasChanged();
+    }
+
+    public class Show
+    {
+        public string Cinema { get; set; }
+        public string Time { get; set; }
+
+        public Show(string cinema, string time)
+        {
+            Cinema = cinema;
+            Time = time;
+        }
+    }
+}
