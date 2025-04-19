@@ -1,0 +1,131 @@
+/* Estilos Base */
+.cinematic-navbar {
+    background: rgba(0, 0, 0, 0.9);
+    padding: 1rem 2rem;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+}
+
+.navbar-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.cinuma-logo {
+    color: #F5F5F5;
+    font-family: Poppins;
+    font-size: 2rem;
+    font-weight: 700;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.nav-menu {
+    display: flex;
+    gap: 2rem;
+    margin-left: auto;
+}
+
+.nav-link {
+    color: #FFF;
+    font-family: Poppins;
+    font-size: 1rem;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.nav-link:hover {
+    color: #F3A529;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    margin-right: 2rem;
+}
+
+.username {
+    color: #FFF;
+    font-family: Poppins;
+    font-size: 0.9rem;
+}
+
+.user-points {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #F3A529;
+    font-size: 0.8rem;
+}
+
+.cart-link {
+    color: white;
+    position: relative;
+    font-size: 1.2rem;
+}
+
+.cart-badge {
+    position: absolute;
+    top: -10px;
+    right: -15px;
+    background: #F3A529;
+    color: black;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: bold;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .navbar-container {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+    }
+
+    .nav-menu {
+        order: 3;
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .user-info {
+        margin-right: 0;
+        align-items: center;
+    }
+
+    .cinuma-logo {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .nav-menu {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .navbar-controls {
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
+}

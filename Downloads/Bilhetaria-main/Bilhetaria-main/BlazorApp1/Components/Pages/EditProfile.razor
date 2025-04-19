@@ -1,0 +1,90 @@
+@page "/editprofile"
+@layout MainLayout
+@using BlazorApp1.Components.Layout
+@using BlazorApp1.Services.RegLogin
+@inject IAuthService AuthService
+@inject IHttpContextAccessor HttpContextAccessor
+
+<div class="page-container">
+    <img src="/img/popcorn.png" class="popcorn" alt="CinUMa Logo">
+    <div class="edit-container">
+        <!-- Left Side -->
+        <div class="left-side">
+            <div class="profile-section">
+                <a href="/" class="back-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" 
+                              stroke="white" 
+                              stroke-width="2"
+                              stroke-linecap="round" 
+                              stroke-linejoin="round"/>
+                        <path d="M12 8L8 12L12 16" 
+                              stroke="white" 
+                              stroke-width="2"
+                              stroke-linecap="round" 
+                              stroke-linejoin="round"/>
+                        <path d="M16 12H8" 
+                              stroke="white" 
+                              stroke-width="2"
+                              stroke-linecap="round" 
+                              stroke-linejoin="round"/>
+                    </svg>
+                    VOLTAR
+                </a>
+                
+                <div class="user-profile">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none">
+                        <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" 
+                              stroke="#F3A529" 
+                              stroke-width="2"
+                              stroke-linecap="round" 
+                              stroke-linejoin="round"/>
+                        <path d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z" 
+                              stroke="#F3A529" 
+                              stroke-width="2"
+                              stroke-linecap="round" 
+                              stroke-linejoin="round"/>
+                    </svg>
+                    <h2>Xico Engenheiro</h2>
+                    <span class="profile-label">Perfil</span>
+                </div>
+
+                <div class="discounts">
+                    <h3>Os teus descontos</h3>
+                    <div class="discount-item">
+                        <span>50% em toda a saga da Pixar</span>
+                        <div class="separator"></div>
+                    </div>
+                    <div class="discount-item">
+                        <span>4,99€ em toda a saga Harry Potter</span>
+                        <div class="separator"></div>
+                    </div>
+                    <div class="discount-item">
+                        <span>20% na próxima compra</span>
+                        <div class="separator"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side -->
+        <div class="right-side">
+            <form class="edit-form">
+                <div class="form-group">
+                    <label>Nome</label>
+                    <input type="text" class="form-input" placeholder="Xico Engenheiro">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" class="form-input" placeholder="xicoengenheiro@example.com">
+                </div>
+                <div class="form-group">
+                    <label>Senha</label>
+                    <input type="password" class="form-input" placeholder="••••••••">
+                </div>
+                <button type="submit" class="save-btn">SALVAR</button>
+            </form>
+        </div>
+    </div>
+</div>
+

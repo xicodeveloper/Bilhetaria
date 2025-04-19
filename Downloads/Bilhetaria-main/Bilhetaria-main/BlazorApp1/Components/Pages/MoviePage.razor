@@ -1,0 +1,209 @@
+@page "/movie/{Id:int}"
+@inject IConfiguration Configuration
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+@using Microsoft.AspNetCore.Components
+@using BlazorApp1.Services.Models
+@using BlazorApp1.Services.Movies
+
+<div class="movie-page-container">
+    @if (_movie == null)
+    {
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Carregando filme...</p>
+        </div>
+    }
+    else
+    {
+        <!-- Header -->
+        <div class="header">
+            <h1 class="cinuma-title">CinUMa</h1>
+            <div class="header-right">
+                <a href="#" class="cart-link">Carrinho</a>
+                <a href="#" class="tickets-link">Bilhetes</a>
+                <a href="/" class="back-link">VOLTAR</a>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Main Content -->
+        <div class="movie-main-content" style="background: url('@(_linkImage + _movie.PosterPath)') no-repeat center center; background-size: cover; ">
+            <!-- Left Column - Movie Poster -->
+            <div class="poster-column">
+                <img src="@(_linkImage + _movie.PosterPath)" alt="@_movie.Title" class="movie-poster" />
+                <div class="action-buttons">
+                    <button class="btn-trailer" @onclick="OpenTrailer">TRAILER</button>
+                </div>
+            </div>
+
+            <!-- Right Column - Movie Info -->
+            <div class="info-column" style="position: relative; z-index: 2;">
+                <h2 class="movie-title">@_movie.OriginalTitle</h2>
+                <div class="tempo + relevance">
+                    <div class="movie-meta">
+                        <span class="tempo">@((_movie.Runtime * 10).ToString("0"))h</span>
+                        <span class="relevance">@((_movie.VoteAverage * 10).ToString("0"))% relevância</span>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <div class="btn-container">
+                        <button class="btn alugar">ALUGAR</button>
+                        <svg class="btn-line" xmlns="http://www.w3.org/2000/svg" width="156" height="52" viewBox="0 0 156 52" fill="none">
+                            <path d="M1 49L155 3" stroke="#F5F5F5" stroke-opacity="0.45" stroke-width="5"/>
+                        </svg>
+                    </div>
+
+                    <div class="btn-container">
+                        <button class="btn comprar">COMPRAR</button>
+                        <svg class="btn-line" xmlns="http://www.w3.org/2000/svg" width="156" height="52" viewBox="0 0 156 52" fill="none">
+                            <path d="M1 49L155 3" stroke="#F5F5F5" stroke-opacity="0.45" stroke-width="5"/>
+                        </svg>
+                    </div>
+                    <button class="btn bilhetes">BILHETES (7.50€)</button>
+                    <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" width="33" height="33" viewBox="0 0 33 33" fill="none">
+                        <path d="M16.5 31.0834C24.5542 31.0834 31.0834 24.5542 31.0834 16.5001C31.0834 8.44593 24.5542 1.91675 16.5 1.91675C8.44587 1.91675 1.91669 8.44593 1.91669 16.5001C1.91669 24.5542 8.44587 31.0834 16.5 31.0834Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M16.5 22.3333V16.5" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M16.5 10.6667H16.5146" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+
+                <d class="btn-favorite">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke="white" stroke-width="2"/>
+                    </svg>
+                    FAVORITAR
+                </d>
+
+                <div class="synopsis">
+                    <h3>Sinopse</h3>
+                    <p>@_movie.Overview</p>
+                </div>
+
+                <div class="movie-details">
+                    <p><strong>Elenco:</strong> @string.Join(", ", _credits?.Cast?.Take(5).Select(c => c.Name) ?? Enumerable.Empty<string>())</p>
+                    <p><strong>Género:</strong> @string.Join(", ", _movie.Genres.Select(g => g.Name))</p>
+                </div>
+            </div>
+        </div>
+        
+        <br>
+
+        <!-- Títulos Semelhantes -->
+        <section class="movies-section">
+            <h3 class="section-title">Títulos Semelhantes</h3>
+            <div class="movies-carousel" @ref="carouselContainer">
+                <div class="carousel-track">
+                    @if (_movies != null)
+                    {
+                        @foreach (var movie in _movies.Take(25))
+                        {
+                            <div class="carousel-item">
+                                <NavLink href="@($"/movie/{movie.Id}")">
+                                    <img src="@(LinkImage + movie.PosterPath)" alt="@movie.Title" class="movie-poster"/>
+                                    <div class="movie-hover-info">
+                                        <h4>@movie.Title</h4>
+                                        <p>💰 @GetRandomPrice()</p>
+                                        <p>⭐ @movie.VoteAverage.ToString("0.0")</p>
+                                    </div>
+                                </NavLink>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p>A carregar filmes...</p>
+                    }
+                </div>
+            </div>
+            <div class="carousel-nav">
+                <button class="carousel-btn prev" @onclick="() => ScrollCarousel(-1)">◀</button>
+                <button class="carousel-btn next" @onclick="() => ScrollCarousel(1)">▶</button>
+            </div>
+        </section>
+    }
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private MovieDetails? _movie;
+    private CreditsResponse? _credits;
+    private string? _trailerUrl;
+    private List<Film>? _movies;
+
+    private string _linkImage => Configuration["TmdbApi:ImageBaseUrl"] ?? string.Empty;
+    private string LinkImage => Configuration["TmdbApi:ImageBaseUrl"] ?? string.Empty;
+    private string ApiLink => $"{Configuration["TmdbApi:BaseUrl"]}/movie/popular";
+
+    private ElementReference carouselContainer;
+
+    private int currentIndex = 0;
+    private string[] discounts = new[] { "50%", "25%", "70%", "2 por 1" };
+
+    private MovieDeserializer deserializer = new MovieDeserializer();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var apiKey = Configuration["TmdbApi:ApiKey"];
+        var baseUrl = Configuration["TmdbApi:BaseUrl"] ?? "https://api.themoviedb.org/3";
+
+        try
+        {
+            var movieTask = Http.GetFromJsonAsync<MovieDetails>($"{baseUrl}/movie/{Id}?api_key={apiKey}&language=pt-PT");
+            var creditsTask = Http.GetFromJsonAsync<CreditsResponse>($"{baseUrl}/movie/{Id}/credits?api_key={apiKey}");
+            var videosTask = Http.GetFromJsonAsync<VideosResponse>($"{baseUrl}/movie/{Id}/videos?api_key={apiKey}");
+
+            await Task.WhenAll(movieTask, creditsTask, videosTask);
+
+            _movie = await movieTask;
+            _credits = await creditsTask;
+
+            var videos = await videosTask;
+            _trailerUrl = videos?.Results?.FirstOrDefault(v => v.Type.Equals("Trailer", StringComparison.OrdinalIgnoreCase))?.Key;
+
+            var response = deserializer.FetchPopularMovies(ApiLink);
+            _movies = response.Results;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro: {ex.Message}");
+        }
+    }
+
+    private async Task OpenTrailer()
+    {
+        if (!string.IsNullOrEmpty(_trailerUrl))
+        {
+            await JS.InvokeVoidAsync("window.open", $"https://www.youtube.com/watch?v={_trailerUrl}", "_blank");
+        }
+    }
+
+    private async Task ScrollCarousel(int direction)
+    {
+        currentIndex += direction;
+        if (currentIndex < 0) currentIndex = 0;
+        await JS.InvokeVoidAsync("scrollCarousel", carouselContainer, currentIndex);
+    }
+
+    private string GetRandomPrice()
+    {
+        var random = new Random();
+        double[] prices = { 2.99, 4.99, 9.99, 14.99 };
+        return prices[random.Next(prices.Length)].ToString("0.00€");
+    }
+
+    private string GetRandomDiscount()
+    {
+        var random = new Random();
+        return discounts[random.Next(discounts.Length)];
+    }
+
+    public void Dispose()
+    {
+        deserializer?.Dispose();
+    }
+}
