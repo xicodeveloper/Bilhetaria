@@ -1,0 +1,174 @@
+@page "/perfilAdmin"
+@layout MainLayout
+@using BlazorApp1.Components.Layout
+@using BlazorApp1.Services.RegLogin
+@using System.Globalization
+@inject IAuthService AuthService
+@inject IHttpContextAccessor HttpContextAccessor
+@rendermode InteractiveServer
+
+<div class="page-container">
+    <div class="grid-container">
+        <div class="grid-item horizontal" style="grid-column: span 1; grid-row: span 1">
+            
+            <div class="vertical" style="display: flex; gap: 10px; width: 100%">
+                Total visto: <br/>
+                <div class="horizontal" style="display: flex; gap: 10px; margin-top: auto">
+                    <h3>@totalVisto</h3>
+                    <p>minutos</p>
+                </div>
+                
+            </div>
+            <!-- Hardcoded -->
+            <div>
+                logo
+            </div>
+            <!--  -->
+            
+        </div>
+        <div class="grid-item horizontal" style="grid-column: span 1; grid-row: span 1">
+            <div class="vertical" style="display: flex; gap: 10px; width: 100%; justify-content: space-between">
+                Metodo de Pagamento:
+                
+                <h3>@paymentMethod</h3>
+            </div>
+            <!-- Hardcoded -->
+            <div>
+                logo
+            </div>
+            <!--  -->
+            
+        </div>
+        <div class="grid-item horizontal" style="grid-column: span 1; grid-row: span 1">
+            <div class="vertical" style="display: flex; gap: 10px; width: 100%; justify-content: space-between">
+                Valor total em compra:
+
+                <h3>@totalPay€</h3>
+            </div>
+            
+            <!-- Hardcoded -->
+            <div>
+                logo
+            </div>
+            <!--  -->
+            
+        </div>
+
+        <div class="grid-item vertical" style="grid-column: span 2; grid-row: span 2">
+            Visto este mês:
+
+            <!-- Hardcoded -->
+            <div style="display: flex; justify-content: center; align-content: center">
+                lista de séries
+            </div>
+            <!-- -->
+            
+        </div>
+        <div class="grid-item vertical" style="grid-column: span 1; grid-row: span 2">
+            Géneros:
+            
+            <!-- Hardcoded -->
+            <div style="display: flex; justify-content: center; align-content: center">
+                display do grafico
+            </div>
+            <!--  -->
+            
+        </div>
+
+        <div class="grid-item" style="grid-column: span 2; grid-row: span 2">
+            As tuas moradas:
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px; overflow: auto">
+                @foreach (var address in userAddresses)
+                {
+                    bool isSelected = moradaSelecionada == address;
+
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <!-- Botón estilo radio -->
+                        <button @onclick="@(() => SelecionarMorada(address))"
+                                style="
+                                    width: 20px;
+                                    height: 20px;
+                                    border-radius: 50%;
+                                    border: 2px solid #2196F3;
+                                    background-color: @(isSelected ? "#2196F3" : "transparent");
+                                cursor: pointer;
+                                display: inline-block;">
+                        </button>
+
+                        <!-- Tarjeta de morada -->
+                        <div style="
+                            flex-grow: 1;
+                            border: 2px solid @(isSelected ? "#2196F3" : "#ccc");
+                        border-radius: 8px;
+                        padding: 10px;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                        background-color: @(isSelected ? "#e3f2fd" : "white");
+                        ">
+                            <div><strong>Nome:</strong> @address.Nome</div>
+                            <div><strong>Morada:</strong> @address.Morada</div>
+                            <div><strong>Telefone:</strong> @address.Telefone</div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+        <div class="grid-item" style="grid-column: span 1; grid-row: span 2; overflow: auto">
+            Histórico de Compras:
+            @foreach (var purchase in purchaseHistory)
+            {
+                <div class="compraDiv horizontal" style="margin: 5px 0">
+                    <div class="vertical" style="width: 100%; gap: 10px">
+                        <div ><strong>@purchase.Name</strong> </div>
+                        <div class="smallFont">@purchase.Date - @purchase.Type </div>
+                    </div>
+                    
+                    <div style="align-items: flex-end; justify-content: flex-end;">
+                        <strong>@purchase.Price€</strong>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    public string totalVisto = "525.678";
+    public string paymentMethod = "MBWay";
+    public string totalPay = "32.99";
+    
+    public List<Purchase> purchaseHistory = new List<Purchase>
+    {
+        new Purchase { Name = "Filme 1", Date = "15/05/2023", Type = "Digital", Price = "9.99" },
+        new Purchase { Name = "Filme 2", Date = "10/05/2023", Type = "Blu-ray", Price = "12.50" },
+        new Purchase { Name = "Filme 3", Date = "03/05/2023", Type = "Streaming", Price = "7.99" }
+    };
+
+    public class Purchase
+    {
+        public string Name { get; set; }
+        public string Date { get; set; }
+        public string Type { get; set; }
+        public string Price { get; set; }
+    }
+    
+    public Address moradaSelecionada;
+
+    public List<Address> userAddresses = new List<Address>
+    {
+        new Address { Nome = "João Silva", Morada = "Rua das Palmeiras, 45", Telefone = "912345678" },
+        new Address { Nome = "Maria Santos", Morada = "Avenida do Mar, 120", Telefone = "968765432" }
+    };
+    void SelecionarMorada(Address address)
+    {
+        moradaSelecionada = address;
+        StateHasChanged();
+    }
+
+    public class Address
+    {
+        public string Nome { get; set; }
+        public string Morada { get; set; }
+        public string Telefone { get; set; }
+    }
+
+}
