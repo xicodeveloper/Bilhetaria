@@ -5,74 +5,96 @@
 @using System.Globalization
 @inject IAuthService AuthService
 @inject IHttpContextAccessor HttpContextAccessor
+@inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
 
 <div class="page-container">
-    
     <div class="container-cinemaPage">
+        
         <h1> Seleciona o horário</h1>
-        <div class="Select-Horario">
-            <div class="day-selector">
-                @foreach (var day in AvailableDays)
-                {
-                    <button class="day-button @(SelectedDay == day ? "activeButton" : " ")" @onclick="() => SelectDay(day)">
-                        @day
-                    </button>
-                }
-            </div>
-            
+        <div class="Selector scrollable" id="ScrollableContainer">
 
-            <h4>Resultados para: @SelectedDay</h4>
-
-            @if (AvailableShows.ContainsKey(SelectedDay))
+            @foreach (var day in AvailableDays)
             {
-                <div>
-                    
-                    <ul>
-                        @foreach (var show in AvailableShows[SelectedDay])
-                        {
-                            <li><strong>@show.Cinema</strong> - @show.Time</li>
-                        }
-                    </ul>
-                </div>
-                
-            }
-            else
-            {
-                <h1>Não tem funções disponiveis.</h1>
+                <button class="dayButton @(SelectedDay == day ? "activeButton" : " ")" @onclick="() => SelectDay(day)">
+                    @day
+                </button>
             }
         </div>
-    </div>
+        @if (AvailableShows.ContainsKey(SelectedDay))
+        {
+            <div class="cinemasDiv">
+
+
+                <h1> Seleciona o horário</h1>
+                @foreach (var cinema in AvailableShows[SelectedDay])
+                {
+                    <div class="Selector cinemaDetails">
+                        <h2> @cinema.Cinema </h2>
+                        <h3 class="cuadroCastanho"> @cinema.Format2D3D </h3>
+                        <div class="horaDisplay">
+                            @foreach (var Time in cinema.Times)
+                            {
+                                <h4 class="timeButton cuadroCastanho"> @Time </h4>
+                                <!-- futuramente mudar por <a> para redirecionar a escolher lugares -->
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <h1>Não tem funções disponiveis.</h1>
+        }
+    </div>    
 </div>
-
-
+<script src="Components/Pages/Cinemas.razor.js"></script>
 @code {
-    private List<string> AvailableDays = new() { "Hoje", "Amanhã", "Sábado", "Domingo" };
-    private string SelectedDay = "Hoje";
-
-    private Dictionary<string, List<Show>> AvailableShows = new()
+    private Dictionary<string, List<(string Cinema, string Format2D3D, List<string> Times)>> AvailableShows = new()
     {
-        { "Hoje", new List<Show> { new("Cinema A", "18:00"), new("Cinema B", "20:00") } },
-        { "Amanhã", new List<Show> { new("Cinema A", "16:00"), new("Cinema C", "21:00") } },
-        { "Sábado", new List<Show> { new("Cinema B", "17:30") } },
-        { "Domingo", new List<Show>() } // sem funções
+        { "Hoje", new List<(string Cinema, string Format2D3D, List<string> Times)>
+            {
+                ("CinePlace", "2D", new List<string> { "18:00", "20:00", "22:00" }),
+                ("Cinemas NOS Porto", "3D", new List<string> { "17:30", "19:30", "21:30" })
+            }
+        },
+        { "Amanhã", new List<(string Cinema, string Format2D3D, List<string> Times)>
+            {
+                ("CinePlace", "2D", new List<string> { "18:00", "20:00", "22:00" }),
+                ("Cinemas NOS Madeira", "2D", new List<string> { "16:00", "18:00", "20:00" }),
+                ("Cinemas NOS Porto", "3D", new List<string> { "19:00", "21:00" })
+            }
+        },
+        { "Sábado", new List<(string Cinema, string Format2D3D, List<string> Times)>
+            {
+                ("CinePlace", "2D", new List<string> { "18:00", "20:00", "22:00" }),
+                ("Cinemas NOS Madeira", "2D", new List<string> { "16:00", "18:00", "20:00" }),
+                ("Cinemas NOS Porto", "2D", new List<string> { "19:30", "22:00" }),
+                ("Cinemas NOS Porto", "3D", new List<string> { "19:00", "21:00" })
+            }
+        }
     };
+
+    private List<string> AvailableDays = new()
+    {
+        "Hoje",
+        "Amanhã",
+        "Sábado",
+        "Domingo",
+        "Segunda-Feira",
+        "Terça-Feira",
+        "Quarta-Feira",
+        "Quinta-Feira",
+        "Sexta-Feira"
+    };
+    private string SelectedDay = "Hoje";
 
     private void SelectDay(string day)
     {
         SelectedDay = day;
         StateHasChanged();
     }
-
-    public class Show
-    {
-        public string Cinema { get; set; }
-        public string Time { get; set; }
-
-        public Show(string cinema, string time)
-        {
-            Cinema = cinema;
-            Time = time;
-        }
-    }
+    
 }
+
