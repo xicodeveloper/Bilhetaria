@@ -93,7 +93,7 @@
                     
                     await provider.UpdateAuthenticationStateAsync(result.ClaimsPrincipal);
                     await AuthStateProvider.GetAuthenticationStateAsync(); // Forçar atualização
-                    HttpContextAccessor.HttpContext.Response.Redirect("/debug");
+                    HttpContextAccessor.HttpContext.Response.Redirect("/");
                 }
                 else
                 {
