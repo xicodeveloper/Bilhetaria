@@ -1,14 +1,16 @@
 @page "/movie/{Id:int}"
+@inherits BlazorApp1.Components.Layout.MainLayout
+@implements IDisposable
+
+@using Microsoft.AspNetCore.Components
+@using BlazorApp1.Services.Models
+@using System.Threading
+
 @inject IConfiguration Configuration
 @inject HttpClient Http
-@inherits BlazorApp1.Components.Layout.MainLayout
 @inject IHttpContextAccessor HttpContextAccessor
-@implements IDisposable
-@using System.Threading
-@using Microsoft.Extensions.Configuration
-@using BlazorApp1.Services.Models
 @inject IJSRuntime JS
-@using Microsoft.AspNetCore.Components
+
 <div class="movie-container">
     @if (_movie == null)
     {
@@ -19,9 +21,9 @@
     }
     else
     {
-        <div class="movie-header">
-            
+        <div class="movie-header" style="background-image: url('@_backdropImage');">
             <div class="header-content">
+                <!-- Header Actors -->
                 <div class="header-actors">
                     @if (_credits?.Cast != null)
                     {
@@ -32,43 +34,57 @@
                     }
                 </div>
 
+                <!-- Tagline -->
                 <p class="tagline">@_movie.Tagline</p>
-                <div id="css-test-element" class="css-test"></div>
 
+                <!-- Title Section -->
                 <div class="movie-title-section">
                     <h1>@_movie.Title.ToUpper()</h1>
-                    <div class="action-buttons">
-                        <button class="btn-trailer" @onclick="OpenTrailer">TRAILER</button>
-                    </div>
+                    @if (!string.IsNullOrEmpty(_trailerUrl))
+                    {
+                        <a href="@_trailerUrl" target="_blank" class="btn-trailer">TRAILER</a>
+                    }
+                    else
+                    {
+                        <button class="btn-trailer" disabled>TRAILER INDISPONÍVEL</button>
+                    }
                 </div>
             </div>
         </div>
 
+        <!-- Movie Details -->
         <div class="movie-details">
             <h2>@_movie.OriginalTitle</h2>
 
+            <!-- Runtime & Relevance -->
             <div class="time-relevance">
                 <span>@FormatRuntime(_movie.Runtime)</span>
                 <span class="relevance">@((_movie.VoteAverage * 10).ToString("0"))% relevância</span>
             </div>
 
+            <!-- Purchase Options -->
             <div class="purchase-options">
                 <button class="btn-rent">ALUGAR (2,49€)</button>
                 <button class="btn-buy">COMPRAR (4,49€)</button>
                 <button class="btn-tickets">BILHETES</button>
             </div>
 
+            <!-- Favorites -->
             <button class="btn-favorite">FAVORITAR</button>
 
+            <!-- Synopsis -->
             <div class="synopsis">
                 <p>@_movie.Overview</p>
             </div>
 
+            <!-- Cast & Genre -->
             <div class="cast-genre">
                 <p><strong>Elenco:</strong> @string.Join(", ", _credits?.Cast?.Take(5).Select(c => c.Name) ?? Enumerable.Empty<string>())</p>
                 <p><strong>Género:</strong> @string.Join(", ", _movie.Genres.Select(g => g.Name))</p>
             </div>
         </div>
+
+        <!-- Keywords Section -->
         <div class="keywords-section">
             <div class="keywords">
                 @if (_keywords?.Keywords != null)
@@ -78,57 +94,43 @@
                         <a href="/movie/@keyword.Id" class="keyword-link">
                             @keyword.Name.ToUpper()
                         </a>
-                        <br>
                     }
                 }
             </div>
         </div>
     }
 </div>
-@code {
-    [Parameter] public int Id { get; set; }
 
+@code {
+    // Parameters
+    [Parameter] public int Id { get; set; }
+    
+    private string ApiKey = Environment.GetEnvironmentVariable("API_KEY");
+    private string BaseUrl => Configuration["TmdbApi:BaseUrl"];
+    private string ImageBaseUrl => Configuration["TmdbApi:ImageBaseUrl"];
+
+    // State
     private MovieDetails _movie;
     private CreditsResponse _credits;
     private KeywordsResponse _keywords;
     private string _trailerUrl;
-    private string _linkImage => Configuration["TmdbApi:ImageBaseUrl"] ?? string.Empty;
+    private string _backdropImage => string.IsNullOrEmpty(_movie?.backdrop_path) 
+        ? null 
+        : $"{ImageBaseUrl}{_movie.backdrop_path}";
+
     protected override async Task OnInitializedAsync()
     {
-       
-        var apiKey = Environment.GetEnvironmentVariable("API_KEY");
-        if (string.IsNullOrEmpty(apiKey))
+        if (string.IsNullOrEmpty(ApiKey))
         {
-            throw new InvalidOperationException("API key não configurada no ambiente.");
+            throw new InvalidOperationException("API key não configurada.");
         }
-
-        var baseUrl = Configuration["TmdbApi:BaseUrl"];
 
         try
         {
-            // Carregar dados principais
-            _movie = await Http.GetFromJsonAsync<MovieDetails>($"{baseUrl}/movie/{Id}?api_key={apiKey}&language=pt-PT");
-            _credits = await Http.GetFromJsonAsync<CreditsResponse>($"{baseUrl}/movie/{Id}/credits?api_key={apiKey}");
-            _keywords = await Http.GetFromJsonAsync<KeywordsResponse>($"{baseUrl}/movie/{Id}/keywords?api_key={apiKey}");
-            var videos = await Http.GetFromJsonAsync<VideosResponse>($"{baseUrl}/movie/{Id}/videos?api_key={apiKey}");
-            Console.WriteLine($"Vídeos encontrados: {videos?.Results?.Count ?? 0}");
-
-            if (videos?.Results != null)
-            {
-                foreach (var video in videos.Results)
-                {
-                    Console.WriteLine($"Video: {video.Type} | Key: {video.Key}");
-                }
-            }
-            // Carregar vídeos e encontrar trailer do YouTube
-             videos = await Http.GetFromJsonAsync<VideosResponse>($"{baseUrl}/movie/{Id}/videos?api_key={apiKey}");
-            var trailer = videos?.Results
-                .FirstOrDefault(v => v.Type.Equals("Trailer", StringComparison.OrdinalIgnoreCase) 
-                                    );
-            
-            _trailerUrl = trailer != null 
-                ? $"https://www.youtube.com/watch?v={trailer.Key}" 
-                : null;
+            await LoadMovieData();
+            await LoadCredits();
+            await LoadKeywords();
+            await LoadTrailer();
         }
         catch (Exception ex)
         {
@@ -136,38 +138,31 @@
         }
     }
 
-    private async Task OpenTrailer()
+    private async Task LoadMovieData() => 
+        _movie = await Http.GetFromJsonAsync<MovieDetails>($"{BaseUrl}/movie/{Id}?api_key={ApiKey}");
+
+    private async Task LoadCredits() => 
+        _credits = await Http.GetFromJsonAsync<CreditsResponse>($"{BaseUrl}/movie/{Id}/credits?api_key={ApiKey}");
+
+    private async Task LoadKeywords() => 
+        _keywords = await Http.GetFromJsonAsync<KeywordsResponse>($"{BaseUrl}/movie/{Id}/keywords?api_key={ApiKey}");
+
+    private async Task LoadTrailer()
     {
-        try
-        {
-            if (!string.IsNullOrEmpty(_trailerUrl))
-            {
-                await JS.InvokeVoidAsync("window.open", _trailerUrl, "_blank");  // Correção do nome JS
-            }
-            else
-            {
-                Console.WriteLine("Trailer não disponível.");
-                // Opcional: Mostrar mensagem para o usuário
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Erro ao abrir trailer: {ex.Message}");
-        }
+        var videos = await Http.GetFromJsonAsync<VideosResponse>($"{BaseUrl}/movie/{Id}/videos?api_key={ApiKey}");
+        var trailer = videos?.Results?.FirstOrDefault(v => v.Type == "Trailer");
+        _trailerUrl = trailer != null ? $"https://www.youtube.com/embed/{trailer.Key}" : null;
     }
 
-    private string FormatRuntime(int minutes)
+    private string FormatRuntime(int runtime)
     {
-        var ts = TimeSpan.FromMinutes(minutes);
-        return $"{ts.Hours}h {ts.Minutes}min";
+        var hours = runtime / 60;
+        var minutes = runtime % 60;
+        return $"{hours}h {minutes}m";
     }
-
-
-
-
 
     public void Dispose()
     {
-        // Libertar recursos se necessário
+        // Cleanup resources if needed
     }
 }

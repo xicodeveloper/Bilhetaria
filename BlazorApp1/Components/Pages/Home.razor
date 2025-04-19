@@ -1,7 +1,14 @@
 ﻿@page "/"
+@using System.Security.Claims
 @using BlazorApp1.Services.Movies
 @inject IConfiguration Configuration
 @implements IDisposable
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@attribute [Authorize]
+
+@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Filmes Populares</PageTitle>
 
@@ -56,7 +63,53 @@
     }
 </div>
 
+@if (claims.Any())
+{
+    <table class="table">
+        <thead>
+        <tr>
+            <th>Tipo</th>
+            <th>Valor</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var claim in claims)
+        {
+            <tr>
+                <td>@claim.Type</td>
+                <td>@claim.Value</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+else
+{
+    <div class="alert alert-warning">Nenhuma claim encontrada</div>
+}
+
 @code {
+    private List<Claim> claims = new();
+
+
+    private async Task LoadClaims()
+    {
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            claims = authState.User.Claims.ToList();
+
+            // Forçar atualização da UI
+            StateHasChanged();
+
+
+        }
+        catch (Exception ex)
+        {
+
+        }
+    }
+
     private string ApIlink => $"{Configuration["TmdbApi:BaseUrl"]}/movie/popular";
     private string LinkImage => Configuration["TmdbApi:ImageBaseUrl"]?? string.Empty;
     private List<Film>? _movies;
@@ -66,6 +119,7 @@
     {
         try
         {
+            await LoadClaims();
             var response = deserializer.FetchPopularMovies(ApIlink);
             _movies = response.Results;
         }
