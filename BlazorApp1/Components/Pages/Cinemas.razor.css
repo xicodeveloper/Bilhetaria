@@ -14,35 +14,79 @@
     width: 100%;
 }
 
-.day-selector {
-    z-index: 1;
+.Selector{
     background: linear-gradient(90deg,
     rgba(0, 0, 0, 0.85) 0%,
-    rgba(0, 0, 0, 0.65) 100%);
+    rgba(0, 0, 0, 0.65) 0%);
     border-radius: 15px;
-    padding: 1rem;
+    padding: 1rem 3rem;
     width: 100%;
     display: flex;
-    backdrop-filter: blur(10px);
+    color: #fff;
+    align-items: center;
+    gap: 1rem;
+}
+
+.scrollable {
+    max-height: 200px; /* Ajusta la altura máxima según sea necesario */
+    overflow-y: auto;
+    padding-right: 10px; /* Opcional: espacio para el scroll */
+}
+
+.Selector > h2,h3{
+    margin: 0;
+    font-weight: bold;
+
 }
 
 h1{
     color: #fff;
+    font-weight: bold;
+}
+h2{
+    width: max-content;
 }
 
-
-.day-button{
+.dayButton{
     display: flex;
     margin:auto;
     border: none;
     background: none;
-    color: #fff;
     font-size: 2rem;
-
+    color: white;
+    font-weight: normal;
 }
 
 .activeButton{
     color: #d4af37;
+}
+
+.cuadroCastanho{
+    border-radius: 5px;
+    background: #7E5000;
+    padding: 0 12px
+}
+
+.horaDisplay{
+    margin-left: auto;
+    gap: 1rem;
+    display: flex;
+    justify-content: flex-end;
+
+}
+.timeButton{
+    width: max-content;
+    text-align: center;
+    font-size: 12px;
+    margin: 0;
+    padding: 5px 8px;
+}
+
+.cinemasDiv{
+    margin-top: 5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 }
 
 /* ========== RESPONSIVIDADE ========== */
