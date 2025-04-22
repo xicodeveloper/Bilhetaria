@@ -7,5 +7,6 @@ namespace BlazorApp1.Services.RegLogin
         public bool Success { get; set; }
         public ClaimsPrincipal? ClaimsPrincipal { get; set; }
         public string? ErrorMessage { get; set; }
+        
     }
 }

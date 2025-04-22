@@ -1,6 +1,8 @@
 @page "/basket"
 @using BlazorApp1.Services.OrderFiles
+@using Microsoft.AspNetCore.Authorization
 @inject IHttpContextAccessor HttpContextAccessor
+@attribute [Authorize]
 <div class="basket-container">
     <h1>Carrinho</h1>
     

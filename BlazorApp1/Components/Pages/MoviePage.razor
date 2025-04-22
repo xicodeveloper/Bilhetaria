@@ -1,10 +1,12 @@
 @page "/movie/{Id:int}"
 @inherits BlazorApp1.Components.Layout.MainLayout
 @implements IDisposable
+@attribute [Authorize]
 
 @using Microsoft.AspNetCore.Components
 @using BlazorApp1.Services.Models
 @using System.Threading
+@using Microsoft.AspNetCore.Authorization
 
 @inject IConfiguration Configuration
 @inject HttpClient Http

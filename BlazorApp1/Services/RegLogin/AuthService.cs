@@ -17,15 +17,50 @@ public class AuthService : IAuthService
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly VerificationService _verificationService;
 
-        public AuthService(
-            ApplicationDbContext context,
-            IHttpContextAccessor httpContextAccessor,
-            VerificationService verificationService)
-        {
-            _context = context;
-            _httpContextAccessor = httpContextAccessor;
-            _verificationService = verificationService;
-        }
+            public AuthService(
+                ApplicationDbContext context,
+                IHttpContextAccessor httpContextAccessor,
+                VerificationService verificationService)
+            {
+                _context = context;
+                _httpContextAccessor = httpContextAccessor;
+                _verificationService = verificationService;
+            }
+            public async Task<User> FindUserByUsername(string username)
+            {
+                var user = await _context.Users
+                    .FirstOrDefaultAsync(u => u.Username == username);
+                if (user == null)
+                {
+                    throw new KeyNotFoundException("Utilizador não encontrado");
+                }
+                return user;
+            }
+            public async Task<bool> UpdateUser(int id, string username, string email, string newPassword, bool sameUserName)
+            {
+                var user = await _context.Users.FindAsync(id);
+                if (user == null) throw new KeyNotFoundException("Usuário não encontrado");
+
+                // Verificar se o novo username é diferente e já existe
+                if (user.Username != username && await CheckUsernameExists(username) && sameUserName)
+                    throw new InvalidOperationException("Nome de usuário já está em uso!");
+
+                // Verificar se o novo email é diferente e já existe
+                if (user.Email != email && await CheckEmailExists(email))
+                    throw new InvalidOperationException("Email já está em uso!");
+
+                // Atualizar campos
+                user.Username = username;
+                user.Email = email;
+
+                // Atualizar senha se fornecida
+                if (!string.IsNullOrEmpty(newPassword))
+                    user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+
+                await _context.SaveChangesAsync(); 
+                return true; // <-- Garanta que está salvando
+                // <-- Garanta que está salvando
+            }
         public async Task<bool> VerifyUserAsync(string email, string code)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
@@ -127,6 +162,7 @@ public class AuthService : IAuthService
             }
         }
     }
+
 
     }
 
