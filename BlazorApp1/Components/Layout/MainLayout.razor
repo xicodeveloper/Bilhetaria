@@ -1,9 +1,14 @@
-﻿@inherits LayoutComponentBase
+﻿@using System.Security.Claims
+@using BlazorApp1.Services.RegLogin
+@using Microsoft.AspNetCore.Components.Authorization
+@inherits LayoutComponentBase
 @inject IHttpContextAccessor HttpContextAccessor
+@inject AuthService AuthService
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <div class="cinematic-navbar">
     <div class="navbar-container">
-        <!-- Voltar + Logo -->
         <div class="navbar-brand">
             <br>
             <a href="/" class="back-link">
@@ -27,15 +32,12 @@
                 VOLTAR
             </a>
             <h1 class="cinuma-title"><a href="/">CinUma</a></h1>
-            <h2 ><a href="/basket">Carrinho</a></h2>
-            <h2 ><a href="/bilhetes">Bilhetes</a></h2>
+            <h2><a href="/basket">Carrinho</a></h2>
+            <h2><a href="/bilhetes">Bilhetes</a></h2>
+            <h2><a href="/about">Sobre</a></h2>
 
             <div class="search-container">
-                <input
-                    type="text"
-                    class="search-input"
-                    placeholder="titulos, séries e genêros"
-                />
+                <input type="text" class="search-input" placeholder="titulos, séries e genêros"/>
                 <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
                     <path d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z"
                           stroke="white"
@@ -51,23 +53,76 @@
             </div>
         </div>
 
-        <!-- Perfil do Usuário -->
         <div class="user-profile">
-            <span class="username"><a href="/editProfile">Xico Engenheiro</a></span>
-            <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none">
-                <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21"
-                      stroke="#F3A529"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"/>
-                <path d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z"
-                      stroke="#F3A529"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"/>
-            </svg>
+            <div class="nav-right">
+                <span class="username"><a href="/editProfile/@username">@username
+                        <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none">
+                    <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21"
+                          stroke="#F3A529"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"/>
+                    <path d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z"
+                          stroke="#F3A529"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"/>
+                </svg>
+                    </a></span>
+                <a href="/logout" @onclick="Logout" @onclick:preventDefault class="logout-button">
+                    SAIR
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9"
+                              stroke="#F3A529"
+                              stroke-width="2"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"/>
+                        <path d="M16 17L21 12L16 7"
+                              stroke="#F3A529"
+                              stroke-width="2"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"/>
+                        <path d="M21 12H9"
+                              stroke="#F3A529"
+                              stroke-width="2"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"/>
+                    </svg>
+                </a>
+              
+            </div>
         </div>
     </div>
 </div>
 <div class="space"></div>
 @Body
+
+@code {
+    private string? username;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUserState();
+    }
+
+    private async Task LoadUserState()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        username = authState.User.Identity?.Name;
+        StateHasChanged();
+    }
+
+    private async Task Logout()
+    {
+        try
+        {
+            await AuthService.LogoutAsync();
+            await ((CustomAuthStateProvider)AuthenticationStateProvider).UpdateAuthenticationStateAsync(new ClaimsPrincipal());
+            
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro no logout: {ex.Message}");
+        }
+    }
+}

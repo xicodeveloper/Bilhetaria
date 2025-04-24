@@ -57,11 +57,20 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<MovieDeserializer>();
 
 // 4. Registro dos serviços
+// Adicione estas linhas:
+builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<AuthenticationStateProvider>(sp => 
+    sp.GetRequiredService<CustomAuthStateProvider>());
+builder.Services.AddScoped<CustomAuthStateProvider>();
+builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<VerificationService>();
 builder.Services.AddScoped<EmailService>();  // Registrar o EmailService
-
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<CustomAuthStateProvider>();
+builder.Services.AddScoped<AuthenticationStateProvider>(sp => 
+    sp.GetRequiredService<CustomAuthStateProvider>());
 builder.Services.AddHttpClient();
 builder.Services.AddHttpContextAccessor();
 

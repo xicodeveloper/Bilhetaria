@@ -153,6 +153,23 @@ h2 a, .cinuma-title a,  .username a{
     margin: 0 1rem;
     
 }
+.logout-button {
+    text-decoration: none !important;
+    color: inherit !important;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.logout-button:hover {
+    color: #F3A529 !important;
+}
+
+/* Remover sublinhado no estado hover */
+.logout-button:hover path {
+    stroke: #F3A529;
+}
 /* Responsividade */
 @media (max-width: 768px) {
     .search-container {

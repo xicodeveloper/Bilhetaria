@@ -1,0 +1,100 @@
+.page-container {
+    background-image: url("img/popcorn.png");
+    background-size: cover;
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 6rem 0 2rem;
+    align-items: center;
+}
+
+.grid-container{
+    flex-grow: 0;
+    margin-top: 2rem;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(300px, 1fr));
+    grid-auto-rows: 100px;
+    gap: 2rem;
+}
+
+.grid-item{
+    background-color: white;
+    display: flex;
+    flex-direction: column;
+    border-radius: 10px;
+    padding: 15px;
+}
+
+.horizontal{
+    display: flex;
+    flex-direction: row;
+}
+
+.vertical{
+    flex-direction: column;
+}
+
+h3{
+    font-size: 20px;
+    font-weight: bold;
+    margin: 0;
+}
+p{
+    font-size: 16px;
+    margin: 0;
+}
+
+.compraDiv{
+    border: 1px solid #ccc;
+    border-radius: 8px; 
+    padding: 10px; 
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    
+}
+
+.smallFont{
+    font-size: 12px;
+}
+/* ========== RESPONSIVIDADE ========== */
+@media (max-width: 992px) {
+    .edit-container {
+        flex-direction: column;
+        gap: 2rem;
+        padding: 1.5rem;
+    }
+
+    .left-side {
+        max-width: 100%;
+        border-right: none;
+        padding-right: 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 2rem;
+    }
+
+    .right-side {
+        padding-left: 0;
+    }
+}
+
+@media (max-width: 576px) {
+    .page-container {
+        padding: 1rem;
+    }
+
+    .edit-container {
+        padding: 1rem;
+    }
+
+    .user-profile h2 {
+        font-size: 1.25rem;
+        font-size: 1.25rem;
+    }
+    .form-input {
+        padding: 0.6rem;
+    }
+
+    .save-btn {
+        padding: 0.6rem 1rem;
+    }
+}

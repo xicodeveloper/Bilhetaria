@@ -1,216 +1,321 @@
-/* Estilos gerais */
+/* Estrutura principal */
 .movie-container {
-    max-width: 1200px;
-    margin-top: 30%;
-    color: white;
-    font-family: 'Arial', sans-serif;
+    max-width: 1280px;
+    margin: 4% auto;
+    padding: 1rem;
+    color: #f0f0f0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
 }
 
-.loading {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-}
-
-.spinner {
-    width: 50px;
-    height: 50px;
-    border: 5px solid #f3f3f3;
-    border-top: 5px solid #e50914;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-bottom: 1rem;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-/* Cabeçalho do filme */
+/* Cabeçalho com imagem de fundo */
 .movie-header {
     position: relative;
-    height: 80vh;
+    height: 70vh;
+    min-height: 500px;
     background-size: cover;
     background-position: center;
-    background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7));
-}
-
-.header-content {
-    position: relative;
-    height: 100%;
-    padding: 2rem;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
     display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+    align-items: flex-end;
 }
 
-.header-actors h2 {
-    font-size: 2.5rem;
-    margin: 0;
-    color: rgba(255, 255, 255, 0.8);
+/* Gradiente de fundo para legibilidade */
+.header-content {
+    width: 100%;
+    padding: 3rem;
+    background: linear-gradient(180deg, rgba(0,0,0,0.0) 30%, rgba(0,0,0,0.95) 90%);
+    backdrop-filter: blur(2px);
+    z-index: 2;
 }
 
-.tagline {
-    font-size: 1.2rem;
-    font-style: italic;
-    text-align: center;
-    color: #e50914;
-    margin: 1rem 0;
-}
-
-.movie-title-section {
-    text-align: center;
-}
-
+/* Título do filme */
 .movie-title-section h1 {
-    font-size: 3.5rem;
-    margin: 0;
+    font-size: 4rem;
+    margin: 0.5rem 0;
+    text-shadow: 2px 4px 10px rgba(0, 0, 0, 0.7);
     letter-spacing: 2px;
 }
 
-.action-buttons {
-    margin-top: 2rem;
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
+/* Tagline */
+.tagline {
+    font-size: 1.3rem;
+    font-weight: 300;
+    color: #ffcb05;
+    margin-bottom: 1.5rem;
 }
 
-/* Botões */
-button {
-    padding: 0.8rem 1.5rem;
+/* Botões de ação */
+.action-buttons,
+.purchase-options {
+    display: flex;
+    gap: 1.2rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+}
+
+.btn-trailer,
+.btn-rent,
+.btn-buy,
+.btn-tickets,
+.btn-favorite {
+    background: #e50914;
+    color: white;
+    padding: 0.9rem 1.8rem;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 1rem;
+    text-transform: uppercase;
     border: none;
-    border-radius: 4px;
     cursor: pointer;
-    font-weight: bold;
     transition: all 0.3s ease;
 }
 
-.btn-trailer {
-    background-color: #e50914;
-    color: white;
+.btn-trailer:hover,
+.btn-rent:hover,
+.btn-buy:hover,
+.btn-tickets:hover,
+.btn-favorite:hover {
+    background: #b20710;
+    transform: scale(1.05);
 }
 
-.btn-similar {
-    background-color: transparent;
-    border: 2px solid white;
-    color: white;
-}
-
-.btn-rent {
-    background-color: #e50914;
-    color: white;
-}
-
-.btn-buy {
-    background-color: #0071eb;
-    color: white;
-}
-
-.btn-tickets {
-    background-color: #00a862;
-    color: white;
-}
-
-.btn-favorite {
-    background-color: transparent;
-    border: 2px solid white;
-    color: white;
-    margin: 1rem 0;
-}
-
-button:hover {
-    opacity: 0.9;
-    transform: translateY(-2px);
-}
-
-/* Detalhes do filme */
+/* Secção de detalhes */
 .movie-details {
-    padding: 2rem;
-    background: #141414;
+    margin-top: 3rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
+/* Duração e relevância */
 .time-relevance {
     display: flex;
-    gap: 1rem;
-    margin: 1rem 0;
+    gap: 2rem;
+    margin-top: 1rem;
+    font-size: 1rem;
+    font-weight: 500;
 }
 
-.relevance {
-    color: #46d369;
-}
-
-.purchase-options {
-    display: flex;
-    gap: 1rem;
-    margin: 1.5rem 0;
-}
-
-.synopsis p {
+/* Sinopse */
+.synopsis {
+    margin-top: 2rem;
     font-size: 1.1rem;
-    line-height: 1.6;
-    max-width: 800px;
-    margin: 1rem 0;
+    line-height: 1.7;
+    color: #ddd;
 }
 
-.cast-genre p {
-    color: rgba(255, 255, 255, 0.8);
-    margin: 0.5rem 0;
+/* Elenco e Género */
+.cast-genre {
+    margin-top: 2rem;
+    font-size: 1rem;
 }
 
 /* Palavras-chave */
 .keywords-section {
-    padding: 2rem;
-    background: #141414;
+    margin-top: 3rem;
 }
 
 .keywords {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: 1rem;
 }
 
-.keywords span {
-    background-color: rgba(255, 255, 255, 0.1);
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
+.keyword-link {
+    padding: 0.6rem 1.2rem;
+    border-radius: 30px;
+    background-color: rgba(255, 255, 255, 0.08);
+    color: #fff;
     font-size: 0.9rem;
+    text-decoration: none;
+    transition: background 0.3s, transform 0.3s;
 }
 
-/* Elemento de teste CSS (pode ser removido) */
-.css-test {
-    display: none;
+.keyword-link:hover {
+    background-color: #e50914;
+    transform: translateY(-3px);
+}
+
+/* Modal (se usar mais tarde) */
+.trailer-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.95);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.trailer-modal-content {
+    width: 90%;
+    max-width: 900px;
+    height: 70vh;
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+}
+
+.close-btn {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: white;
+    cursor: pointer;
 }
 
 /* Responsividade */
-@media (max-width: 768px) {
-    .movie-header {
-        height: 60vh;
+@media (max-width: 1024px) {
+    .movie-title-section h1 {
+        font-size: 3rem;
     }
 
-    .header-actors h2 {
-        font-size: 1.5rem;
+    .header-content {
+        padding: 2rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .movie-header {
+        height: 45vh;
+        min-height: 300px;
+    }
+
+    .header-content {
+        padding: 1.5rem;
     }
 
     .movie-title-section h1 {
-        font-size: 2rem;
+        font-size: 2.2rem;
     }
 
-    .action-buttons {
-        flex-direction: column;
+    .btn-trailer,
+    .btn-rent,
+    .btn-buy,
+    .btn-tickets,
+    .btn-favorite {
+        width: 100%;
+        text-align: center;
     }
+}
+.movie-container {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: white;
+}
 
-    .purchase-options {
-        flex-direction: column;
-    }
+.movie-header {
+    position: relative;
+    background-size: cover;
+    background-position: center;
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: start;
+}
 
-    .keywords {
-        gap: 0.3rem;
-    }
+.movie-header::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 1;
+}
 
-    .keywords span {
-        padding: 0.3rem 0.8rem;
-    }
+.header-content {
+    position: relative;
+    z-index: 2;
+    padding: 2rem;
+    max-width: 1000px;
+}
+
+.movie-title-section h1 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.btn-trailer {
+    background-color: crimson;
+    color: white;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.btn-trailer:disabled {
+    background-color: gray;
+}
+
+.movie-details {
+    background-color: #121212;
+    padding: 2rem;
+}
+
+.time-relevance {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 1rem;
+}
+
+.relevance {
+    font-weight: bold;
+}
+
+.purchase-options button,
+.btn-favorite {
+    margin-right: 1rem;
+    margin-bottom: 1rem;
+    padding: 0.5rem 1rem;
+    border: none;
+    background-color: #333;
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.synopsis {
+    margin-top: 1rem;
+}
+
+.cast-genre p {
+    margin-top: 0.5rem;
+}
+
+.keywords-section {
+    background-color: #1a1a1a;
+    padding: 1rem 2rem;
+}
+
+.keyword-link {
+    color: #ddd;
+    text-decoration: none;
+    margin-right: 10px;
+}
+
+.loading {
+    padding: 3rem;
+    text-align: center;
+}
+
+.spinner {
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid crimson;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
