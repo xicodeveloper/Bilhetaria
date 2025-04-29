@@ -1,117 +1,100 @@
 using System.Security.Claims;
-using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 using BlazorApp1.Services.DataBase;
-using MySql.Data.MySqlClient;
 using BlazorApp1.Services.RegLogin;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace BlazorApp1.Services.RegLogin
 {
-    
-
-public class AuthService : IAuthService
+    public class AuthService : IAuthService
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly VerificationService _verificationService;
 
-            public AuthService(
-                ApplicationDbContext context,
-                IHttpContextAccessor httpContextAccessor,
-                VerificationService verificationService)
-            {
-                _context = context;
-                _httpContextAccessor = httpContextAccessor;
-                _verificationService = verificationService;
-            }
-            public async Task<User> FindUserByUsername(string username)
-            {
-                var user = await _context.Users
-                    .FirstOrDefaultAsync(u => u.Username == username);
-                if (user == null)
-                {
-                    throw new KeyNotFoundException("Utilizador não encontrado");
-                }
-                return user;
-            }
-            public async Task<bool> UpdateUser(int id, string username, string email, string newPassword, bool sameUserName)
-            {
-                var user = await _context.Users.FindAsync(id);
-                if (user == null) throw new KeyNotFoundException("Usuário não encontrado");
+        public AuthService(
+            IUnitOfWork unitOfWork,
+            IHttpContextAccessor httpContextAccessor,
+            VerificationService verificationService)
+        {
+            _unitOfWork = unitOfWork;
+            _httpContextAccessor = httpContextAccessor;
+            _verificationService = verificationService;
+        }
 
-                // Verificar se o novo username é diferente e já existe
-                if (user.Username != username && await CheckUsernameExists(username) && sameUserName)
-                    throw new InvalidOperationException("Nome de usuário já está em uso!");
+        public async Task<User> FindUserByUsername(string username)
+        {
+            return _unitOfWork.User.GetAll().FirstOrDefault(u => u.Username == username);
+        }
 
-                // Verificar se o novo email é diferente e já existe
-                if (user.Email != email && await CheckEmailExists(email))
-                    throw new InvalidOperationException("Email já está em uso!");
+        public async Task<bool> UpdateUser(int id, string username, string email, string newPassword, bool sameUserName)
+        {
+            var user = _unitOfWork.User.GetById(id);
+            if (user == null) throw new KeyNotFoundException("Usuário não encontrado");
 
-                // Atualizar campos
-                user.Username = username;
-                user.Email = email;
+            if (user.Username != username && await CheckUsernameExists(username) && sameUserName)
+                throw new InvalidOperationException("Nome de usuário já está em uso!");
 
-                // Atualizar senha se fornecida
-                if (!string.IsNullOrEmpty(newPassword))
-                    user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            if (user.Email != email && await CheckEmailExists(email))
+                throw new InvalidOperationException("Email já está em uso!");
 
-                await _context.SaveChangesAsync(); 
-                return true; // <-- Garanta que está salvando
-                // <-- Garanta que está salvando
-            }
+            user.Username = username;
+            user.Email = email;
+
+            if (!string.IsNullOrEmpty(newPassword))
+                user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+
+            _unitOfWork.Complete();
+            return true;
+        }
+
         public async Task<bool> VerifyUserAsync(string email, string code)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            var user = _unitOfWork.User.GetAll().FirstOrDefault(u => u.Email == email);
             if (user == null) return false;
 
             if (_verificationService.ValidateCode(email, code))
             {
-                user.IsSucess = true; 
-                Console.WriteLine("User success: " + user.IsSucess);
-                await _context.SaveChangesAsync();
+                user.IsSucess = true;
+                _unitOfWork.Complete();
                 return true;
             }
+
             return false;
         }
 
-
         public async Task<bool> CheckUsernameExists(string username)
-            {
-                return await _context.Users
-                    .AnyAsync(u => u.Username == username);
-            }    
+        {
+            return _unitOfWork.User.GetAll().Any(u => u.Username == username);
+        }
+
         public async Task<bool> CheckEmailExists(string email)
-            {
-                return await _context.Users
-                    .AnyAsync(u => u.Email == email);
-            }
+        {
+            return _unitOfWork.User.GetAll().Any(u => u.Email == email);
+        }
 
-            public async Task CreateUser(string username, string password, string email)
+        public async Task CreateUser(string username, string password, string email)
+        {
+            var user = new User
             {
-                var user = new User
-                {
-                    Username = username,
-                    Email = email,
-                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
-                    IsSucess = false 
-                };
-    
-                _context.Users.Add(user);
-                await _context.SaveChangesAsync();
-    
-                await _verificationService.SendVerificationCodeAsync(email); // Enviar código após criar usuário
-            }
+                Username = username,
+                Email = email,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
+                IsSucess = false
+            };
 
-// Crie um endpoint temporário para teste
+            _unitOfWork.User.Add(user);
+            _unitOfWork.Complete();
+
+            await _verificationService.SendVerificationCodeAsync(email);
+        }
 
         public async Task<AuthResult> LoginAsync(string username, string password)
         {
             try
             {
                 var user = await FindUser(username);
-        
+
                 if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
                 {
                     return new AuthResult { Success = false, ErrorMessage = "Credenciais inválidas" };
@@ -124,7 +107,6 @@ public class AuthService : IAuthService
                     new(ClaimTypes.NameIdentifier, user.Id.ToString())
                 };
 
-                // Adicione aqui a verificação do status de confirmação
                 if (user.IsSucess)
                 {
                     claims.Add(new Claim("EmailConfirmed", "true"));
@@ -133,26 +115,28 @@ public class AuthService : IAuthService
                 var identity = new ClaimsIdentity(claims, "Cookies");
                 var principal = new ClaimsPrincipal(identity);
 
-                return new AuthResult 
-                { 
+                return new AuthResult
+                {
                     Success = true,
                     ClaimsPrincipal = principal
                 };
             }
             catch (Exception ex)
             {
-                return new AuthResult 
-                { 
+                return new AuthResult
+                {
                     Success = false,
                     ErrorMessage = ex.Message
                 };
             }
         }
+
         public async Task<User> FindUser(string usernameOrEmail)
         {
-            return await _context.Users
-                .FirstOrDefaultAsync(u => u.Username == usernameOrEmail || u.Email == usernameOrEmail);
+            return _unitOfWork.User.GetAll()
+                .FirstOrDefault(u => u.Username == usernameOrEmail || u.Email == usernameOrEmail);
         }
+
         public async Task LogoutAsync()
         {
             var context = _httpContextAccessor.HttpContext;
@@ -162,7 +146,4 @@ public class AuthService : IAuthService
             }
         }
     }
-
-
-    }
-
+}

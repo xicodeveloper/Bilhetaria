@@ -15,21 +15,21 @@
         <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.4" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.4" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.4">
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-          <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
         </PackageReference>
         <PackageReference Include="MySql.Data" Version="9.2.0" />
         <PackageReference Include="MySqlConnector" Version="2.4.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.1" />
     </ItemGroup>
-    
+
     <ItemGroup>
         <None Update=".env" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
-    
+
     <ItemGroup>
-      <Folder Include="Services\Users\" />
+        <Folder Include="Services\Users\" />
     </ItemGroup>
 
 </Project>

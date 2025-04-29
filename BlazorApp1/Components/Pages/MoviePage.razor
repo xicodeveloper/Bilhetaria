@@ -66,13 +66,12 @@
 
             <!-- Purchase Options -->
             <div class="purchase-options">
-                <button class="btn-rent">ALUGAR (2,49€)</button>
-                <button class="btn-buy">COMPRAR (4,49€)</button>
-                <button class="btn-tickets">BILHETES</button>
+                <button class="btn-rent" @onclick="Borrow">ALUGAR (2,49€)</button>
+                <button class="btn-tickets" @onclick="BuyTicket">BILHETES</button>
             </div>
 
             <!-- Favorites -->
-            <button class="btn-favorite">FAVORITAR</button>
+            <button class="btn-favorite" @onclick="AddFav">FAVORITAR</button>
 
             <!-- Synopsis -->
             <div class="synopsis">
@@ -167,4 +166,22 @@
     {
         // Cleanup resources if needed
     }
+                    
+    private void BuyTicket()
+    {
+        Console.WriteLine("Botão de bilhetes clicado!");
+                            
+    }
+    private void AddFav()
+    {
+        Console.WriteLine("Botão de favorito clicado!");
+                            
+    }
+    private void Borrow()
+    {
+        Console.WriteLine("Botão de alugar clicado!");
+                            
+    }
+                        
+
 }
