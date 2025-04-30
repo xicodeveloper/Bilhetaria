@@ -3,6 +3,7 @@ namespace BlazorApp1.Services.OrderFiles;
 public class OrderBuilder
 {
     private int _number;
+    private int _id;
     private DateTime _date;
     private Basket _basket;
     private readonly AdressBuilder _addressBuilder = AdressBuilder.Empty();
@@ -15,6 +16,11 @@ public class OrderBuilder
     public OrderBuilder WithNumber(int number)
     {
         _number = number;
+        return this;
+    }
+    public OrderBuilder WithId(int number)
+    {
+        _id = number;
         return this;
     }
 
@@ -39,6 +45,7 @@ public class OrderBuilder
 
     public Order Build() => new()
     {
+        UserId = _id,
         Number = _number,
         Date = _date,
         Basket = _basket,

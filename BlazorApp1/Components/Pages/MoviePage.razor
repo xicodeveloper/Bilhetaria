@@ -3,15 +3,21 @@
 @implements IDisposable
 @attribute [Authorize]
 
+@using System.Security.Claims
 @using Microsoft.AspNetCore.Components
 @using BlazorApp1.Services.Models
 @using System.Threading
+@using BlazorApp1.Services
+@using BlazorApp1.Services.OrderFiles
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.EntityFrameworkCore.Metadata.Internal
 
 @inject IConfiguration Configuration
 @inject HttpClient Http
+@inject NavigationManager Navigation
 @inject IHttpContextAccessor HttpContextAccessor
-@inject IJSRuntime JS
+@inject AuthenticationStateProvider AuthStateProvider
 
 <div class="movie-container">
     @if (_movie == null)
@@ -64,11 +70,11 @@
                 <span class="relevance">@((_movie.VoteAverage * 10).ToString("0"))% relevância</span>
             </div>
 
-            <!-- Purchase Options -->
             <div class="purchase-options">
-                <button class="btn-rent">ALUGAR (2,49€)</button>
-                <button class="btn-buy">COMPRAR (4,49€)</button>
-                <button class="btn-tickets">BILHETES</button>
+                <button class="btn-rent" @onclick="async () => await BuyAluga()">ALUGAR (2,49€)</button>
+                <button class="btn-tickets" @onclick="async () => await BuyAluga()">COMPRAR</button>
+                <button class="btn-tickets" @onclick="async () => await BuyTicket()">BILHETES</button>
+                
             </div>
 
             <!-- Favorites -->
@@ -101,38 +107,85 @@
             </div>
         </div>
     }
+
+
 </div>
 
 @code {
+   
     // Parameters
     [Parameter] public int Id { get; set; }
-    
+    private Order order;
+
+
+    private string userId { get; set; }
     private string ApiKey = Environment.GetEnvironmentVariable("API_KEY");
     private string BaseUrl => Configuration["TmdbApi:BaseUrl"];
     private string ImageBaseUrl => Configuration["TmdbApi:ImageBaseUrl"];
+
+    private List<Claim> claims = new();
 
     // State
     private MovieDetails _movie;
     private CreditsResponse _credits;
     private KeywordsResponse _keywords;
     private string _trailerUrl;
-    private string _backdropImage => string.IsNullOrEmpty(_movie?.backdrop_path) 
-        ? null 
+
+    private string _backdropImage => string.IsNullOrEmpty(_movie?.backdrop_path)
+        ? null
         : $"{ImageBaseUrl}{_movie.backdrop_path}";
+    void SelecionarMorada()
+    {
+       Console.WriteLine("Hellooo");
+        StateHasChanged();
+    }
+    private async Task BuyTicket()
+    {
+        try
+        {
+            Console.WriteLine("Processando bilhetes...");
+            Navigation.NavigateTo("/cinemas");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro: {ex.Message}");
+        }
+    }
+
+    private async Task BuyAluga()
+    {
+        try
+        {
+            var order = OrderBuilder.Empty()
+                .WithId(1)
+                .Build();
+            
+
+            
+
+                Navigation.NavigateTo("/basket");
+
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro: {ex.Message}");
+        }
+    }
+
 
     protected override async Task OnInitializedAsync()
     {
-        if (string.IsNullOrEmpty(ApiKey))
-        {
-            throw new InvalidOperationException("API key não configurada.");
-        }
-
         try
         {
+            await LoadClaims();
             await LoadMovieData();
             await LoadCredits();
             await LoadKeywords();
             await LoadTrailer();
+            //await BuyTicket();
+            //await BuyForever();
+            //await AddFav();
+           
         }
         catch (Exception ex)
         {
@@ -140,13 +193,13 @@
         }
     }
 
-    private async Task LoadMovieData() => 
+    private async Task LoadMovieData() =>
         _movie = await Http.GetFromJsonAsync<MovieDetails>($"{BaseUrl}/movie/{Id}?api_key={ApiKey}");
 
-    private async Task LoadCredits() => 
+    private async Task LoadCredits() =>
         _credits = await Http.GetFromJsonAsync<CreditsResponse>($"{BaseUrl}/movie/{Id}/credits?api_key={ApiKey}");
 
-    private async Task LoadKeywords() => 
+    private async Task LoadKeywords() =>
         _keywords = await Http.GetFromJsonAsync<KeywordsResponse>($"{BaseUrl}/movie/{Id}/keywords?api_key={ApiKey}");
 
     private async Task LoadTrailer()
@@ -163,8 +216,39 @@
         return $"{hours}h {minutes}m";
     }
 
+
+    private string GetUserId()
+    {
+        return claims.FirstOrDefault(c =>
+            c.Type == ClaimTypes.NameIdentifier || c.Type == "sub")?.Value;
+    }
+
+    private async Task LoadClaims()
+    {
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            claims = authState.User.Claims.ToList();
+
+            userId = GetUserId();
+
+            Console.WriteLine($"User ID: {userId}");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+
+        }
+    }
+
+    
+ 
+
+
+
     public void Dispose()
     {
         // Cleanup resources if needed
     }
+
 }

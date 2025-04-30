@@ -27,32 +27,26 @@ builder.Services.AddAuthentication(options =>
     options.ExpireTimeSpan = TimeSpan.FromDays(30);
 });
 
+
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("VerifiedEmail", policy => 
         policy.RequireClaim("EmailConfirmed", "true"));
 });
-// 2. Configuração da autorização
+
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("Authenticated", policy =>
         policy.RequireAuthenticatedUser());
 });
 
-// 3. Configuração do MySQL
-try
-{
-    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-    builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    {
-        options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
-    });
-    Console.WriteLine("Conexão com o banco de dados estabelecida");
-}
-catch (Exception error)
-{
-    Console.WriteLine("Erro ao conectar com o banco de dados: "+ error.StackTrace);
-}
+
+var connectionString = "Server=localhost;Port=3306;Database=ticketzone;Uid=root;Pwd=;";
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+
+// Injeção de dependência
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<MovieDeserializer>();
 

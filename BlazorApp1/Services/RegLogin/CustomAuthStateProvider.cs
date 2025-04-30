@@ -15,7 +15,7 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
         var context = _httpContextAccessor.HttpContext;
         if (context != null)
         {
-            await context.AuthenticateAsync(); // Força a recarregar o estado
+            await context.AuthenticateAsync(); 
             NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
         }
     }
