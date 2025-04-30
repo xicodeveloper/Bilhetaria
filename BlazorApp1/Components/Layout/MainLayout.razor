@@ -110,6 +110,7 @@
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         username = authState.User.Identity?.Name;
+
         StateHasChanged();
     }
 

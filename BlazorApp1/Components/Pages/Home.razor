@@ -1,125 +1,220 @@
 ﻿@page "/"
-@using System.Security.Claims
 @using BlazorApp1.Services.Movies
 @inject IConfiguration Configuration
+@inject HttpClient Http
+@inherits BlazorApp1.Components.Layout.MainLayout
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IJSRuntime JS
 @implements IDisposable
-@using System.Security.Claims
-@using Microsoft.AspNetCore.Authorization
-@using Microsoft.AspNetCore.Components.Authorization
-@attribute [Authorize]
 
-@inject AuthenticationStateProvider AuthStateProvider
+@* A FALTAR: *@
+@* Factory Method para os carrosseis; *@
+@* JS correto para as setas; *@
+@* Color Thief para extrair a cor do poster. *@
 
-<PageTitle>Filmes Populares</PageTitle>
+<div class="homepage-container">
+    <!-- Header -->
+    <div class="header">
+        <h1 class="cinuma-title">CinUMa</h1>
+        <a href="/" class="back-link">VOLTAR</a>
+    </div>
 
-<div class="movies-container">
-    <h1 class="main-title">🎬 Filmes Populares</h1>
-    
-    @if (_movies == null)
-    {
-        <div class="loading">
-            <div class="spinner"></div>
-            <p>Carregando filmes...</p>
+    <!-- Featured Movie Section -->
+    <section class="featured-section">
+        <h2 class="featured-title">Minions 4</h2>
+        <div class="relevance">99% relevância</div>
+        <div class="divider"></div>
+        <div class="action-buttons">
+            <div class="btn-container">
+                <button class="btn alugar">ALUGAR</button>
+                <svg class="btn-line" xmlns="http://www.w3.org/2000/svg" width="156" height="52" viewBox="0 0 156 52" fill="none">
+                    <path d="M1 49L155 3" stroke="#F5F5F5" stroke-opacity="0.45" stroke-width="5"/>
+                </svg>
+            </div>
+
+            <div class="btn-container">
+                <button class="btn comprar">COMPRAR</button>
+                <svg class="btn-line" xmlns="http://www.w3.org/2000/svg" width="156" height="52" viewBox="0 0 156 52" fill="none">
+                    <path d="M1 49L155 3" stroke="#F5F5F5" stroke-opacity="0.45" stroke-width="5"/>
+                </svg>
+            </div>
+            <button class="btn bilhetes">BILHETES (7.50€)</button>
+            <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" width="33" height="33" viewBox="0 0 33 33" fill="none">
+                <path d="M16.5 31.0834C24.5542 31.0834 31.0834 24.5542 31.0834 16.5001C31.0834 8.44593 24.5542 1.91675 16.5 1.91675C8.44587 1.91675 1.91669 8.44593 1.91669 16.5001C1.91669 24.5542 8.44587 31.0834 16.5 31.0834Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M16.5 22.3333V16.5" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M16.5 10.6667H16.5146" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
         </div>
-    }
-    else
-    {
-        <div class="movies-grid">
-            @foreach (var movie in _movies)
-            {
-                <a href="movie/@movie.Id">
-                <div class="movie-card">
-                    <img src="@(LinkImage + movie.PosterPath)" 
-                         class="movie-poster" 
-                         alt="@movie.Title">
-                    
-                    <div class="movie-details">
-                        <h3 class="movie-title">@movie.Title</h3>
-                        
-                        <div class="movie-info">
-                            <span class="release-date">
-                                📅 @movie.ReleaseDate.ToString("dd/MM/yyyy")
-                            </span>
-                            <span class="rating">
-                                ⭐ @movie.VoteAverage.ToString("0.0")
-                            </span>
+    </section>
+
+    <!-- Popular Movies Section -->
+    <section class="movies-section">
+        <h3 class="section-title">Mais Populares</h3>
+        <div class="movies-carousel" @ref="carouselContainer">
+            <div class="carousel-track">
+                @if (_movies != null)
+                {
+                    @foreach (var movie in _movies.Take(25))
+                    {
+                        <div class="carousel-item">
+                            <NavLink href="@($"movie/{movie.Id}")">
+                                <img src="@(LinkImage + movie.PosterPath)" alt="@movie.Title" class="movie-poster"/>
+                                <div class="movie-hover-info">
+                                    <h4>@movie.Title</h4>
+                                    <p>💰 @GetRandomPrice()</p>
+                                    <p>⭐ @movie.VoteAverage.ToString("0.0")</p>
+                                </div>
+                            </NavLink>
                         </div>
-                        
-                        <p class="movie-overview">@movie.Overview.Truncate(150)</p>
-                        
-                        <div class="movie-stats">
-                            <span class="genre-count">
-                                🏷️ @movie.GenreIds.Count gêneros
-                            </span>
-                            <span class="votes">
-                                👍 @movie.VoteCount.ToString("N0") votos
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                </a>
-            }
+                    }
+                }
+                else
+                {
+                    <p>A carregar filmes...</p>
+                }
+            </div>
         </div>
-    }
+        <div class="carousel-nav">
+            <button class="carousel-btn prev" @onclick="() => ScrollCarousel(-1)">◀</button>
+            <button class="carousel-btn next" @onclick="() => ScrollCarousel(1)">▶</button>
+        </div>
+    </section>
+
+    <!-- Promotions Section -->
+    <section class="movies-section">
+        <h3 class="section-title">Promoções</h3>
+        <div class="movies-carousel" @ref="promoCarouselContainer">
+            <div class="carousel-track">
+                @if (_movies != null)
+                {
+                    @foreach (var movie in _movies.Skip(7).Take(25))
+                    {
+                        <div class="carousel-item">
+                            <NavLink href="@($"movie/{movie.Id}")">
+                            <span class="discount-tag">@GetRandomDiscount()</span>
+                            <img src="@(LinkImage + movie.PosterPath)" alt="@movie.Title" class="movie-poster"/>
+                            <div class="movie-hover-info">
+                                <h4>@movie.Title</h4>
+                                <p>💰 @GetRandomPrice()</p>
+                                <p>⭐ @movie.VoteAverage.ToString("0.0")</p>
+                            </div>
+                            </NavLink>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+        <div class="carousel-nav">
+            <button class="carousel-btn prev" @onclick="() => ScrollPromoCarousel(-1)">◀</button>
+            <button class="carousel-btn next" @onclick="() => ScrollPromoCarousel(1)">▶</button>
+        </div>
+    </section>
+
+    <!-- Coming Soon Section -->
+    <section class="movies-section">
+        <h3 class="section-title">Coming Soon</h3>
+        <div class="movies-carousel" @ref="comingSoonCarouselContainer">
+            <div class="carousel-track">
+                @if (_movies != null)
+                {
+                    @foreach (var movie in _movies.Skip(14).Take(25))
+                    {
+                        <div class="carousel-item">
+                            <NavLink href="@($"movie/{movie.Id}")">
+                            <img src="@(LinkImage + movie.PosterPath)" alt="@movie.Title" class="movie-poster"/>
+                            <div class="movie-hover-info">
+                                <h4>@movie.Title</h4>
+                                <p>💰 @GetRandomPrice()</p>
+                                <p>⭐ @movie.VoteAverage.ToString("0.0")</p>
+                            </div>
+                            </NavLink>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+        <div class="carousel-nav">
+            <button class="carousel-btn prev" @onclick="() => ScrollComingSoonCarousel(-1)">◀</button>
+            <button class="carousel-btn next" @onclick="() => ScrollComingSoonCarousel(1)">▶</button>
+        </div>
+    </section>
+
+    <!-- Newsletter Section -->
+    <section class="footer-newsletter-container">
+        <!-- Footer (lado esquerdo) -->
+        <div class="footer-left">
+            <p class="footer-text">© melhor conteúdo de séries para ti</p>
+            <p class="copyright">
+                © 2025 - Todos os direitos reservados - CinUMa
+            </p>
+            <div class="footer-links">
+                <a href="#">Termos de serviço</a>
+                <a href="#">Política de privacidade</a>
+            </div>
+        </div>
+
+        <!-- Newsletter (lado direito) -->
+        <div class="newsletter-right">
+            <h3 class="newsletter-title">Newsletter</h3>
+            <p class="newsletter-text">Inscreve-te no nosso newsletter</p>
+            <div class="newsletter-form">
+                <input type="email" placeholder="Email" />
+            </div>
+        </div>
+    </section>
 </div>
 
-@if (claims.Any())
-{
-    <table class="table">
-        <thead>
-        <tr>
-            <th>Tipo</th>
-            <th>Valor</th>
-        </tr>
-        </thead>
-        <tbody>
-        @foreach (var claim in claims)
-        {
-            <tr>
-                <td>@claim.Type</td>
-                <td>@claim.Value</td>
-            </tr>
-        }
-        </tbody>
-    </table>
-}
-else
-{
-    <div class="alert alert-warning">Nenhuma claim encontrada</div>
-}
-
 @code {
-    private List<Claim> claims = new();
+    private string ApIlink => $"{Configuration["TmdbApi:BaseUrl"]}/movie/popular";
+    private string LinkImage => Configuration["TmdbApi:ImageBaseUrl"] ?? string.Empty;
+    private List<Film>? _movies;
+    private MovieDeserializer deserializer = new MovieDeserializer();
 
-
-    private async Task LoadClaims()
-    {
-        try
-        {
-            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-            claims = authState.User.Claims.ToList();
-
-            // Forçar atualização da UI
-            StateHasChanged();
-
-
-        }
-        catch (Exception ex)
-        {
-
-        }
+    private ElementReference carouselContainer;
+    private ElementReference promoCarouselContainer;
+    private ElementReference comingSoonCarouselContainer;
+    private int currentIndex = 0;
+    private int promoCurrentIndex = 0;
+    private int comingSoonCurrentIndex = 0;
+    
+    private string[] discounts = new[] { "50%", "25%", "70%", "2 por 1" };
+    
+    private string GetRandomPrice() {
+        var random = new Random();
+        double[] prices = { 2.99, 4.99, 9.99, 14.99 };
+        return prices[random.Next(0, prices.Length)].ToString("0.00€");
     }
 
-    private string ApIlink => $"{Configuration["TmdbApi:BaseUrl"]}/movie/popular";
-    private string LinkImage => Configuration["TmdbApi:ImageBaseUrl"]?? string.Empty;
-    private List<Film>? _movies;
-    private MovieDeserializer deserializer = new MovieDeserializer();  //aqui é feito para converter JSON para objeto
+    private string GetRandomDiscount() {
+        var random = new Random();
+        return discounts[random.Next(0, discounts.Length)];
+    }
+
+    private async Task ScrollCarousel(int direction)
+    {
+        currentIndex += direction;
+        if (currentIndex < 0) currentIndex = 0;
+        await JS.InvokeVoidAsync("scrollCarousel", carouselContainer, currentIndex);
+    }
+
+    private async Task ScrollPromoCarousel(int direction)
+    {
+        promoCurrentIndex += direction;
+        if (promoCurrentIndex < 0) promoCurrentIndex = 0;
+        await JS.InvokeVoidAsync("scrollCarousel", promoCarouselContainer, promoCurrentIndex);
+    }
+
+    private async Task ScrollComingSoonCarousel(int direction)
+    {
+        comingSoonCurrentIndex += direction;
+        if (comingSoonCurrentIndex < 0) comingSoonCurrentIndex = 0;
+        await JS.InvokeVoidAsync("scrollCarousel", comingSoonCarouselContainer, comingSoonCurrentIndex);
+    }
     
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            await LoadClaims();
             var response = deserializer.FetchPopularMovies(ApIlink);
             _movies = response.Results;
         }
@@ -134,4 +229,13 @@ else
         deserializer?.Dispose();
     }
 }
-}
+
+<script>
+    function scrollCarousel(element, direction) {
+        const scrollAmount = 300; // Ajuste conforme necessário
+        element.scrollBy({
+            left: scrollAmount * direction,
+            behavior: 'smooth'
+        });
+    }
+</script>

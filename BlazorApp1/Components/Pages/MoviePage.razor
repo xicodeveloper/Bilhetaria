@@ -3,15 +3,19 @@
 @implements IDisposable
 @attribute [Authorize]
 
+@using System.Security.Claims
 @using Microsoft.AspNetCore.Components
 @using BlazorApp1.Services.Models
 @using System.Threading
+@using BlazorApp1.Services
+@using BlazorApp1.Services.OrderFiles
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
 
 @inject IConfiguration Configuration
 @inject HttpClient Http
 @inject IHttpContextAccessor HttpContextAccessor
-@inject IJSRuntime JS
+@inject AuthenticationStateProvider AuthStateProvider
 
 <div class="movie-container">
     @if (_movie == null)
@@ -64,10 +68,10 @@
                 <span class="relevance">@((_movie.VoteAverage * 10).ToString("0"))% relevância</span>
             </div>
 
-            <!-- Purchase Options -->
             <div class="purchase-options">
-                <button class="btn-rent" @onclick="Borrow">ALUGAR (2,49€)</button>
+                <button class="btn-rent" @onclick="BuyAluga">ALUGAR (2,49€)</button>
                 <button class="btn-tickets" @onclick="BuyTicket">BILHETES</button>
+                <button class="btn-tickets" @onclick="BuyForever">COMPRAR</button>
             </div>
 
             <!-- Favorites -->
@@ -103,13 +107,17 @@
 </div>
 
 @code {
+    
     // Parameters
     [Parameter] public int Id { get; set; }
-    
+    private Order order;
+
+
+    private string userId { get; set; } 
     private string ApiKey = Environment.GetEnvironmentVariable("API_KEY");
     private string BaseUrl => Configuration["TmdbApi:BaseUrl"];
     private string ImageBaseUrl => Configuration["TmdbApi:ImageBaseUrl"];
-
+    private List<Claim> claims = new();
     // State
     private MovieDetails _movie;
     private CreditsResponse _credits;
@@ -121,24 +129,23 @@
 
     protected override async Task OnInitializedAsync()
     {
-        if (string.IsNullOrEmpty(ApiKey))
-        {
-            throw new InvalidOperationException("API key não configurada.");
-        }
-
         try
         {
-            await LoadMovieData();
+            await LoadClaims();
+           await LoadMovieData();
             await LoadCredits();
             await LoadKeywords();
             await LoadTrailer();
+            //await BuyTicket();
+            //await BuyForever();
+            //await AddFav();
+            //await BuyAluga();
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Erro ao carregar dados: {ex.Message}");
         }
     }
-
     private async Task LoadMovieData() => 
         _movie = await Http.GetFromJsonAsync<MovieDetails>($"{BaseUrl}/movie/{Id}?api_key={ApiKey}");
 
@@ -154,7 +161,6 @@
         var trailer = videos?.Results?.FirstOrDefault(v => v.Type == "Trailer");
         _trailerUrl = trailer != null ? $"https://www.youtube.com/embed/{trailer.Key}" : null;
     }
-
     private string FormatRuntime(int runtime)
     {
         var hours = runtime / 60;
@@ -162,26 +168,87 @@
         return $"{hours}h {minutes}m";
     }
 
+
+    private string GetUserId()
+    {
+        return claims.FirstOrDefault(c =>
+            c.Type == ClaimTypes.NameIdentifier || c.Type == "sub")?.Value;
+    }
+    private async Task LoadClaims()
+    {
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            claims = authState.User.Claims.ToList();
+
+            userId = GetUserId();
+
+            Console.WriteLine($"User ID: {userId}");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+
+        }
+    }
+
+    private async Task BuyTicket()
+    {
+        try
+        {
+            
+           // HttpContextAccessor.HttpContext.Response.Redirect("/cinemas");
+
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro: {ex.Message}");
+        }
+    }
+    private async Task BuyForever()
+    {
+        try
+        { 
+            int Id = int.Parse(userId);
+            order = OrderBuilder.Empty().WithId(Id)
+                .Build();
+            Console.WriteLine(order);
+            
+            
+
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro: {ex.Message}");
+        }
+    }
+    private async Task AddFav()
+    {
+        try
+        {
+            Console.WriteLine("Navegando para compra de bilhetes...");
+
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro: {ex.Message}");
+        }
+    }
+    private async Task BuyAluga()
+    {
+        try
+        {
+            Console.WriteLine("Navegando para compra de bilhetes...");
+
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro: {ex.Message}");
+        }
+    }
     public void Dispose()
     {
         // Cleanup resources if needed
     }
-                    
-    private void BuyTicket()
-    {
-        Console.WriteLine("Botão de bilhetes clicado!");
-                            
-    }
-    private void AddFav()
-    {
-        Console.WriteLine("Botão de favorito clicado!");
-                            
-    }
-    private void Borrow()
-    {
-        Console.WriteLine("Botão de alugar clicado!");
-                            
-    }
-                        
 
 }
