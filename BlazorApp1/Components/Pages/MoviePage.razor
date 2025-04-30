@@ -11,9 +11,11 @@
 @using BlazorApp1.Services.OrderFiles
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.EntityFrameworkCore.Metadata.Internal
 
 @inject IConfiguration Configuration
 @inject HttpClient Http
+@inject NavigationManager Navigation
 @inject IHttpContextAccessor HttpContextAccessor
 @inject AuthenticationStateProvider AuthStateProvider
 
@@ -69,13 +71,14 @@
             </div>
 
             <div class="purchase-options">
-                <button class="btn-rent" @onclick="BuyAluga">ALUGAR (2,49€)</button>
-                <button class="btn-tickets" @onclick="BuyTicket">BILHETES</button>
-                <button class="btn-tickets" @onclick="BuyForever">COMPRAR</button>
+                <button class="btn-rent" @onclick="async () => await BuyAluga()">ALUGAR (2,49€)</button>
+                <button class="btn-tickets" @onclick="async () => await BuyAluga()">COMPRAR</button>
+                <button class="btn-tickets" @onclick="async () => await BuyTicket()">BILHETES</button>
+                
             </div>
 
             <!-- Favorites -->
-            <button class="btn-favorite" @onclick="AddFav">FAVORITAR</button>
+            <button class="btn-favorite">FAVORITAR</button>
 
             <!-- Synopsis -->
             <div class="synopsis">
@@ -104,55 +107,99 @@
             </div>
         </div>
     }
+
+
 </div>
 
 @code {
-    
+   
     // Parameters
     [Parameter] public int Id { get; set; }
     private Order order;
 
 
-    private string userId { get; set; } 
+    private string userId { get; set; }
     private string ApiKey = Environment.GetEnvironmentVariable("API_KEY");
     private string BaseUrl => Configuration["TmdbApi:BaseUrl"];
     private string ImageBaseUrl => Configuration["TmdbApi:ImageBaseUrl"];
+
     private List<Claim> claims = new();
+
     // State
     private MovieDetails _movie;
     private CreditsResponse _credits;
     private KeywordsResponse _keywords;
     private string _trailerUrl;
-    private string _backdropImage => string.IsNullOrEmpty(_movie?.backdrop_path) 
-        ? null 
+
+    private string _backdropImage => string.IsNullOrEmpty(_movie?.backdrop_path)
+        ? null
         : $"{ImageBaseUrl}{_movie.backdrop_path}";
+    void SelecionarMorada()
+    {
+       Console.WriteLine("Hellooo");
+        StateHasChanged();
+    }
+    private async Task BuyTicket()
+    {
+        try
+        {
+            Console.WriteLine("Processando bilhetes...");
+            Navigation.NavigateTo("/cinemas");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro: {ex.Message}");
+        }
+    }
+
+    private async Task BuyAluga()
+    {
+        try
+        {
+            var order = OrderBuilder.Empty()
+                .WithId(1)
+                .Build();
+            
+
+            
+
+                Navigation.NavigateTo("/basket");
+
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro: {ex.Message}");
+        }
+    }
+
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
             await LoadClaims();
-           await LoadMovieData();
+            await LoadMovieData();
             await LoadCredits();
             await LoadKeywords();
             await LoadTrailer();
             //await BuyTicket();
             //await BuyForever();
             //await AddFav();
-            //await BuyAluga();
+           
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Erro ao carregar dados: {ex.Message}");
         }
     }
-    private async Task LoadMovieData() => 
+
+    private async Task LoadMovieData() =>
         _movie = await Http.GetFromJsonAsync<MovieDetails>($"{BaseUrl}/movie/{Id}?api_key={ApiKey}");
 
-    private async Task LoadCredits() => 
+    private async Task LoadCredits() =>
         _credits = await Http.GetFromJsonAsync<CreditsResponse>($"{BaseUrl}/movie/{Id}/credits?api_key={ApiKey}");
 
-    private async Task LoadKeywords() => 
+    private async Task LoadKeywords() =>
         _keywords = await Http.GetFromJsonAsync<KeywordsResponse>($"{BaseUrl}/movie/{Id}/keywords?api_key={ApiKey}");
 
     private async Task LoadTrailer()
@@ -161,6 +208,7 @@
         var trailer = videos?.Results?.FirstOrDefault(v => v.Type == "Trailer");
         _trailerUrl = trailer != null ? $"https://www.youtube.com/embed/{trailer.Key}" : null;
     }
+
     private string FormatRuntime(int runtime)
     {
         var hours = runtime / 60;
@@ -174,6 +222,7 @@
         return claims.FirstOrDefault(c =>
             c.Type == ClaimTypes.NameIdentifier || c.Type == "sub")?.Value;
     }
+
     private async Task LoadClaims()
     {
         try
@@ -192,60 +241,11 @@
         }
     }
 
-    private async Task BuyTicket()
-    {
-        try
-        {
-            
-           // HttpContextAccessor.HttpContext.Response.Redirect("/cinemas");
+    
+ 
 
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Erro: {ex.Message}");
-        }
-    }
-    private async Task BuyForever()
-    {
-        try
-        { 
-            int Id = int.Parse(userId);
-            order = OrderBuilder.Empty().WithId(Id)
-                .Build();
-            Console.WriteLine(order);
-            
-            
 
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Erro: {ex.Message}");
-        }
-    }
-    private async Task AddFav()
-    {
-        try
-        {
-            Console.WriteLine("Navegando para compra de bilhetes...");
 
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Erro: {ex.Message}");
-        }
-    }
-    private async Task BuyAluga()
-    {
-        try
-        {
-            Console.WriteLine("Navegando para compra de bilhetes...");
-
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Erro: {ex.Message}");
-        }
-    }
     public void Dispose()
     {
         // Cleanup resources if needed

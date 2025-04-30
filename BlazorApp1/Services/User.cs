@@ -14,13 +14,18 @@ namespace BlazorApp1.Services
         public string Username { get; set; }
         public string Email { get; set; }
         public string PasswordHash { get; set; }
-        
+
+        private List<Adress> _addresses { get; } = new List<Adress>();
         public bool IsSucess { get; set; }
         
 
         // Parameterless constructor REQUIRED for Entity Framework
         public User()
         {
+        }
+        public void addAdress(Adress adress)
+        {
+            _addresses.Add(adress);
         }
 
         // Optional constructor for convenience

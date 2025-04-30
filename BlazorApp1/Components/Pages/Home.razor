@@ -1,12 +1,13 @@
 ﻿@page "/"
 @using BlazorApp1.Services.Movies
+@using Microsoft.AspNetCore.Authorization
 @inject IConfiguration Configuration
 @inject HttpClient Http
 @inherits BlazorApp1.Components.Layout.MainLayout
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IJSRuntime JS
 @implements IDisposable
-
+@attribute [Authorize]
 @* A FALTAR: *@
 @* Factory Method para os carrosseis; *@
 @* JS correto para as setas; *@
