@@ -18,6 +18,7 @@
 @inject NavigationManager Navigation
 @inject IHttpContextAccessor HttpContextAccessor
 @inject AuthenticationStateProvider AuthStateProvider
+@rendermode InteractiveServer
 
 <div class="movie-container">
     @if (_movie == null)
@@ -151,12 +152,14 @@
             Console.WriteLine($"Erro: {ex.Message}");
         }
     }
-
+    
+    
     private async Task BuyAluga()
     {
         try
         {
-            var order = OrderBuilder.Empty()
+            /*
+             var order = OrderBuilder.Empty()
                 .WithId(1)
                 .Build();
             
@@ -164,7 +167,8 @@
             
 
                 Navigation.NavigateTo("/basket");
-
+            */
+            Console.WriteLine("Processando compra...");
         }
         catch (Exception ex)
         {
