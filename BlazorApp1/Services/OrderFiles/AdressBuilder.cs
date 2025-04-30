@@ -7,12 +7,17 @@ public class AdressBuilder
     private string _state;
     private string _zipCode;
     private string _country;
-    private int _number;
+    private string _number;
     public static AdressBuilder Empty() => new ();
 
     public AdressBuilder WithStreet(string street)
     {
         _street = street;
+        return this;
+    }
+    public AdressBuilder WithId(string city)
+    {
+        _city = city;
         return this;
     }
     public AdressBuilder WithCity(string city)
@@ -35,7 +40,7 @@ public class AdressBuilder
         _country = country;
         return this;
     }
-    public AdressBuilder WithNumber(int number)
+    public AdressBuilder WithNumber(string number)
     {
         _number = number;
         return this;

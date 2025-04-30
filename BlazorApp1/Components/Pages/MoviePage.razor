@@ -2,7 +2,7 @@
 @inherits BlazorApp1.Components.Layout.MainLayout
 @implements IDisposable
 @attribute [Authorize]
-
+@inject IUnitOfWork _unitOfWork
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Components
 @using BlazorApp1.Services.Models
@@ -73,7 +73,7 @@
 
             <div class="purchase-options">
                 <button class="btn-rent" @onclick="async () => await BuyAluga()">ALUGAR (2,49€)</button>
-                <button class="btn-tickets" @onclick="async () => await BuyAluga()">COMPRAR</button>
+                <button class="btn-tickets" @onclick="async () => await BuyForever()">COMPRAR</button>
                 <button class="btn-tickets" @onclick="async () => await BuyTicket()">BILHETES</button>
                 
             </div>
@@ -135,46 +135,120 @@
     private string _backdropImage => string.IsNullOrEmpty(_movie?.backdrop_path)
         ? null
         : $"{ImageBaseUrl}{_movie.backdrop_path}";
-    void SelecionarMorada()
-    {
-       Console.WriteLine("Hellooo");
-        StateHasChanged();
-    }
-    private async Task BuyTicket()
-    {
-        try
-        {
-            Console.WriteLine("Processando bilhetes...");
-            Navigation.NavigateTo("/cinemas");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Erro: {ex.Message}");
-        }
-    }
-    
-    
+
     private async Task BuyAluga()
     {
         try
         {
-            /*
-             var order = OrderBuilder.Empty()
-                .WithId(1)
+            int numero = int.Parse(userId);
+            var order = OrderBuilder.Empty()
+                .WithId(numero)
+                .WithNumber(Id)
+                .WithCreatedOn(DateTime.UtcNow)
+                .WithShippingAddress(a => a
+                    .WithCity("Required City")    // Provide actual city
+                    .WithStreet("Required Street")
+                    .WithCountry("Required Country")
+                    .WithState("State")
+                    .WithZipCode("ZipCode")
+                    .WithNumber("123"))
+                .WithBasket(b => b
+                    .WithDigitalTicket(
+                        movieId: Id,
+                        title: _movie?.Title ?? "Sem Título",
+                        posterUrl: _backdropImage,
+                        quantity: 1,
+                        screeningDate: DateTime.UtcNow.AddDays(1),
+                        price: 2.49
+                    )
+                )
                 .Build();
-            
-
-            
-
-                Navigation.NavigateTo("/basket");
-            */
-            Console.WriteLine("Processando compra...");
+            await _unitOfWork.Order.AddAsync(order);
+            await _unitOfWork.CompleteAsync();
+            Navigation.NavigateTo("/basket");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Erro: {ex.Message}");
+            Console.WriteLine($"Erro em BuyAluga: {ex.Message}");
         }
     }
+private async Task BuyForever()
+{
+    try
+    {
+        int numero = int.Parse(userId);
+        var order = OrderBuilder.Empty()
+            .WithId(numero)
+            .WithNumber(Id)
+            .WithCreatedOn(DateTime.UtcNow)
+            .WithBasket(b => b
+                .WithDigitalTicket(
+                    movieId: Id,
+                    title: _movie?.Title ?? "Sem Título",
+                    posterUrl: _backdropImage,
+                    quantity: 1,
+                    screeningDate: DateTime.UtcNow,
+                    price: 9.99
+                )
+            )
+            .Build();
+        await _unitOfWork.Order.AddAsync(order);
+        await _unitOfWork.CompleteAsync();
+        Console.WriteLine("COMPRA DEFINITIVA:");
+        PrintOrder(order);
+        Navigation.NavigateTo("/basket");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Erro em BuyForever: {ex.Message}");
+    }
+}
+
+private async Task BuyTicket()
+{
+    try
+    {
+        int numero = int.Parse(userId);
+        var order = OrderBuilder.Empty()
+            .WithId(numero)
+            .WithNumber(Id)
+            .WithCreatedOn(DateTime.UtcNow)
+            .WithBasket(b => b
+                .WithPhysicalTicket(
+                    movieId: Id,
+                    title: _movie?.Title ?? "Sem Título",
+                    posterUrl: _backdropImage,
+                    quantity: 1,
+                    screeningDate: DateTime.UtcNow.AddDays(3),
+                    price: 5.99
+                )
+            )
+            .Build();
+        await _unitOfWork.Order.AddAsync(order);
+        await _unitOfWork.CompleteAsync();
+        Console.WriteLine("BILHETE FÍSICO:");
+        PrintOrder(order);
+        Navigation.NavigateTo("/basket");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Erro em BuyTicket: {ex.Message}");
+    }
+}
+
+private void PrintOrder(Order order)
+{
+    Console.WriteLine($"UserId: {order.UserId}, Número: {order.Number}, Data: {order.Date}, Itens: {order.Basket.TotalItems}");
+    foreach (var item in order.Basket.Items)
+    {
+        Console.WriteLine($" - {item.MovieTitle} | {item.Type} | Quant: {item.Quantity} | Preço: {item.Price}€ | Data: {item.ScreeningDate}");
+    }
+}
+
+    
+    
+
+
 
 
     protected override async Task OnInitializedAsync()
@@ -186,9 +260,7 @@
             await LoadCredits();
             await LoadKeywords();
             await LoadTrailer();
-            //await BuyTicket();
-            //await BuyForever();
-            //await AddFav();
+ 
            
         }
         catch (Exception ex)
@@ -196,7 +268,7 @@
             Console.Error.WriteLine($"Erro ao carregar dados: {ex.Message}");
         }
     }
-
+    //api
     private async Task LoadMovieData() =>
         _movie = await Http.GetFromJsonAsync<MovieDetails>($"{BaseUrl}/movie/{Id}?api_key={ApiKey}");
 
@@ -213,14 +285,9 @@
         _trailerUrl = trailer != null ? $"https://www.youtube.com/embed/{trailer.Key}" : null;
     }
 
-    private string FormatRuntime(int runtime)
-    {
-        var hours = runtime / 60;
-        var minutes = runtime % 60;
-        return $"{hours}h {minutes}m";
-    }
 
 
+//claims do user
     private string GetUserId()
     {
         return claims.FirstOrDefault(c =>
@@ -244,12 +311,12 @@
 
         }
     }
-
-    
- 
-
-
-
+    private string FormatRuntime(int runtime)
+    {
+        var hours = runtime / 60;
+        var minutes = runtime % 60;
+        return $"{hours}h {minutes}m";
+    }    
     public void Dispose()
     {
         // Cleanup resources if needed

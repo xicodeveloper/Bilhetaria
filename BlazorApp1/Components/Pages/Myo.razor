@@ -1,0 +1,88 @@
+@page "/my-orders"
+@using System.Security.Claims
+@using BlazorApp1.Services.OrderFiles
+@using Microsoft.AspNetCore.Components.Authorization
+@inherits BlazorApp1.Components.Layout.MainLayout
+@inject IOrderRepository OrderRepository
+@inject AuthenticationStateProvider AuthStateProvider
+@rendermode InteractiveServer
+
+<div class="basket-container">
+    <h1>Histórico de Pedidos</h1>
+    <div class="basket-items">
+        @if (orders == null)
+        {
+            <p class="loading-text">Carregando...</p>
+        }
+        else if (!orders.Any())
+        {
+            <p class="empty-cart">Nenhum pedido encontrado</p>
+        }
+        else
+        {
+            @foreach (var order in orders)
+            {
+                <div class="order-card">
+                    <div class="order-header">
+                        <div>
+                            <h3 class="order-number">Pedido #@order.Number</h3>
+                            <p class="order-date">@order.Date.ToString("dd/MM/yyyy HH:mm")</p>
+                        </div>
+                        <span class="order-status">Concluído</span>
+                    </div>
+
+                    <div class="order-items">
+                        @foreach (var item in order.Basket.Items)
+                        {
+                            <div class="item-card">
+                                <div class="item-header">
+                                    <img src="@item.MoviePosterUrl" alt="Poster do filme" />
+                                    <div class="item-info">
+                                        <h3 class="item-title">@item.MovieTitle</h3>
+                                        <p class="item-type">@GetTicketType(item.Type)</p>
+                                    </div>
+                                    <span class="item-price">@($"{item.Quantity * item.Price:F2}€")</span>
+                                </div>
+                                <div class="item-details">
+                                    <p class="quantity">Quantidade: @item.Quantity</p>
+                                    <p class="screening-date">Data: @item.ScreeningDate?.ToString("dd/MM/yyyy HH:mm")</p>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="order-footer">
+                        <div class="shipping-address">
+                            <h4>Endereço de Entrega</h4>
+                            <p>@order.ShippingAddress.Street, @order.ShippingAddress.Number</p>
+                            <p>@order.ShippingAddress.City, @order.ShippingAddress.ZipCode</p>
+                            <p>@order.ShippingAddress.Country</p>
+                        </div>
+                        <div class="order-total">
+                            <h4>Total do Pedido</h4>
+                            <p class="total-price">@order.Basket.Items.Sum(i => i.Price * i.Quantity).ToString("F2")€</p>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    private IEnumerable<Order> orders;
+    private int userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        userId = int.Parse(authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+        
+        orders = await OrderRepository.GetByUserIdAsync(userId);
+    }
+
+    private string GetTicketType(TicketType type)
+    {
+        return type == TicketType.Digital ? "Digital" : "Físico";
+    }
+}

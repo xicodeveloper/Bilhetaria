@@ -4,6 +4,7 @@ using BlazorApp1.Services.DataBase;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BlazorApp1.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250430150708_CreateAddressTable")]
+    partial class CreateAddressTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -112,16 +115,11 @@ namespace BlazorApp1.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
                     b.Property<string>("ZipCode")
                         .IsRequired()
                         .HasColumnType("longtext");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("Adress");
                 });
@@ -240,17 +238,6 @@ namespace BlazorApp1.Migrations
                     b.ToTable("users", (string)null);
                 });
 
-            modelBuilder.Entity("BlazorApp1.Services.OrderFiles.Adress", b =>
-                {
-                    b.HasOne("BlazorApp1.Services.User", "User")
-                        .WithMany("Addresses")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("BlazorApp1.Services.OrderFiles.BasketItem", b =>
                 {
                     b.HasOne("BlazorApp1.Services.OrderFiles.Basket", null)
@@ -280,11 +267,6 @@ namespace BlazorApp1.Migrations
             modelBuilder.Entity("BlazorApp1.Services.OrderFiles.Basket", b =>
                 {
                     b.Navigation("Items");
-                });
-
-            modelBuilder.Entity("BlazorApp1.Services.User", b =>
-                {
-                    b.Navigation("Addresses");
                 });
 #pragma warning restore 612, 618
         }

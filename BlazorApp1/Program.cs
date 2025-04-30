@@ -67,7 +67,8 @@ builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
     sp.GetRequiredService<CustomAuthStateProvider>());
 builder.Services.AddHttpClient();
 builder.Services.AddHttpContextAccessor();
-
+// Program.cs
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 // 5. Configuração do Blazor
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
