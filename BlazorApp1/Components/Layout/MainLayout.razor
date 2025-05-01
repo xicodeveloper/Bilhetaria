@@ -1,11 +1,16 @@
 ﻿@using System.Security.Claims
+@using BlazorApp1.Services.DataBase
+@using BlazorApp1.Services.OrderFiles
 @using BlazorApp1.Services.RegLogin
 @using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.EntityFrameworkCore
 @inherits LayoutComponentBase
 @inject IHttpContextAccessor HttpContextAccessor
 @inject AuthService AuthService
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IUnitOfWork _UnitOfWork
+@inject IDbContextFactory<ApplicationDbContext> _contextFactory
 
 <div class="cinematic-navbar" xmlns="http://www.w3.org/1999/html">
     <div class="navbar-container">
@@ -63,7 +68,7 @@
 
                 <!-- Badge com quantidade -->
                 <circle cx="19" cy="5" r="4.5" fill="#FF4500"/>
-                <text x="19" y="6.5" text-anchor="middle" fill="white" font-size="6" font-family="Arial" font-weight="bold">3</text>
+                <text x="19" y="6.5" text-anchor="middle" fill="white" font-size="6" font-family="Arial" font-weight="bold">@cartItemCount</text>
             </svg>
 
 
@@ -114,10 +119,11 @@
 
 @code {
     private string? username;
-
+    private int cartItemCount;
     protected override async Task OnInitializedAsync()
     {
         await LoadUserState();
+        await LoadCartCount();
     }
 
     private async Task LoadUserState()
@@ -127,7 +133,33 @@
 
         StateHasChanged();
     }
+    private async Task LoadCartCount()
+    {
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var userIdClaim = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
+            if (!string.IsNullOrEmpty(userIdClaim) && int.TryParse(userIdClaim, out var userId))
+            {
+                // Cria um novo contexto para esta operação
+                using (var context = _contextFactory.CreateDbContext())
+                {
+                    var order = await context.Orders
+                        .Include(o => o.Basket) // Carrega o carrinho
+                        .ThenInclude(b => b.Items) // Carrega os itens
+                        .FirstOrDefaultAsync(o => o.UserId == userId && o.Status == OrderStatus.Pending);
+
+                    cartItemCount = order?.Basket?.Items.Sum(item => item.Quantity) ?? 0;
+                    StateHasChanged();
+                } // O contexto é descartado automaticamente aqui
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao carregar carrinho: {ex.Message}");
+        }
+    }
     private async Task Logout()
     {
         try

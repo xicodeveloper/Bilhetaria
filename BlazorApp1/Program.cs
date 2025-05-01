@@ -1,7 +1,6 @@
 using BlazorApp1.Components;
 using BlazorApp1.Services.DataBase;
 using BlazorApp1.Services.Movies;
-using BlazorApp1.Services.Orders.Repositories;
 using BlazorApp1.Services.RegLogin;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -43,8 +42,22 @@ builder.Services.AddAuthorization(options =>
 
 
 var connectionString = "Server=localhost;Port=3306;Database=ticketzone;Uid=root;Pwd=;";
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+
+// Configuração CORRETA para MySQL com Pomelo:
+
+builder.Services.AddDbContextFactory<ApplicationDbContext>(
+    options => options.UseMySql(
+        connectionString,
+        ServerVersion.AutoDetect(connectionString)
+));
+
+// Opcional: Se precisar do DbContext padrão
+builder.Services.AddDbContext<ApplicationDbContext>(
+    options => options.UseMySql(
+        connectionString,
+        ServerVersion.AutoDetect(connectionString)),
+    contextLifetime: ServiceLifetime.Transient
+);
 
 // Injeção de dependência
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();

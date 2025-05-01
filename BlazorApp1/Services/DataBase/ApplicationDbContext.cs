@@ -17,7 +17,7 @@ namespace BlazorApp1.Services.DataBase
         public DbSet<Order> Orders { get; set; }
         public DbSet<Basket> Baskets { get; set; }
         public DbSet<BasketItem> BasketItems { get; set; }
-        public DbSet<Adress> Addresses { get; set; } // Corrigido o nome para Address
+        public DbSet<Adress> Addresses { get; set; } 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

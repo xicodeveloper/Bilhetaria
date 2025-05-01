@@ -9,6 +9,7 @@ using System.Threading.Tasks;
     {
         Task AddAsync(Order order);
         Task<Order> GetActiveOrderWithItemsAsync(int userId);
+        Task ClearBasketAsync(int orderId);
         Task<Order> GetByIdAsync(int id);
         Task<IEnumerable<Order>> GetAllAsync();
         Task<IEnumerable<Order>> GetByUserIdAsync(int userId);

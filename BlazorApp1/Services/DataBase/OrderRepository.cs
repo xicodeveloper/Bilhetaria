@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using BlazorApp1.Services.OrderFiles;
 
-namespace BlazorApp1.Services.Orders.Repositories
+namespace BlazorApp1.Services.DataBase
 {
     public class OrderRepository : IOrderRepository
     {
@@ -61,6 +61,19 @@ namespace BlazorApp1.Services.Orders.Repositories
         {
             _context.Entry(order).State = EntityState.Modified;
             await _context.SaveChangesAsync();
+        }
+        public async Task ClearBasketAsync(int orderId)
+        {
+            var order = await _context.Orders
+                .Include(o => o.Basket)
+                .ThenInclude(b => b.Items)
+                .FirstOrDefaultAsync(o => o.Id == orderId);
+
+            if (order?.Basket?.Items != null)
+            {
+                _context.BasketItems.RemoveRange(order.Basket.Items);
+                await _context.SaveChangesAsync();
+            }
         }
 
         public async Task SaveChangesAsync()

@@ -2,45 +2,30 @@
 @using System.Security.Claims
 @using BlazorApp1.Services.DataBase
 @using BlazorApp1.Services.OrderFiles
-@using Microsoft.AspNetCore.Authorization
-@using Microsoft.AspNetCore.Components.Authorization
-@inject IOrderRepository OrderRepository
-@inject AuthenticationStateProvider AuthStateProvider
-@inject NavigationManager Navigation
-@attribute [Authorize]
-@* Components/Pages/Basket.razor *@
-@using BlazorApp1.Services.Orders.Models // Adicionar para Order
-
+@using BlazorApp1.Services.Orders.Models
+@inject IUnitOfWork _UnitOfWork
+@inject IHttpContextAccessor HttpContextAccessor
+@rendermode InteractiveServer
 
 <div class="basket-container">
     <h1>Carrinho</h1>
-    <a href="/" style="text-decoration: none; color: inherit">
-        <button class="back-btn">Continua a Comprar</button>
-    </a>
+    
     <div class="basket-items">
-        @if (currentOrder == null)
+        @if (order != null)
         {
-            <p>Carregando...</p>
-        }
-        else if (!currentOrder.Basket.Items.Any())
-        {
-            <p>O seu carrinho está vazio.</p>
-        }
-        else
-        {
-            @foreach (var item in currentOrder.Basket.Items)
+            @foreach (var item in order.Basket.Items)
             {
-                <div class="item-card">
+                <div class="item-card" key="@item.MovieId">
                     <div class="item-header">
-                        <img src="@item.MoviePosterUrl" alt="Poster do filme" />
+                        <img src="@item.MoviePosterUrl" alt="Poster do filme"/>
                         <h3 class="item-title">@item.MovieTitle</h3>
-                        <span class="item-price">@($"{item.Quantity * item.Price:F2}€")</span>
+                        <span class="item-price">@(item.Price.ToString("0.00"))€</span>
                     </div>
-                    <p class="item-type">@GetTicketLabel(item.Type)</p>
+                    <p class="item-type">@item.Type.ToString()</p>
                     <div class="quantity-controls">
-                        <button class="quantity-btn" @onclick="@(() => UpdateQuantity(item.BasketId, -1))">-</button>
+                        <button class="quantity-btn" @onclick="(() => UpdateQuantity(item, -1))">-</button>
                         <span class="quantity-display">@item.Quantity</span>
-                        <button class="quantity-btn" @onclick="@(() => UpdateQuantity(item.BasketId, 1))">+</button>
+                        <button class="quantity-btn" @onclick="(() => UpdateQuantity(item, 1))">+</button>
                     </div>
                 </div>
             }
@@ -48,58 +33,47 @@
             <div class="total-section">
                 <button class="clear-btn" @onclick="ClearBasket">Limpar Carrinho</button>
                 <div class="checkout-box">
-                    <p class="total-price">Total: @($"{currentOrder.Basket.Items.Sum(i => i.Price * i.Quantity):F2}€")</p>
-                    <button class="checkout-btn" @onclick="ProceedToCheckout">Checkout</button>
+                    <p class="total-price">Total: @(order.Basket.Items.Sum(i => i.Price * i.Quantity).ToString("0.00"))€</p>
+                    <button class="checkout-btn">Checkout</button>
                 </div>
             </div>
+        }
+        else
+        {
+            <p>Carrinho vazio</p>
         }
     </div>
 </div>
 
 @code {
-    private Order currentOrder;
-    private int userId;
+    private Order  order;
+    private string userId;
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-        userId = int.Parse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-
-        //currentOrder = await OrderRepository.GetActiveOrderAsync(userId);
-    }
-
-    private string GetTicketLabel(TicketType type)
-    {
-        return type == TicketType.Digital ? "Aluguer (Digital)" : "Bilhete Físico";
-    }
-
-    private async Task UpdateQuantity(int itemId, int change)
-    {
-        var item = currentOrder.Basket.Items.FirstOrDefault(i => i.BasketId == itemId);
-        if (item != null)
+        // Obter ID do utilizador autenticado
+        userId = HttpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        
+        if (!string.IsNullOrEmpty(userId) && int.TryParse(userId, out var userIdInt))
         {
-            item.Quantity += change;
-            
-            if (item.Quantity < 1)
-            {
-                currentOrder.Basket.Items.Remove(item);
-            }
-            
-            await OrderRepository.UpdateAsync(currentOrder);
-          //  currentOrder = await OrderRepository.GetActiveOrderAsync(userId);
+             order = (await _UnitOfWork.Orders.GetByUserIdAsync(userIdInt)).FirstOrDefault();
         }
+    }
+
+    private async Task UpdateQuantity(BasketItem item, int change)
+    {
+        item.Quantity += change;
+        
+        if (item.Quantity < 1) item.Quantity = 1;
+        
+        await _UnitOfWork.Orders.UpdateAsync(order);
+        StateHasChanged();
     }
 
     private async Task ClearBasket()
     {
-        currentOrder.Basket.Items.Clear();
-        await OrderRepository.UpdateAsync(currentOrder);
-        //currentOrder = await OrderRepository.GetActiveOrderAsync(userId);
-    }
-
-    private void ProceedToCheckout()
-    {
-        Navigation.NavigateTo("/checkout");
+        await _UnitOfWork.Orders.ClearBasketAsync(order.Id);
+        order = null;
+        StateHasChanged();
     }
 }
