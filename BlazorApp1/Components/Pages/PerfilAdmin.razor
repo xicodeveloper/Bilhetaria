@@ -3,11 +3,18 @@
 @using BlazorApp1.Components.Layout
 @using BlazorApp1.Services.RegLogin
 @using System.Globalization
+@using System.Security.Claims
+@using BlazorApp1.Services
+@using BlazorApp1.Services.Address
+@using BlazorApp1.Services.DataBase
+@using BlazorApp1.Services.Orders.Models
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
 @inject IAuthService AuthService
 @inject IHttpContextAccessor HttpContextAccessor
 @attribute [Authorize]
-
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IUnitOfWork _unitOfWork
 @rendermode InteractiveServer
 
 <div class="page-container">
@@ -79,9 +86,11 @@
         </div>
 
         <div class="grid-item" style="grid-column: span 2; grid-row: span 2">
+            
+
             As tuas moradas:
             <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px; overflow: auto">
-                @foreach (var address in userAddresses)
+                @foreach(var address in userEntity.Addresses)
                 {
                     bool isSelected = moradaSelecionada == address;
 
@@ -107,9 +116,16 @@
                         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
                         background-color: @(isSelected ? "#e3f2fd" : "white");
                         ">
-                            <div><strong>Nome:</strong> @address.Nome</div>
-                            <div><strong>Morada:</strong> @address.Morada</div>
-                            <div><strong>Telefone:</strong> @address.Telefone</div>
+
+                                <div><strong>País:</strong> @address.Country</div>
+                                <div><strong>Cidade:</strong> @address.City</div>
+                                <div><strong>Numero:</strong> @address.Number</div>
+                                <div><strong>Rua:</strong> @address.Street</div>
+                                <div><strong>Distrito:</strong> @address.State</div>
+                                <div><strong>Zip-Code:</strong> @address.ZipCode</div>
+
+                            }
+
                         </div>
                     </div>
                 }
@@ -132,13 +148,92 @@
             }
         </div>
     </div>
+    <div>
+        <EditForm Model="Model" OnValidSubmit="AddAddress" FormName="address-form" class="Addressform">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="form-group">
+                <label>Rua</label>
+                <InputText @bind-Value="Model!.Street" class="form-control" placeholder="Rua" />
+            </div>
+
+            <div class="form-group">
+                <label>Número</label>
+                <InputText @bind-Value="Model!.Number" class="form-control" placeholder="Número" />
+            </div>
+
+            <div class="form-group">
+                <label>Código Postal</label>
+                <InputText @bind-Value="Model!.ZipCode" class="form-control" placeholder="0000-000" />
+            </div>
+
+            <div class="form-group">
+                <label>Cidade</label>
+                <InputText @bind-Value="Model!.City" class="form-control" placeholder="Cidade" />
+            </div>
+
+            <div class="form-group">
+                <label>Estado/Distrito</label>
+                <InputText @bind-Value="Model!.State" class="form-control" placeholder="Estado ou distrito" />
+            </div>
+
+            <div class="form-group">
+                <label>País</label>
+                <InputText @bind-Value="Model!.Country" class="form-control" placeholder="País" />
+            </div>
+
+            <button type="submit" class="loginsub">Guardar Endereço</button>
+        </EditForm>
+    </div>
 </div>
 
 @code {
+
+    [SupplyParameterFromForm] 
+    private AddressModel? Model { get; set; } = new();
+   
+    private string userId { get; set; } = string.Empty;
     public string totalVisto = "525.678";
     public string paymentMethod = "MBWay";
     public string totalPay = "32.99";
     
+    
+    private List<Claim> claims = new();
+    private User userEntity { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadClaims();
+    }
+    private string GetUserId()
+    {
+        return claims.FirstOrDefault(c =>
+            c.Type == ClaimTypes.NameIdentifier || c.Type == "sub")?.Value;
+    }
+    private async Task LoadClaims()
+    {
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            claims = authState.User.Claims.ToList();
+
+            userId = GetUserId();
+
+            Console.WriteLine($"User ID: {userId}");
+            if (!int.TryParse(userId, out var userIdInt)) return;
+
+             userEntity = await _unitOfWork.Users.GetByIdAsync(userIdInt);
+            if (userEntity == null) return;
+
+            // Busca a encomenda ativa INCLUINDO os itens do carrinho
+            var existingOrder = await _unitOfWork.Orders.GetActiveOrderWithItemsAsync(userIdInt);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+
+        }
+    }
     public List<Purchase> purchaseHistory = new List<Purchase>
     {
         new Purchase { Name = "Filme 1", Date = "15/05/2023", Type = "Digital", Price = "9.99" },
@@ -154,24 +249,30 @@
         public string Price { get; set; }
     }
     
-    public Address moradaSelecionada;
+    public Adress moradaSelecionada;
 
-    public List<Address> userAddresses = new List<Address>
-    {
-        new Address { Nome = "João Silva", Morada = "Rua das Palmeiras, 45", Telefone = "912345678" },
-        new Address { Nome = "Maria Santos", Morada = "Avenida do Mar, 120", Telefone = "968765432" }
-    };
-    void SelecionarMorada(Address address)
+
+    void SelecionarMorada(Adress address)
     {
         moradaSelecionada = address;
         StateHasChanged();
     }
 
-    public class Address
+    private void AddAddress()
     {
-        public string Nome { get; set; }
-        public string Morada { get; set; }
-        public string Telefone { get; set; }
+        Console.WriteLine("Endereço guardado:");
+        Console.WriteLine($"{Model.Street}, {Model.Number}, {Model.ZipCode}, {Model.City}, {Model.State}, {Model.Country}");
+        Adress address = new Adress
+        {
+            Street = Model.Street,
+            Number = Model.Number,
+            ZipCode = Model.ZipCode,
+            City = Model.City,
+            State = Model.State,
+            Country = Model.Country
+        };
+        userEntity.Addresses.Add(address);
+        
     }
 
 }
