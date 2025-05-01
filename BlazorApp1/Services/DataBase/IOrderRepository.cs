@@ -1,11 +1,18 @@
-using BlazorApp1.Services.OrderFiles;
+// Services/Orders/Interfaces/IOrderRepository.cs
+using BlazorApp1.Services.Orders.Models;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
-public interface IOrderRepository
+ namespace BlazorApp1.Services.DataBase
 {
-    Task AddAsync(Order order);
-    Task<Order> GetByIdAsync(int id);
-    Task<IEnumerable<Order>> GetAllAsync();
-    Task<IEnumerable<Order>> GetByUserIdAsync(int userId);
-    Task UpdateAsync(Order order);
-
+    public interface IOrderRepository
+    {
+        Task AddAsync(Order order);
+        Task<Order> GetActiveOrderWithItemsAsync(int userId);
+        Task<Order> GetByIdAsync(int id);
+        Task<IEnumerable<Order>> GetAllAsync();
+        Task<IEnumerable<Order>> GetByUserIdAsync(int userId);
+        Task UpdateAsync(Order order);
+        Task SaveChangesAsync();
+    }
 }

@@ -1,57 +1,71 @@
+// Services/Orders/Repositories/OrderRepository.cs
 using BlazorApp1.Services.DataBase;
-using BlazorApp1.Services.OrderFiles;
+using BlazorApp1.Services.Orders.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using BlazorApp1.Services.OrderFiles;
 
-public class OrderRepository : IOrderRepository
+namespace BlazorApp1.Services.Orders.Repositories
 {
-    private readonly ApplicationDbContext _context;
-
-    public OrderRepository(ApplicationDbContext context)
+    public class OrderRepository : IOrderRepository
     {
-        _context = context;
-    }
+        private readonly ApplicationDbContext _context;
 
-    public async Task AddAsync(Order order)
-    {
-        await _context.Orders.AddAsync(order);
-    }
+        public OrderRepository(ApplicationDbContext context)
+        {
+            _context = context;
+        }
 
-    // Busca pelo ID do pedido (não confundir com UserId)
-    public async Task<Order> GetByIdAsync(int id)
-    {
-        return await _context.Orders
-            .Include(o => o.Basket)
-            .ThenInclude(b => b.Items)
-            .Include(o => o.ShippingAddress)
-            .FirstOrDefaultAsync(o => o.Id == id); // Corrigido para usar Id do pedido
-    }
+        public async Task AddAsync(Order order)
+        {
+            await _context.Orders.AddAsync(order);
+        }
 
-    public async Task<IEnumerable<Order>> GetAllAsync()
-    {
-        return await _context.Orders
-            .Include(o => o.Basket)
-            .ThenInclude(b => b.Items)
-            .Include(o => o.ShippingAddress)
-            .ToListAsync();
-    }
+        public async Task<Order> GetByIdAsync(int id)
+        {
+            return await _context.Orders
+                .Include(o => o.Basket)
+                .ThenInclude(b => b.Items)
+                .Include(o => o.ShippingAddress)
+                .FirstOrDefaultAsync(o => o.Id == id);
+        }
 
-    // Busca todos os pedidos de um usuário
-    public async Task<IEnumerable<Order>> GetByUserIdAsync(int userId)
-    {
-        return await _context.Orders
-            .Include(o => o.Basket)
-            .ThenInclude(b => b.Items)
-            .Include(o => o.ShippingAddress)
-            .Where(o => o.UserId == userId)
-            .ToListAsync();
-    }
+        public async Task<IEnumerable<Order>> GetAllAsync()
+        {
+            return await _context.Orders
+                .Include(o => o.Basket)
+                .ThenInclude(b => b.Items)
+                .Include(o => o.ShippingAddress)
+                .ToListAsync();
+        }
+        public async Task<Order> GetActiveOrderWithItemsAsync(int userId)
+        {
+            return await _context.Orders
+                .Include(o => o.Basket)
+                .ThenInclude(b => b.Items)
+                .FirstOrDefaultAsync(o => o.UserId == userId && o.Status == OrderStatus.Pending);
+        }
+        public async Task<IEnumerable<Order>> GetByUserIdAsync(int userId)
+        {
+            return await _context.Orders
+                .Include(o => o.Basket)
+                .ThenInclude(b => b.Items)
+                .Include(o => o.ShippingAddress)
+                .Where(o => o.UserId == userId)
+                .ToListAsync();
+        }
+  
 
-    // Busca o carrinho ativo (pedido não finalizado)
+        public async Task UpdateAsync(Order order)
+        {
+            _context.Entry(order).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+        }
 
-    // Atualiza um pedido
-    public async Task UpdateAsync(Order order)
-    {
-        _context.Orders.Update(order);
-        await _context.SaveChangesAsync();
+        public async Task SaveChangesAsync()
+        {
+            await _context.SaveChangesAsync();
+        }
     }
 }

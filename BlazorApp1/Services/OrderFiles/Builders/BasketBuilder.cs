@@ -1,3 +1,5 @@
+using BlazorApp1.Services.Orders.Models;
+
 namespace BlazorApp1.Services.OrderFiles;
 
 public class BasketBuilder

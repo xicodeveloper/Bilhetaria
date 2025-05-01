@@ -1,5 +1,6 @@
 @page "/basket"
 @using System.Security.Claims
+@using BlazorApp1.Services.DataBase
 @using BlazorApp1.Services.OrderFiles
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
@@ -7,6 +8,9 @@
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager Navigation
 @attribute [Authorize]
+@* Components/Pages/Basket.razor *@
+@using BlazorApp1.Services.Orders.Models // Adicionar para Order
+
 
 <div class="basket-container">
     <h1>Carrinho</h1>
@@ -34,9 +38,9 @@
                     </div>
                     <p class="item-type">@GetTicketLabel(item.Type)</p>
                     <div class="quantity-controls">
-                        <button class="quantity-btn" @onclick="@(() => UpdateQuantity(item.Id, -1))">-</button>
+                        <button class="quantity-btn" @onclick="@(() => UpdateQuantity(item.BasketId, -1))">-</button>
                         <span class="quantity-display">@item.Quantity</span>
-                        <button class="quantity-btn" @onclick="@(() => UpdateQuantity(item.Id, 1))">+</button>
+                        <button class="quantity-btn" @onclick="@(() => UpdateQuantity(item.BasketId, 1))">+</button>
                     </div>
                 </div>
             }
@@ -72,7 +76,7 @@
 
     private async Task UpdateQuantity(int itemId, int change)
     {
-        var item = currentOrder.Basket.Items.FirstOrDefault(i => i.Id == itemId);
+        var item = currentOrder.Basket.Items.FirstOrDefault(i => i.BasketId == itemId);
         if (item != null)
         {
             item.Quantity += change;

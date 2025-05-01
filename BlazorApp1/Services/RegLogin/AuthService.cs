@@ -1,6 +1,6 @@
+// Services/RegLogin/AuthService.cs
 using System.Security.Claims;
 using BlazorApp1.Services.DataBase;
-using BlazorApp1.Services.RegLogin;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
@@ -24,12 +24,12 @@ namespace BlazorApp1.Services.RegLogin
 
         public async Task<User> FindUserByUsername(string username)
         {
-            return _unitOfWork.User.GetAll().FirstOrDefault(u => u.Username == username);
+            return await _unitOfWork.Users.FindByUsernameAsync(username);
         }
 
         public async Task<bool> UpdateUser(int id, string username, string email, string newPassword, bool sameUserName)
         {
-            var user = _unitOfWork.User.GetById(id);
+            var user = await _unitOfWork.Users.GetByIdAsync(id);
             if (user == null) throw new KeyNotFoundException("Usuário não encontrado");
 
             if (user.Username != username && await CheckUsernameExists(username) && sameUserName)
@@ -44,19 +44,19 @@ namespace BlazorApp1.Services.RegLogin
             if (!string.IsNullOrEmpty(newPassword))
                 user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
 
-            _unitOfWork.Complete();
+            await _unitOfWork.CommitAsync();
             return true;
         }
 
         public async Task<bool> VerifyUserAsync(string email, string code)
         {
-            var user = _unitOfWork.User.GetAll().FirstOrDefault(u => u.Email == email);
+            var user = await _unitOfWork.Users.FindByEmailAsync(email);
             if (user == null) return false;
 
             if (_verificationService.ValidateCode(email, code))
             {
                 user.IsSucess = true;
-                _unitOfWork.Complete();
+                await _unitOfWork.CommitAsync();
                 return true;
             }
 
@@ -65,12 +65,12 @@ namespace BlazorApp1.Services.RegLogin
 
         public async Task<bool> CheckUsernameExists(string username)
         {
-            return _unitOfWork.User.GetAll().Any(u => u.Username == username);
+            return await _unitOfWork.Users.UsernameExistsAsync(username);
         }
 
         public async Task<bool> CheckEmailExists(string email)
         {
-            return _unitOfWork.User.GetAll().Any(u => u.Email == email);
+            return await _unitOfWork.Users.EmailExistsAsync(email);
         }
 
         public async Task CreateUser(string username, string password, string email)
@@ -83,8 +83,8 @@ namespace BlazorApp1.Services.RegLogin
                 IsSucess = false
             };
 
-            _unitOfWork.User.Add(user);
-            _unitOfWork.Complete();
+            await _unitOfWork.Users.AddAsync(user);
+            await _unitOfWork.CommitAsync();
 
             await _verificationService.SendVerificationCodeAsync(email);
         }
@@ -97,7 +97,10 @@ namespace BlazorApp1.Services.RegLogin
 
                 if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
                 {
-                    return new AuthResult { Success = false, ErrorMessage = "Credenciais inválidas" };
+                    return new AuthResult { 
+                        Success = false, 
+                        ErrorMessage = "Credenciais inválidas" 
+                    };
                 }
 
                 var claims = new List<Claim>
@@ -109,11 +112,16 @@ namespace BlazorApp1.Services.RegLogin
 
                 if (user.IsSucess)
                 {
-                    claims.Add(new Claim("EmailConfirmed", "true"));
+                    claims.Add(new Claim("EmailVerified", "true"));
                 }
 
-                var identity = new ClaimsIdentity(claims, "Cookies");
+                var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                 var principal = new ClaimsPrincipal(identity);
+
+                // Autenticar o usuário
+                await _httpContextAccessor.HttpContext.SignInAsync(
+                    CookieAuthenticationDefaults.AuthenticationScheme,
+                    principal);
 
                 return new AuthResult
                 {
@@ -133,17 +141,13 @@ namespace BlazorApp1.Services.RegLogin
 
         public async Task<User> FindUser(string usernameOrEmail)
         {
-            return _unitOfWork.User.GetAll()
-                .FirstOrDefault(u => u.Username == usernameOrEmail || u.Email == usernameOrEmail);
+            return await _unitOfWork.Users.FindByUsernameOrEmailAsync(usernameOrEmail);
         }
 
         public async Task LogoutAsync()
         {
-            var context = _httpContextAccessor.HttpContext;
-            if (context != null)
-            {
-                await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            }
+            await _httpContextAccessor.HttpContext.SignOutAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme);
         }
     }
 }

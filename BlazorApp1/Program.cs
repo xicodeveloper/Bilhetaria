@@ -1,6 +1,7 @@
 using BlazorApp1.Components;
 using BlazorApp1.Services.DataBase;
 using BlazorApp1.Services.Movies;
+using BlazorApp1.Services.Orders.Repositories;
 using BlazorApp1.Services.RegLogin;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -68,11 +69,14 @@ builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
 builder.Services.AddHttpClient();
 builder.Services.AddHttpContextAccessor();
 // Program.cs
-builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+
 // 5. Configuração do Blazor
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 // 6. Configuração do Kestrel
 builder.WebHost.UseUrls("https://localhost:7193", "http://localhost:5212");
 builder.WebHost.ConfigureKestrel(serverOptions =>

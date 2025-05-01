@@ -1,7 +1,15 @@
-public interface IUnitOfWork : IDisposable
+// Services/Core/UnitOfWork/IUnitOfWork.cs
+using System;
+using System.Threading.Tasks;
+
+
+namespace BlazorApp1.Services.DataBase
 {
-    IUserRepository User { get; }
-    int Complete(); // Commit
-    IOrderRepository Order { get; }
-    Task<int> CompleteAsync();
+    public interface IUnitOfWork : IDisposable
+    {
+        IUserRepository Users { get; }
+        IOrderRepository Orders { get; }
+        Task<int> CommitAsync();
+        int Commit();
+    }
 }

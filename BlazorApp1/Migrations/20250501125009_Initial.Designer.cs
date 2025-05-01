@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BlazorApp1.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250430150708_CreateAddressTable")]
-    partial class CreateAddressTable
+    [Migration("20250501125009_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -87,7 +87,7 @@ namespace BlazorApp1.Migrations
                     b.ToTable("movies", (string)null);
                 });
 
-            modelBuilder.Entity("BlazorApp1.Services.OrderFiles.Adress", b =>
+            modelBuilder.Entity("BlazorApp1.Services.Orders.Models.Adress", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -115,16 +115,21 @@ namespace BlazorApp1.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
                     b.Property<string>("ZipCode")
                         .IsRequired()
                         .HasColumnType("longtext");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Adress");
+                    b.HasIndex("UserId");
+
+                    b.ToTable("addresses", (string)null);
                 });
 
-            modelBuilder.Entity("BlazorApp1.Services.OrderFiles.Basket", b =>
+            modelBuilder.Entity("BlazorApp1.Services.Orders.Models.Basket", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -137,7 +142,7 @@ namespace BlazorApp1.Migrations
                     b.ToTable("baskets", (string)null);
                 });
 
-            modelBuilder.Entity("BlazorApp1.Services.OrderFiles.BasketItem", b =>
+            modelBuilder.Entity("BlazorApp1.Services.Orders.Models.BasketItem", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -145,7 +150,7 @@ namespace BlazorApp1.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("BasketId")
+                    b.Property<int>("BasketId")
                         .HasColumnType("int");
 
                     b.Property<int>("MovieId")
@@ -178,7 +183,7 @@ namespace BlazorApp1.Migrations
                     b.ToTable("basket_items", (string)null);
                 });
 
-            modelBuilder.Entity("BlazorApp1.Services.OrderFiles.Order", b =>
+            modelBuilder.Entity("BlazorApp1.Services.Orders.Models.Order", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -192,10 +197,14 @@ namespace BlazorApp1.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<int>("Number")
-                        .HasColumnType("int");
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasColumnType("longtext");
 
                     b.Property<int>("ShippingAddressId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
                         .HasColumnType("int");
 
                     b.Property<int>("UserId")
@@ -203,7 +212,8 @@ namespace BlazorApp1.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BasketId");
+                    b.HasIndex("BasketId")
+                        .IsUnique();
 
                     b.HasIndex("ShippingAddressId");
 
@@ -238,25 +248,40 @@ namespace BlazorApp1.Migrations
                     b.ToTable("users", (string)null);
                 });
 
-            modelBuilder.Entity("BlazorApp1.Services.OrderFiles.BasketItem", b =>
+            modelBuilder.Entity("BlazorApp1.Services.Orders.Models.Adress", b =>
                 {
-                    b.HasOne("BlazorApp1.Services.OrderFiles.Basket", null)
-                        .WithMany("Items")
-                        .HasForeignKey("BasketId");
+                    b.HasOne("BlazorApp1.Services.User", "User")
+                        .WithMany("Addresses")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
-            modelBuilder.Entity("BlazorApp1.Services.OrderFiles.Order", b =>
+            modelBuilder.Entity("BlazorApp1.Services.Orders.Models.BasketItem", b =>
                 {
-                    b.HasOne("BlazorApp1.Services.OrderFiles.Basket", "Basket")
-                        .WithMany()
+                    b.HasOne("BlazorApp1.Services.Orders.Models.Basket", "Basket")
+                        .WithMany("Items")
                         .HasForeignKey("BasketId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BlazorApp1.Services.OrderFiles.Adress", "ShippingAddress")
+                    b.Navigation("Basket");
+                });
+
+            modelBuilder.Entity("BlazorApp1.Services.Orders.Models.Order", b =>
+                {
+                    b.HasOne("BlazorApp1.Services.Orders.Models.Basket", "Basket")
+                        .WithOne()
+                        .HasForeignKey("BlazorApp1.Services.Orders.Models.Order", "BasketId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BlazorApp1.Services.Orders.Models.Adress", "ShippingAddress")
                         .WithMany()
                         .HasForeignKey("ShippingAddressId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Basket");
@@ -264,9 +289,14 @@ namespace BlazorApp1.Migrations
                     b.Navigation("ShippingAddress");
                 });
 
-            modelBuilder.Entity("BlazorApp1.Services.OrderFiles.Basket", b =>
+            modelBuilder.Entity("BlazorApp1.Services.Orders.Models.Basket", b =>
                 {
                     b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("BlazorApp1.Services.User", b =>
+                {
+                    b.Navigation("Addresses");
                 });
 #pragma warning restore 612, 618
         }

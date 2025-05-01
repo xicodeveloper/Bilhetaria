@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using BlazorApp1.Services.OrderFiles;
+using BlazorApp1.Services.Orders.Models;
 
 namespace BlazorApp1.Services
 {

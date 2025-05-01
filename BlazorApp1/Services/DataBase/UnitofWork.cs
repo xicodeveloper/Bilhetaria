@@ -1,29 +1,40 @@
+// Services/Core/UnitOfWork/UnitOfWork.cs
 using BlazorApp1.Services.DataBase;
+using BlazorApp1.Services.Orders.Repositories;
 
-public class UnitOfWork : IUnitOfWork
+
+namespace BlazorApp1.Services.DataBase
 {
-    private readonly ApplicationDbContext _context;
-    public IUserRepository User { get; }
-    public IOrderRepository Order { get; }
+    public class UnitOfWork : IUnitOfWork
+    {
+        private readonly ApplicationDbContext _context;
+        private IUserRepository _users;
+        private IOrderRepository _orders;
 
-    public UnitOfWork(ApplicationDbContext context)
-    {
-        _context = context;
-        User = new UserRepository(_context);
-        Order = new OrderRepository(_context);
-    }
+        public UnitOfWork(ApplicationDbContext context)
+        {
+            _context = context;
+        }
 
-    public int Complete()
-    {
-        return _context.SaveChanges();
-    }
-    public async Task<int> CompleteAsync()
-    {
-        return await _context.SaveChangesAsync();
-    }
-    
-    public void Dispose()
-    {
-        _context.Dispose();
+        public IUserRepository Users => 
+            _users ??= new UserRepository(_context);
+            
+        public IOrderRepository Orders => 
+            _orders ??= new OrderRepository(_context);
+
+        public async Task<int> CommitAsync()
+        {
+            return await _context.SaveChangesAsync();
+        }
+
+        public int Commit()
+        {
+            return _context.SaveChanges();
+        }
+
+        public void Dispose()
+        {
+            _context.Dispose();
+        }
     }
 }
