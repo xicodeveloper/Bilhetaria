@@ -81,7 +81,6 @@ builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
     sp.GetRequiredService<CustomAuthStateProvider>());
 builder.Services.AddHttpClient();
 builder.Services.AddHttpContextAccessor();
-// Program.cs
 
 // 5. Configuração do Blazor
 builder.Services.AddRazorComponents()
@@ -100,11 +99,11 @@ builder.WebHost.ConfigureKestrel(serverOptions =>
 
 var app = builder.Build();
 
-// 7. Ordem CORRETA dos middlewares
+
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Configuração do pipeline
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);

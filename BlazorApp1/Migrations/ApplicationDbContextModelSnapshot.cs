@@ -100,6 +100,9 @@ namespace BlazorApp1.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<bool>("IstheOne")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<string>("Number")
                         .IsRequired()
                         .HasColumnType("longtext");

@@ -90,7 +90,11 @@
 
             As tuas moradas:
             <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px; overflow: auto">
-                @foreach(var address in userEntity.Addresses)
+                @if (userEntity == null || userEntity.Addresses == null || userEntity.Addresses.Count == 0)
+                {
+                    <div style="text-align: center; font-style: italic;">Nenhuma morada encontrada.</div>
+                }else{
+                @foreach (var address in userEntity.Addresses)
                 {
                     bool isSelected = moradaSelecionada == address;
 
@@ -117,17 +121,18 @@
                         background-color: @(isSelected ? "#e3f2fd" : "white");
                         ">
 
-                                <div><strong>País:</strong> @address.Country</div>
-                                <div><strong>Cidade:</strong> @address.City</div>
-                                <div><strong>Numero:</strong> @address.Number</div>
-                                <div><strong>Rua:</strong> @address.Street</div>
-                                <div><strong>Distrito:</strong> @address.State</div>
-                                <div><strong>Zip-Code:</strong> @address.ZipCode</div>
+                            <div><strong>País:</strong> @address.Country</div>
+                            <div><strong>Cidade:</strong> @address.City</div>
+                            <div><strong>Numero:</strong> @address.Number</div>
+                            <div><strong>Rua:</strong> @address.Street</div>
+                            <div><strong>Distrito:</strong> @address.State</div>
+                            <div><strong>Zip-Code:</strong> @address.ZipCode</div>
 
                             }
 
                         </div>
                     </div>
+                }
                 }
             </div>
         </div>
@@ -252,27 +257,53 @@
     public Adress moradaSelecionada;
 
 
-    void SelecionarMorada(Adress address)
+    async Task SelecionarMorada(Adress address)
     {
-        moradaSelecionada = address;
-        StateHasChanged();
+        try
+        {
+            foreach (var addr in userEntity.Addresses)
+            {
+                addr.IstheOne = false;
+            }
+        
+            // Definir a morada selecionada
+            address.IstheOne = true;
+            moradaSelecionada = address;
+
+            // Atualizar no banco de dados
+            await _unitOfWork.Users.UpdateUserAddressesAsync(userEntity);
+            userEntity = await _unitOfWork.Users.GetByIdAddressAsync(userEntity.Id); // Recarregar dados
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao selecionar morada: {ex.Message}");
+        }
     }
 
-    private void AddAddress()
+    private async Task AddAddress()
     {
-        Console.WriteLine("Endereço guardado:");
-        Console.WriteLine($"{Model.Street}, {Model.Number}, {Model.ZipCode}, {Model.City}, {Model.State}, {Model.Country}");
-        Adress address = new Adress
+        try
         {
-            Street = Model.Street,
-            Number = Model.Number,
-            ZipCode = Model.ZipCode,
-            City = Model.City,
-            State = Model.State,
-            Country = Model.Country
-        };
-        userEntity.Addresses.Add(address);
-        
+            var newAddress = new Adress 
+            {
+                Street = Model.Street,
+                Number = Model.Number,
+                ZipCode = Model.ZipCode,
+                City = Model.City,
+                State = Model.State,
+                Country = Model.Country,
+                UserId = userEntity.Id
+            };
+
+             _unitOfWork.Users.AddAddress(userEntity, newAddress);
+            userEntity = await _unitOfWork.Users.GetByIdAddressAsync(userEntity.Id);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro: {ex.Message}");
+        }
     }
 
 }

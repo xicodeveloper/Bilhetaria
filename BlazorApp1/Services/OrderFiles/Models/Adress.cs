@@ -16,4 +16,5 @@ public class Adress
     public string Country { get; set; }
     public int UserId { get; set; }
     public virtual User User { get; set; }
+    public bool IstheOne { get; set; } = false;
 }

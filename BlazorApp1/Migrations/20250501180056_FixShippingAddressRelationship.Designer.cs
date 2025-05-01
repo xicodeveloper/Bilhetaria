@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BlazorApp1.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250501125009_Initial")]
-    partial class Initial
+    [Migration("20250501180056_FixShippingAddressRelationship")]
+    partial class FixShippingAddressRelationship
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -102,6 +102,9 @@ namespace BlazorApp1.Migrations
                     b.Property<string>("Country")
                         .IsRequired()
                         .HasColumnType("longtext");
+
+                    b.Property<bool>("IstheOne")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<string>("Number")
                         .IsRequired()

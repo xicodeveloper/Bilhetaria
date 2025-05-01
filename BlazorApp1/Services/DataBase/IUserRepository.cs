@@ -1,6 +1,7 @@
 // Services/Users/Interfaces/IUserRepository.cs
 
 using System.Threading.Tasks;
+using BlazorApp1.Services.Orders.Models;
 
 namespace BlazorApp1.Services.DataBase
 {
@@ -14,5 +15,9 @@ namespace BlazorApp1.Services.DataBase
         Task<bool> EmailExistsAsync(string email);
         Task AddAsync(User user);
         Task UpdateAsync(User user);
+        void AddAddress(User user, Adress address);
+        Task<User> GetByIdAddressAsync(int userId);
+        Task UpdateUserAddressesAsync(User user);
+
     }
 }

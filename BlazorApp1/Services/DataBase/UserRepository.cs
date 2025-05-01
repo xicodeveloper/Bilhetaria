@@ -3,6 +3,7 @@ using BlazorApp1.Services.DataBase;
 using BlazorApp1.Services.DataBase;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
+using BlazorApp1.Services.Orders.Models;
 
 namespace BlazorApp1.Services.DataBase
 {
@@ -62,5 +63,40 @@ namespace BlazorApp1.Services.DataBase
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
         }
+        public void AddAddress(User user, Adress address)
+        {
+            if (user.Addresses == null)
+            {
+                user.Addresses = new List<Adress>();
+            }
+
+            address.UserId = user.Id;
+            user.Addresses.Add(address);
+
+            _context.Addresses.Add(address); // Adiciona diretamente à tabela de endereços
+            _context.SaveChanges(); // Grava na base de dados
+        }
+
+
+        // Método para buscar user com moradas
+        public async Task<User> GetByIdAddressAsync(int userId)
+        {
+            return await _context.Users
+                .Include(u => u.Addresses) // Carrega as moradas
+                .FirstOrDefaultAsync(u => u.Id == userId);
+        }
+        public async Task UpdateUserAddressesAsync(User user)
+        {
+            // Atualizar todas as moradas do usuário
+            foreach (var address in user.Addresses)
+            {
+                _context.Entry(address).State = EntityState.Modified;
+            }
+            await _context.SaveChangesAsync();
+        }
+
+
+
+
     }
 }

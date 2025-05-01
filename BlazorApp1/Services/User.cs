@@ -18,7 +18,7 @@ namespace BlazorApp1.Services
         public string PasswordHash { get; set; }
         public bool IsSucess { get; set; }
 
-        // Adicione uma lista de endereços associados ao usuário
+        // Adicione uma lista de endereços associados ao user
         public virtual ICollection<Adress> Addresses { get; set; } = new List<Adress>();
 
         public User() { }
