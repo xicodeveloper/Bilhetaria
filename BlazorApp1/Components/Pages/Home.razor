@@ -91,9 +91,9 @@
                     @foreach (var movie in _movies.Skip(7).Take(25))
                     {
                         <div class="carousel-item">
-                            <NavLink href="@($"movie/{movie.Id}")">
-                            <span class="discount-tag">@GetRandomDiscount()</span>
-                            <img src="@(LinkImage + movie.PosterPath)" alt="@movie.Title" class="movie-poster"/>
+                            <NavLink href="@($"movie/{movie.Id}?discount={GetDeterministicDiscount(movie.Id)}&hash={DiscountHasher.GenerateHash(movie.Id, GetDeterministicDiscount(movie.Id))}")">
+                                <span class="discount-tag">@GetDeterministicDiscount(movie.Id)</span>
+                                <img src="@(LinkImage + movie.PosterPath)" alt="@movie.Title" class="movie-poster"/>
                             <div class="movie-hover-info">
                                 <h4>@movie.Title</h4>
                                 <p>💰 @GetRandomPrice()</p>
@@ -165,6 +165,8 @@
     </section>
 </div>
 
+
+
 @code {
     private string ApIlink => $"{Configuration["TmdbApi:BaseUrl"]}/movie/popular";
     private string LinkImage => Configuration["TmdbApi:ImageBaseUrl"] ?? string.Empty;
@@ -177,8 +179,9 @@
     private int currentIndex = 0;
     private int promoCurrentIndex = 0;
     private int comingSoonCurrentIndex = 0;
+    private int discount;
     
-    private string[] discounts = new[] { "50%", "25%", "70%", "2 por 1" };
+    private readonly string[] _discountTiers = { "10%", "70%", "25%" };
     
     private string GetRandomPrice() {
         var random = new Random();
@@ -186,9 +189,10 @@
         return prices[random.Next(0, prices.Length)].ToString("0.00€");
     }
 
-    private string GetRandomDiscount() {
-        var random = new Random();
-        return discounts[random.Next(0, discounts.Length)];
+    private string GetDeterministicDiscount(int movieId) {
+        // Cálculo determinístico baseado no ID do filme
+        int index = movieId % _discountTiers.Length;
+        return _discountTiers[index];
     }
 
     private async Task ScrollCarousel(int direction)

@@ -14,6 +14,7 @@
 @using BlazorApp1.Services.Orders.Models
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.WebUtilities
 @using Microsoft.EntityFrameworkCore.Metadata.Internal
 
 @inject IConfiguration Configuration
@@ -115,7 +116,16 @@
 
 
 </div>
-
+@if (!string.IsNullOrEmpty(discount))
+{
+    <div class="discount-banner">
+        Promoção Ativa: @discount
+    </div>
+}
+else
+{
+    <p>Nao houve desconto</p>
+}
 @code {
    
     // Parameters
@@ -139,6 +149,7 @@
     private CreditsResponse _credits;
     private KeywordsResponse _keywords;
     private string _trailerUrl;
+    private string? discount;
     
 
     private string _backdropImage => string.IsNullOrEmpty(_movie?.backdrop_path)
@@ -258,7 +269,21 @@ private async Task BuyAsync(PurchaseType type)
             await LoadCredits();
             await LoadKeywords();
             await LoadTrailer();
- 
+            var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+            var query = QueryHelpers.ParseQuery(uri.Query);
+
+            if (query.TryGetValue("discount", out var discountParam) && 
+                 query.TryGetValue("hash", out var hashParam))
+            {
+                if (DiscountHasher.ValidateHash(Id, discountParam!, hashParam!))
+                {
+                    discount = discountParam!;
+                }
+                else
+                {
+                    Console.WriteLine("Hash de desconto inválido.");
+                }
+            }
            
         }
         catch (Exception ex)
@@ -266,6 +291,7 @@ private async Task BuyAsync(PurchaseType type)
             Console.Error.WriteLine($"Erro ao carregar dados: {ex.Message}");
         }
     }
+    
     //api
     private async Task LoadMovieData() =>
         _movie = await Http.GetFromJsonAsync<MovieDetails>($"{BaseUrl}/movie/{Id}?api_key={ApiKey}");
