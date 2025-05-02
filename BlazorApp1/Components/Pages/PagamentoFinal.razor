@@ -4,6 +4,7 @@
 @using BlazorApp1.Components.Layout
 @using BlazorApp1.Services.RegLogin
 @using BlazorApp1.Services.DataBase
+@using BlazorApp1.Services.Discounts
 @using BlazorApp1.Services.OrderFiles
 @using BlazorApp1.Services.Orders.Models
 @using Microsoft.AspNetCore.Components.Authorization
@@ -65,12 +66,28 @@
             </div>
 
             <!-- Desconto -->
+            
             <div class="grid-item info-card discount-info">
+                
                 <div class="title">
                     <h3>Desconto Aplicado</h3>
                     <hr/>
                 </div>
-                <p>-10% (Cartão de Fidelização)</p>
+                @if (order?.Basket?.Items != null && order.Basket.Items.Any())
+                {
+                    @foreach (var item in order.Basket.Items)
+                    {
+                        if (item.Discount > 0)
+                        {
+                            <p>- @item.Discount % de desconto em @item.MovieTitle</p>
+                            
+                        }
+                        
+                    }
+                }else
+                {
+                    <p>Não há desconto aplicado.</p>
+                }
             </div>
         </div>
 
@@ -92,6 +109,7 @@
                                 <img src="@item.MoviePosterUrl" alt="@item.MovieTitle" class="product-image"/>
                                 <div class="product-info">
                                     <div class="product-title">@item.MovieTitle</div>
+                                    <div>Descontos: @item.Discount %</div>
                                     <div class="product-desc">(@item.ScreeningDate)</div>
                                     <button type="button" class="remove-btn" @onclick="async () => await RemoverProduto(item.Id)">X Remover</button>
                                 </div>
@@ -144,11 +162,15 @@
     private double desconto = 1.90;
     private double shipping = 5.90;
     private double total;
+    
+    private ApplyDiscoutStrategy discountStrategy;
+
 
     protected override async Task OnInitializedAsync()
     {
 
         await LoadClaims();
+        //ApplyDiscoutStrategy strategy = new ApplyDiscoutStrategy (discountStrategy, new TenDiscount());
         await CarregarDadosDoCarrinho();
     }
 

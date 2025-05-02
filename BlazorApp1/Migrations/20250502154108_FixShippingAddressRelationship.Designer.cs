@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BlazorApp1.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250502130606_FixShippingAddressRelationship")]
+    [Migration("20250502154108_FixShippingAddressRelationship")]
     partial class FixShippingAddressRelationship
     {
         /// <inheritdoc />
@@ -154,6 +154,9 @@ namespace BlazorApp1.Migrations
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("BasketId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Discount")
                         .HasColumnType("int");
 
                     b.Property<int>("MovieId")

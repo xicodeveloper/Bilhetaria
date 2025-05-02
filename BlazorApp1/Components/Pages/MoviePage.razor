@@ -3,6 +3,7 @@
 @implements IDisposable
 @attribute [Authorize]
 @inject IUnitOfWork _unitOfWork
+@using System.Globalization
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Components
 @using BlazorApp1.Services.Models
@@ -121,6 +122,8 @@
     <div class="discount-banner">
         Promoção Ativa: @discount
     </div>
+    <p>Numero : @number_discount ! Ola</p>
+    <p>Preco: @priceMovie %</p>
 }
 else
 {
@@ -150,12 +153,16 @@ else
     private KeywordsResponse _keywords;
     private string _trailerUrl;
     private string? discount;
-    
+    private int number_discount;
+    private int desconto;
 
+    private string? _priceValue;
+    private double priceMovie;
     private string _backdropImage => string.IsNullOrEmpty(_movie?.backdrop_path)
         ? null
         : $"{ImageBaseUrl}{_movie.backdrop_path}";
     
+
     public enum PurchaseType
     {
         Aluga,
@@ -166,7 +173,7 @@ private async Task BuyAsync(PurchaseType type)
     try
     {
         if (!int.TryParse(userId, out var userIdInt)) return;
-
+        
         user = await _unitOfWork.Users.GetByIdAsync(userIdInt);
         if (user?.Addresses == null || user.Addresses.Count == 0)
         {
@@ -207,8 +214,9 @@ private async Task BuyAsync(PurchaseType type)
                 MoviePosterUrl = posterUrl,
                 Quantity = 1,
                 ScreeningDate = screeningDate,
-                Price = price,
-                Type = TicketType.Digital
+                Price = priceMovie,
+                Discount = number_discount,
+                Type = TicketType.Digital,
             });
 
             await _unitOfWork.Orders.UpdateAsync(existingOrder);
@@ -235,7 +243,8 @@ private async Task BuyAsync(PurchaseType type)
                         posterUrl: posterUrl,
                         quantity: 1,
                         screeningDate: screeningDate,
-                        price: price));
+                        price: priceMovie,
+                        discount: number_discount));
 
             if (type == PurchaseType.Forever)
             {
@@ -254,43 +263,72 @@ private async Task BuyAsync(PurchaseType type)
     }
 }
 
-    
-    
-
-
-
-
-    protected override async Task OnInitializedAsync()
+protected override async Task OnInitializedAsync()
+{
+    try
     {
-        try
-        {
-            await LoadClaims();
-            await LoadMovieData();
-            await LoadCredits();
-            await LoadKeywords();
-            await LoadTrailer();
-            var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
-            var query = QueryHelpers.ParseQuery(uri.Query);
+        await LoadClaims();
+        await LoadMovieData();
+        await LoadCredits();
+        await LoadKeywords();
+        await LoadTrailer();
+        
+        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
 
-            if (query.TryGetValue("discount", out var discountParam) && 
-                 query.TryGetValue("hash", out var hashParam))
-            {
-                if (DiscountHasher.ValidateHash(Id, discountParam!, hashParam!))
-                {
-                    discount = discountParam!;
-                }
-                else
-                {
-                    Console.WriteLine("Hash de desconto inválido.");
-                }
-            }
-           
-        }
-        catch (Exception ex)
+        var parameters = new List<string>();
+        
+        // Coletar price corretamente
+        if (query.TryGetValue("price", out var priceValues) && priceValues.Count > 0)
         {
-            Console.Error.WriteLine($"Erro ao carregar dados: {ex.Message}");
+            _priceValue = priceValues[0];
+            if (double.TryParse(_priceValue, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsedPrice))
+            {
+                priceMovie = parsedPrice;
+                parameters.Add(_priceValue);
+            }
+        }
+
+        // Coletar discount corretamente
+        if (query.TryGetValue("discount", out var discountValues) && discountValues.Count > 0)
+        {
+            discount = discountValues[0];
+            if (int.TryParse(discount, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsedDiscount))
+            {
+                number_discount = parsedDiscount;
+                parameters.Add(discount);
+            }
+        }
+
+        // Validação do hash com logging
+        if (query.TryGetValue("hash", out var hashValues) && hashValues.Count > 0)
+        {
+            var providedHash = hashValues[0];
+            var isValid = DiscountHasher.ValidateHash(Id, parameters.ToArray(), providedHash);
+
+            Console.WriteLine($"Parâmetros usados: {string.Join(", ", parameters)}");
+            Console.WriteLine($"Hash recebido: {providedHash}");
+            Console.WriteLine($"Hash válido? {isValid}");
+
+            if (!isValid) ResetValues();
+        }
+        else
+        {
+            ResetValues();
         }
     }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Erro: {ex.Message}");
+        ResetValues();
+    }
+}
+
+private void ResetValues()
+{
+    number_discount = 0;
+
+}
     
     //api
     private async Task LoadMovieData() =>

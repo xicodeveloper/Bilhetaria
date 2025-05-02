@@ -9,7 +9,7 @@ public class BasketBuilder
     public static BasketBuilder Empty() => new();
 
 
-    public BasketBuilder WithPhysicalTicket(int movieId, string title, string posterUrl, int quantity, DateTime screeningDate, double price)
+    public BasketBuilder WithPhysicalTicket(int movieId, string title, string posterUrl, int quantity, DateTime screeningDate, double price, int discount)
     {
         _items.Add(new BasketItem
         {
@@ -19,11 +19,12 @@ public class BasketBuilder
             Quantity = quantity,
             ScreeningDate = screeningDate,
             Price = price,
-            Type = TicketType.Physical
+            Type = TicketType.Physical,
+            Discount = discount
         });
         return this;
     }
-    public BasketBuilder WithDigitalTicket(int movieId, string title, string posterUrl, int quantity, DateTime screeningDate, double price)
+    public BasketBuilder WithDigitalTicket(int movieId, string title, string posterUrl, int quantity, DateTime screeningDate, double price, int discount)
     {
         _items.Add(new BasketItem
         {
@@ -33,7 +34,8 @@ public class BasketBuilder
             Quantity = quantity,
             ScreeningDate = screeningDate,
             Price = price,
-            Type = TicketType.Digital
+            Type = TicketType.Digital,
+            Discount = discount
         });
         return this;
     }

@@ -8,10 +8,7 @@
 @inject IJSRuntime JS
 @implements IDisposable
 @attribute [Authorize]
-@* A FALTAR: *@
-@* Factory Method para os carrosseis; *@
-@* JS correto para as setas; *@
-@* Color Thief para extrair a cor do poster. *@
+
 
 <div class="homepage-container">
     <!-- Header -->
@@ -58,11 +55,11 @@
                     @foreach (var movie in _movies.Take(25))
                     {
                         <div class="carousel-item">
-                            <NavLink href="@($"movie/{movie.Id}")">
+                            <NavLink href="@($"movie/{movie.Id}?price={GetRandomPrice(movie.Id)}&hash={DiscountHasher.GenerateHash(movie.Id, GetRandomPrice(movie.Id))}")">
                                 <img src="@(LinkImage + movie.PosterPath)" alt="@movie.Title" class="movie-poster"/>
                                 <div class="movie-hover-info">
                                     <h4>@movie.Title</h4>
-                                    <p>💰 @GetRandomPrice()</p>
+                                    <p>💰 @GetRandomPrice(movie.Id)</p>
                                     <p>⭐ @movie.VoteAverage.ToString("0.0")</p>
                                 </div>
                             </NavLink>
@@ -90,15 +87,18 @@
                 {
                     @foreach (var movie in _movies.Skip(7).Take(25))
                     {
+                        var price = GetRandomPrice(movie.Id);
+                        var hash = DiscountHasher.GenerateHash(movie.Id, price);
                         <div class="carousel-item">
-                            <NavLink href="@($"movie/{movie.Id}?discount={GetDeterministicDiscount(movie.Id)}&hash={DiscountHasher.GenerateHash(movie.Id, GetDeterministicDiscount(movie.Id))}")">
-                                <span class="discount-tag">@GetDeterministicDiscount(movie.Id)</span>
+                            <!-- Seção Promoções - Linha corrigida -->
+                            <NavLink href="@($"movie/{movie.Id}?price={price}&discount={GetDeterministicDiscount(movie.Id)}&hash={DiscountHasher.GenerateHash(movie.Id, price, GetDeterministicDiscount(movie.Id))}")">
+                                <span class="discount-tag">@GetDeterministicDiscount(movie.Id)%</span>
                                 <img src="@(LinkImage + movie.PosterPath)" alt="@movie.Title" class="movie-poster"/>
-                            <div class="movie-hover-info">
-                                <h4>@movie.Title</h4>
-                                <p>💰 @GetRandomPrice()</p>
-                                <p>⭐ @movie.VoteAverage.ToString("0.0")</p>
-                            </div>
+                                <div class="movie-hover-info">
+                                    <h4>@movie.Title</h4>
+                                    <p>💰 @price</p>
+                                    <p>⭐ @movie.VoteAverage.ToString("0.0")</p>
+                                </div>
                             </NavLink>
                         </div>
                     }
@@ -121,13 +121,13 @@
                     @foreach (var movie in _movies.Skip(14).Take(25))
                     {
                         <div class="carousel-item">
-                            <NavLink href="@($"movie/{movie.Id}")">
-                            <img src="@(LinkImage + movie.PosterPath)" alt="@movie.Title" class="movie-poster"/>
-                            <div class="movie-hover-info">
-                                <h4>@movie.Title</h4>
-                                <p>💰 @GetRandomPrice()</p>
-                                <p>⭐ @movie.VoteAverage.ToString("0.0")</p>
-                            </div>
+                            <NavLink href="@($"movie/{movie.Id}?price={GetRandomPrice(movie.Id)}&hash={DiscountHasher.GenerateHash(movie.Id, GetRandomPrice(movie.Id))}")">
+                                <img src="@(LinkImage + movie.PosterPath)" alt="@movie.Title" class="movie-poster"/>
+                                <div class="movie-hover-info">
+                                    <h4>@movie.Title</h4>
+                                    <p>💰 @GetRandomPrice(movie.Id)</p>
+                                    <p>⭐ @movie.VoteAverage.ToString("0.0")</p>
+                                </div>
                             </NavLink>
                         </div>
                     }
@@ -165,8 +165,6 @@
     </section>
 </div>
 
-
-
 @code {
     private string ApIlink => $"{Configuration["TmdbApi:BaseUrl"]}/movie/popular";
     private string LinkImage => Configuration["TmdbApi:ImageBaseUrl"] ?? string.Empty;
@@ -179,14 +177,15 @@
     private int currentIndex = 0;
     private int promoCurrentIndex = 0;
     private int comingSoonCurrentIndex = 0;
-    private int discount;
+
     
-    private readonly string[] _discountTiers = { "10%", "70%", "25%" };
+    private readonly string[] _discountTiers = { "10", "70", "25" };
     
-    private string GetRandomPrice() {
-        var random = new Random();
-        double[] prices = { 2.99, 4.99, 9.99, 14.99 };
-        return prices[random.Next(0, prices.Length)].ToString("0.00€");
+    private readonly string [] _prices = { "2.99", "4.99", "9.99", "14.99" };
+    
+    private string GetRandomPrice(int movieId) {
+        int index = movieId % _prices.Length;
+        return _prices[index];
     }
 
     private string GetDeterministicDiscount(int movieId) {

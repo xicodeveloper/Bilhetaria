@@ -20,4 +20,5 @@ public class BasketItem
     public double Price { get; set; }
     public Basket Basket { get; set; }
     public double TotalPrice => Price * Quantity;
+    public int Discount { get; set; } 
 }
