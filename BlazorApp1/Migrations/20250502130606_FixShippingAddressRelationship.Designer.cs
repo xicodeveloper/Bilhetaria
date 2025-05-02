@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BlazorApp1.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250501180056_FixShippingAddressRelationship")]
+    [Migration("20250502130606_FixShippingAddressRelationship")]
     partial class FixShippingAddressRelationship
     {
         /// <inheritdoc />

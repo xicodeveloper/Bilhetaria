@@ -1,0 +1,201 @@
+@page "/pagamentoFinal"
+@layout MainLayout
+@using BlazorApp1.Components.Layout
+@using BlazorApp1.Services.RegLogin
+@using System.Globalization
+@inject IAuthService AuthService
+@inject IHttpContextAccessor HttpContextAccessor
+@rendermode InteractiveServer
+
+<div class="page-container">
+    <form class="grid-container" @onsubmit="HandleSubmit">
+
+        <!-- Coluna Esquerda -->
+        <div class="grid-item left-column">
+            <!-- Informações pessoais -->
+            <div class="grid-item info-card personal-info">
+                <div class="title">
+                    <h3>Informações Pessoais</h3>
+                    <hr/>
+                </div>
+                <!-- Campos de entrada -->
+                <input type="text" placeholder="Nome completo" class="form-input"/>
+                <input type="email" placeholder="Email" class="form-input"/>
+                <input type="text" placeholder="Número de telefone" class="form-input"/>
+            </div>
+
+            <!-- Informações de pagamento -->
+            <div class="grid-item info-card payment-info">
+                <div class="title">
+                    <h3>Informações de Pagamento</h3>
+                    <hr/>
+                </div>
+
+                <!-- Formulário para Cartão -->
+                <div class="paymentType">
+                    @if (metodoSelecionado == "visa")
+                    {
+                        <input type="text" placeholder="Número do cartão" class="form-input"/>
+                        <input type="text" placeholder="Validade (MM/AA)" class="form-input"/>
+                        <input type="text" placeholder="CVC" class="form-input"/>
+                    }
+                    else if (metodoSelecionado == "paypal")
+                    {
+                        <p>Será redirecionado para o site do PayPal para concluir o pagamento.</p>
+                    }
+                    else if (metodoSelecionado == "mbway")
+                    {
+                        <input type="text" placeholder="Número de telemóvel MBWay" class="form-input"/>
+                    }
+                </div>
+                <!-- Botões para escolher método -->
+                <div class="payment-method-buttons">
+                    <button type="button" class="@GetButtonClass("visa")" @onclick="() => SelecionarMetodo(1)">Cartão</button>
+                    <button type="button" class="@GetButtonClass("paypal")" @onclick="() => SelecionarMetodo(2)">PayPal</button>
+                    <button type="button" class="@GetButtonClass("mbway")" @onclick="() => SelecionarMetodo(3)">MBWay</button>
+                </div>
+            </div>
+
+            <!-- Desconto -->
+            <div class="grid-item info-card discount-info">
+                <div class="title">
+                    <h3>Desconto Aplicado</h3>
+                    <hr/>
+                </div>
+                <p>-10% (Cartão de Fidelização)</p>
+            </div>
+        </div>
+
+        <!-- Coluna Direita -->
+        <div class="grid-item right-column">
+            <div class="grid-item info-card checkout-summary">
+                <div class="title">
+                    <h3>Resumo da Compra</h3>
+                    <hr/>
+                </div>
+
+            @if (!produtosCarrinho.Any())
+            {
+                <p>O seu carrinho está vazio.</p>
+            }
+                else
+                {
+                    <!-- Lista de produtos -->
+                    <div class="product-list">
+                        @foreach (var produto in produtosCarrinho)
+                        {
+                            <div class="product-item">
+                                <img src="@produto.ImagemUrl" alt="@produto.Nome" class="product-image" />
+                                <div class="product-info">
+                                    <div class="product-title">@produto.Nome</div>
+                                    <div class="product-desc">(@produto.Descricao)</div>
+                                    <button type="button" class="remove-btn" @onclick="() => RemoverProduto(produto)">X Remover</button>
+                                </div>
+                                <div class="product-price">@produto.Preco.ToString("0.00")€</div>
+                            </div>
+                        }
+                    </div>
+                }
+                <hr/>
+                
+                <div class="price-details">
+                    <div class="priceContainer">
+                        <p>Subtotal: </p>
+                        <p class="priceValue">@subtotal.ToString("F2")€</p>
+                    </div>
+                    <div class="priceContainer">
+                        <p>Desconto: </p>
+                        <p class="priceValue">-@desconto.ToString("F2")€</p>
+                    </div>
+                    <div class="priceContainer">
+                        <p>Custos de envio: </p>
+                        <p class="priceValue"> @shipping.ToString("F2")€</p>
+                    </div>
+                    
+                    
+                    
+                    <hr/>
+                    <div class="priceContainer">
+                        <p><strong>Total: </strong></p>
+                        <p class="priceValue"><strong>@total.ToString("F2")€</strong></p>
+                </div>
+
+                <button type="submit" class="checkout-btn">Checkout</button>
+            </div>
+        </div>
+        </div>
+    </form>
+</div>
+
+@code {
+    private void HandleSubmit()
+    {
+        // lógica de processamento do pagamento
+    }
+
+    private string metodoSelecionado = "visa";
+
+    private void SelecionarMetodo(int metodo)
+    {
+        switch (metodo)
+        {
+            case 1:
+                metodoSelecionado = "visa";
+                break;
+            case 2:
+                metodoSelecionado = "paypal";
+                break;
+            case 3:
+                metodoSelecionado = "mbway";
+                break;
+        }
+        StateHasChanged();
+    }
+
+    private string GetButtonClass(string metodo)
+    {
+        return metodoSelecionado == metodo ? "active" : "";
+    }
+
+    
+    public class ProdutoCarrinho
+    {
+        public string Nome { get; set; }
+        public string Descricao { get; set; }
+        public string ImagemUrl { get; set; }
+        public double Preco { get; set; }
+    }
+
+    private List<ProdutoCarrinho> produtosCarrinho = new()
+    {
+        new ProdutoCarrinho {
+            Nome = "Bilhete Adulto x2",
+            Descricao = "Quantidade: 2",
+            ImagemUrl = "img/ticket.png",
+            Preco = 13.00
+        },
+        new ProdutoCarrinho {
+            Nome = "Menu Pipocas",
+            Descricao = "1 Pipoca + 1 Bebida",
+            ImagemUrl = "img/popcorn-menu.png",
+            Preco = 5.00
+        }
+    };
+
+    private void RemoverProduto(ProdutoCarrinho produto)
+    {
+        produtosCarrinho.Remove(produto);
+    }
+    
+    public double subtotal;
+    public double desconto = 1.90;
+    public double shipping = 5.90;
+    public double total;
+    
+    protected override void OnInitialized()
+    {
+        subtotal = produtosCarrinho.Sum(p => p.Preco);
+        total = subtotal - desconto + shipping;
+    }
+    
+}

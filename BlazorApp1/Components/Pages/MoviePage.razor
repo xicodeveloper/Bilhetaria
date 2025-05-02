@@ -76,9 +76,9 @@
             </div>
 
             <div class="purchase-options">
-                <button class="btn-rent" @onclick="async () => await BuyAluga()">ALUGAR (2,49€)</button>
-                <button class="btn-tickets" @onclick="async () => await BuyForever()">COMPRAR</button>
-                <button class="btn-tickets" @onclick="async () => await BuyAluga()">BILHETES</button>
+                <button class="btn-rent" @onclick="async () => await BuyAsync(PurchaseType.Aluga)">ALUGAR (2,49€)</button>
+                <button class="btn-tickets" @onclick="async () => await BuyAsync(PurchaseType.Forever)">COMPRAR</button>
+                <a href="/bilhetes" style="text-decoration: none;color: inherit;"><button class="btn-tickets">BILHETES</button></a>
                 
             </div>
 
@@ -121,7 +121,7 @@
     // Parameters
     [Parameter] public int Id { get; set; }
     private Order order;
-
+    private User user;
 
     private string userId { get; set; }
     private string ApiKey = Environment.GetEnvironmentVariable("API_KEY");
@@ -139,72 +139,64 @@
     private CreditsResponse _credits;
     private KeywordsResponse _keywords;
     private string _trailerUrl;
+    
 
     private string _backdropImage => string.IsNullOrEmpty(_movie?.backdrop_path)
         ? null
         : $"{ImageBaseUrl}{_movie.backdrop_path}";
-private async Task BuyAluga()
-{
-    try
+    
+    public enum PurchaseType
     {
-        var userIdInt = int.Parse(userId);
-        var order = new OrderBuilder()
-            .WithUserId(userIdInt)
-            .WithNumber(Id.ToString())
-            .WithDate(DateTime.UtcNow)
-            .WithShippingAddress(a => a
-                .WithStreet("Required Street")
-                .WithNumber("123")
-                .WithCity("Required City")
-                .WithState("Required State")
-                .WithZipCode("0000-000")
-                .WithCountry("Required Country"))
-            .WithBasket(b => b
-                .WithDigitalTicket(
-                    movieId: Id,
-                    title: _movie?.Title ?? "Sem Título",
-                    posterUrl: _backdropImage,
-                    quantity: 1,
-                    screeningDate: DateTime.UtcNow.AddDays(1),
-                    price: 2.49))
-            .Build();
-
-        await _unitOfWork.Orders.AddAsync(order);
-        await _unitOfWork.CommitAsync();
-        Navigation.NavigateTo("/basket");
+        Aluga,
+        Forever
     }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Erro em BuyAluga: {ex.Message}");
-    }
-}
-private async Task BuyForever()
-
+private async Task BuyAsync(PurchaseType type)
 {
     try
     {
         if (!int.TryParse(userId, out var userIdInt)) return;
 
-        var userEntity = await _unitOfWork.Users.GetByIdAsync(userIdInt);
-        if (userEntity == null) return;
+        user = await _unitOfWork.Users.GetByIdAsync(userIdInt);
+        if (user?.Addresses == null || user.Addresses.Count == 0)
+        {
+            Console.WriteLine("Tem que inserir morada primeiro");
+            Navigation.NavigateTo("/perfilAdmin");
+            return;
+        }
 
-        // Busca a encomenda ativa INCLUINDO os itens do carrinho
-        var existingOrder = await _unitOfWork.Orders.GetActiveOrderWithItemsAsync(userIdInt); // Novo método
+        // Obter morada principal
+        var shippingAddress = user.Addresses.FirstOrDefault(a => a.IstheOne);
+        if (shippingAddress == null)
+        {
+            Console.WriteLine("Nenhum endereço principal encontrado.");
+            return;
+        }
+
+        // Parâmetros específicos do tipo de compra
+        var (price, screeningDate) = type switch
+        {
+            PurchaseType.Aluga => (2.49, DateTime.UtcNow.AddDays(1)),
+            PurchaseType.Forever => (9.99, DateTime.UtcNow),
+            _ => throw new ArgumentException("Tipo de compra inválido")
+        };
+
+        // Verificar encomenda existente
+        var existingOrder = await _unitOfWork.Orders.GetActiveOrderWithItemsAsync(userIdInt);
 
         var title = _movie?.Title ?? "Sem Título";
         var posterUrl = _backdropImage ?? "Poster não definido";
 
         if (existingOrder != null)
         {
-            // Adiciona novo item ao carrinho existente
+            // Adicionar item à encomenda existente
             existingOrder.Basket.Items.Add(new BasketItem
             {
                 MovieId = Id,
                 MovieTitle = title,
                 MoviePosterUrl = posterUrl,
                 Quantity = 1,
-                ScreeningDate = DateTime.UtcNow,
-                Price = 9.99,
+                ScreeningDate = screeningDate,
+                Price = price,
                 Type = TicketType.Digital
             });
 
@@ -212,31 +204,34 @@ private async Task BuyForever()
         }
         else
         {
-            // Cria nova encomenda com status ativo
-            var newOrder = new OrderBuilder()
+            // Criar nova encomenda
+            var orderBuilder = new OrderBuilder()
                 .WithUserId(userIdInt)
-                .WithNumber(Guid.NewGuid().ToString()) // Número único para a encomenda
+                .WithNumber(type == PurchaseType.Aluga ? Id.ToString() : Guid.NewGuid().ToString())
                 .WithDate(DateTime.UtcNow)
-                .WithOrderStatus(OrderStatus.Pending) // Define o status como "Pendente"
                 .WithShippingAddress(a => a
-                    .WithStreet("Digital Delivery")
-                    .WithNumber("N/A")
-                    .WithCity("Digital City")
-                    .WithState("Digital State")
-                    .WithZipCode("0000-000")
-                    .WithCountry("Digital Country")
-                    .WithUser(userEntity))
+                    .WithStreet(shippingAddress.Street)
+                    .WithNumber(shippingAddress.Number)
+                    .WithCity(shippingAddress.City)
+                    .WithState(shippingAddress.State)
+                    .WithZipCode(shippingAddress.ZipCode)
+                    .WithCountry(shippingAddress.Country)
+                    .WithUser(user))
                 .WithBasket(b => b
                     .WithDigitalTicket(
                         movieId: Id,
                         title: title,
                         posterUrl: posterUrl,
                         quantity: 1,
-                        screeningDate: DateTime.UtcNow,
-                        price: 9.99))
-                .Build();
+                        screeningDate: screeningDate,
+                        price: price));
 
-            await _unitOfWork.Orders.AddAsync(newOrder);
+            if (type == PurchaseType.Forever)
+            {
+                orderBuilder.WithOrderStatus(OrderStatus.Pending);
+            }
+
+            await _unitOfWork.Orders.AddAsync(orderBuilder.Build());
         }
 
         await _unitOfWork.CommitAsync();
@@ -244,15 +239,7 @@ private async Task BuyForever()
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Erro em BuyForever: {ex.Message}");
-    }
-}
-private void PrintOrder(Order order)
-{
-    Console.WriteLine($"UserId: {order.UserId}, Número: {order.Number}, Data: {order.Date}, Itens: {order.Basket.TotalItems}");
-    foreach (var item in order.Basket.Items)
-    {
-        Console.WriteLine($" - {item.MovieTitle} | {item.Type} | Quant: {item.Quantity} | Preço: {item.Price}€ | Data: {item.ScreeningDate}");
+        Console.WriteLine($"Erro em BuyAsync: {ex.Message}");
     }
 }
 

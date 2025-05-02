@@ -10,12 +10,14 @@
 @using BlazorApp1.Services.Orders.Models
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.EntityFrameworkCore
 @inject IAuthService AuthService
 @inject IHttpContextAccessor HttpContextAccessor
 @attribute [Authorize]
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IUnitOfWork _unitOfWork
 @rendermode InteractiveServer
+@inject IDbContextFactory<ApplicationDbContext> DbContextFactory
 
 <div class="page-container">
     <div class="grid-container">
@@ -208,7 +210,10 @@
     private User userEntity { get; set; }
     protected override async Task OnInitializedAsync()
     {
+
         await LoadClaims();
+        StateHasChanged();
+
     }
     private string GetUserId()
     {
@@ -221,22 +226,28 @@
         {
             var authState = await AuthStateProvider.GetAuthenticationStateAsync();
             claims = authState.User.Claims.ToList();
-
             userId = GetUserId();
 
-            Console.WriteLine($"User ID: {userId}");
             if (!int.TryParse(userId, out var userIdInt)) return;
+            await using var _context = await DbContextFactory.CreateDbContextAsync();
+            userEntity = await _unitOfWork.Users.GetByIdAsync(userIdInt);
+        
+            // Carregamento explícito se necessário
+            if (userEntity != null && userEntity.Addresses == null)
+            {
+                await _context.Entry(userEntity)
+                    .Collection(u => u.Addresses)
+                    .LoadAsync();
+            }
 
-             userEntity = await _unitOfWork.Users.GetByIdAsync(userIdInt);
-            if (userEntity == null) return;
-
-            // Busca a encomenda ativa INCLUINDO os itens do carrinho
-            var existingOrder = await _unitOfWork.Orders.GetActiveOrderWithItemsAsync(userIdInt);
+            // Carrega a morada ativa
+            moradaSelecionada = userEntity?.Addresses?.FirstOrDefault(a => a.IstheOne);
+        
             StateHasChanged();
         }
         catch (Exception ex)
         {
-
+            Console.WriteLine($"Erro: {ex.Message}");
         }
     }
     public List<Purchase> purchaseHistory = new List<Purchase>
@@ -257,30 +268,29 @@
     public Adress moradaSelecionada;
 
 
-    async Task SelecionarMorada(Adress address)
+   private async Task SelecionarMorada(Adress address)
     {
         try
         {
+            // Desativa todas as moradas
             foreach (var addr in userEntity.Addresses)
             {
                 addr.IstheOne = false;
             }
         
-            // Definir a morada selecionada
+            // Ativa a nova morada
             address.IstheOne = true;
             moradaSelecionada = address;
 
-            // Atualizar no banco de dados
-            await _unitOfWork.Users.UpdateUserAddressesAsync(userEntity);
-            userEntity = await _unitOfWork.Users.GetByIdAddressAsync(userEntity.Id); // Recarregar dados
+            // Atualiza no banco
+            await _unitOfWork.CommitAsync(); // Adicione esta linha
             StateHasChanged();
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Erro ao selecionar morada: {ex.Message}");
+            Console.WriteLine($"Erro: {ex.Message}");
         }
     }
-
     private async Task AddAddress()
     {
         try
@@ -293,7 +303,8 @@
                 City = Model.City,
                 State = Model.State,
                 Country = Model.Country,
-                UserId = userEntity.Id
+                UserId = userEntity.Id,
+                IstheOne = userEntity.Addresses.Count == 0
             };
 
              _unitOfWork.Users.AddAddress(userEntity, newAddress);

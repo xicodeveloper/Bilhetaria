@@ -1,0 +1,199 @@
+.page-container {
+    background-image: url("img/popcorn.png");
+    background-size: cover;
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 6rem 1rem 2rem;
+
+}
+
+/* GRID PRINCIPAL */
+.grid-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    width: 100%;
+    max-width: 1200px;
+    margin: 2rem 0;
+    font-style: normal;
+    font-variant-numeric: lining-nums tabular-nums;
+    font-family: Poppins;
+}
+.title{
+    display: flex;
+    flex-direction: column;
+}
+hr{
+    border: 2px solid #432103;
+    margin: 1rem 0;
+    opacity: 100%;
+    border-radius: 1rem;
+}
+.priceContainer{
+    display: flex;
+}
+
+.priceValue{
+    margin-left: auto;
+    font-size: 20px;
+}
+
+p{
+    font-size: 20px;
+    color: #3F1E02;
+}
+
+.grid-item {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* COLUMNAS */
+.left-column,
+.right-column {
+    gap: 1.5rem;
+}
+
+/* TARJETAS DE INFORMACIÓN */
+.info-card {
+    background-color: rgba(255, 255, 255, 0.95);
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* INPUTS */
+.form-input {
+    display: flex;
+    padding: 0.75rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1rem;
+    width: 100%;
+}
+
+.paymentType{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* BOTÓN DE CHECKOUT */
+.checkout-btn {
+    background-color: #7E5000;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 1rem;
+    width: 10rem;
+    align-self: center;
+}
+
+.checkout-btn:hover {
+    background-color: #603D00;
+}
+
+.payment-method-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.payment-method-buttons button {
+    padding: 0.5rem 1rem;
+    border: 2px solid #ccc;
+    background-color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.2s;
+}
+
+.payment-method-buttons button:hover {
+    background-color: #f0f0f0;
+}
+
+.payment-method-buttons button.active {
+    border-color: #ff5050;
+    background-color: #ffeaea;
+    color: #ff5050;
+}
+
+.product-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    margin-top: 1rem;
+}
+
+.product-item {
+    display: flex;
+    align-items: center;
+    background-color: white;
+    border-radius: 12px;
+    padding: 0.8rem;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+    gap: 1rem;
+}
+
+.product-image {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 12px;
+}
+
+.product-info {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.product-title {
+    font-weight: 600;
+    font-size: 1rem;
+    color: #111;
+}
+
+.product-desc {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.remove-btn {
+    background: none;
+    border: none;
+    color: #a35d00;
+    font-weight: 600;
+    margin-top: 4px;
+    cursor: pointer;
+    padding: 0;
+    align-self: start;
+}
+
+.remove-btn:hover {
+    text-decoration: underline;
+}
+
+.product-price {
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: #3b1e00;
+    white-space: nowrap;
+}
+
+
+/* RESPONSIVO */
+@media (max-width: 768px) {
+    .grid-container {
+        grid-template-columns: 1fr;
+    }
+}

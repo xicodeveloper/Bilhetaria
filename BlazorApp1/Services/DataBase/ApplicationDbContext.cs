@@ -65,6 +65,14 @@ namespace BlazorApp1.Services.DataBase
                 .WithMany()
                 .HasForeignKey(o => o.ShippingAddressId)
                 .OnDelete(DeleteBehavior.Restrict);
+            
+            modelBuilder.Entity<User>()
+                .HasMany(u => u.Addresses)
+                .WithOne(a => a.User)
+                .HasForeignKey(a => a.UserId);
+            
+
         }
+        
     }
 }
