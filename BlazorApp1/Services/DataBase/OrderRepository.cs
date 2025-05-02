@@ -80,5 +80,19 @@ namespace BlazorApp1.Services.DataBase
         {
             await _context.SaveChangesAsync();
         }
+        public async Task RemoveBasketItemAsync(int itemId)
+        {
+            var item = await _context.BasketItems.FindAsync(itemId);
+            if (item != null)
+            {
+                _context.BasketItems.Remove(item);
+                await _context.SaveChangesAsync();
+            }
+        }
+        public async Task ReloadOrderAsync(Order order)
+        {
+            await _context.Entry(order).ReloadAsync();
+            await _context.Entry(order.Basket).Collection(b => b.Items).LoadAsync();
+        }
     }
 }

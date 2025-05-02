@@ -272,18 +272,17 @@
     {
         try
         {
-            // Desativa todas as moradas
+
             foreach (var addr in userEntity.Addresses)
             {
                 addr.IstheOne = false;
             }
         
-            // Ativa a nova morada
+
             address.IstheOne = true;
             moradaSelecionada = address;
 
-            // Atualiza no banco
-            await _unitOfWork.CommitAsync(); // Adicione esta linha
+            await _unitOfWork.CommitAsync(); 
             StateHasChanged();
         }
         catch (Exception ex)

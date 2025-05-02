@@ -5,6 +5,7 @@
 @using BlazorApp1.Services.Orders.Models
 @inject IUnitOfWork _UnitOfWork
 @inject IHttpContextAccessor HttpContextAccessor
+@inject NavigationManager NavigationManager
 @rendermode InteractiveServer
 
 <div class="basket-container">
@@ -34,7 +35,7 @@
                 <button class="clear-btn" @onclick="ClearBasket">Limpar Carrinho</button>
                 <div class="checkout-box">
                     <p class="total-price">Total: @(order.Basket.Items.Sum(i => i.Price * i.Quantity).ToString("0.00"))€</p>
-                    <button class="checkout-btn">Checkout</button>
+                    <button class="checkout-btn" @onclick="Pagamento">Checkout</button>
                 </div>
             </div>
         }
@@ -75,5 +76,19 @@
         await _UnitOfWork.Orders.ClearBasketAsync(order.Id);
         order = null;
         StateHasChanged();
+    }
+
+    private async Task Pagamento()
+    {
+
+        if (order == null)
+        {
+            return;
+        }
+        else
+        {
+            NavigationManager.NavigateTo("/pagamentoFinal");
+        }
+        
     }
 }

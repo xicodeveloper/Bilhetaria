@@ -1,11 +1,19 @@
 @page "/pagamentoFinal"
 @layout MainLayout
+@using System.Security.Claims
 @using BlazorApp1.Components.Layout
 @using BlazorApp1.Services.RegLogin
-@using System.Globalization
+@using BlazorApp1.Services.DataBase
+@using BlazorApp1.Services.OrderFiles
+@using BlazorApp1.Services.Orders.Models
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.EntityFrameworkCore
 @inject IAuthService AuthService
 @inject IHttpContextAccessor HttpContextAccessor
 @rendermode InteractiveServer
+@inject IUnitOfWork _UnitOfWork
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IDbContextFactory<ApplicationDbContext> _contextFactory
 
 <div class="page-container">
     <form class="grid-container" @onsubmit="HandleSubmit">
@@ -74,28 +82,28 @@
                     <hr/>
                 </div>
 
-            @if (!produtosCarrinho.Any())
-            {
-                <p>O seu carrinho está vazio.</p>
-            }
-                else
-                {
-                    <!-- Lista de produtos -->
-                    <div class="product-list">
-                        @foreach (var produto in produtosCarrinho)
+                <!-- Lista de produtos -->
+                <div class="product-list">
+                    @if (order?.Basket?.Items != null && order.Basket.Items.Any())
+                    {
+                        @foreach (var item in order.Basket.Items)
                         {
                             <div class="product-item">
-                                <img src="@produto.ImagemUrl" alt="@produto.Nome" class="product-image" />
+                                <img src="@item.MoviePosterUrl" alt="@item.MovieTitle" class="product-image"/>
                                 <div class="product-info">
-                                    <div class="product-title">@produto.Nome</div>
-                                    <div class="product-desc">(@produto.Descricao)</div>
-                                    <button type="button" class="remove-btn" @onclick="() => RemoverProduto(produto)">X Remover</button>
+                                    <div class="product-title">@item.MovieTitle</div>
+                                    <div class="product-desc">(@item.ScreeningDate)</div>
+                                    <button type="button" class="remove-btn" @onclick="async () => await RemoverProduto(item.Id)">X Remover</button>
                                 </div>
-                                <div class="product-price">@produto.Preco.ToString("0.00")€</div>
+                                <div class="product-price">@item.Price.ToString("0.00")€</div>
                             </div>
                         }
-                    </div>
-                }
+                    }
+                    else
+                    {
+                        <p>O seu carrinho está vazio.</p>
+                    }
+                </div>
                 <hr/>
                 
                 <div class="price-details">
@@ -109,46 +117,111 @@
                     </div>
                     <div class="priceContainer">
                         <p>Custos de envio: </p>
-                        <p class="priceValue"> @shipping.ToString("F2")€</p>
+                        <p class="priceValue">@shipping.ToString("F2")€</p>
                     </div>
-                    
-                    
                     
                     <hr/>
                     <div class="priceContainer">
                         <p><strong>Total: </strong></p>
                         <p class="priceValue"><strong>@total.ToString("F2")€</strong></p>
-                </div>
+                    </div>
 
-                <button type="submit" class="checkout-btn">Checkout</button>
+                    <button type="submit" class="checkout-btn">Checkout</button>
+                </div>
             </div>
-        </div>
         </div>
     </form>
 </div>
 
 @code {
-    private void HandleSubmit()
+    private Order order;
+    private string userId;
+    private int UserId;
+    private List<Claim> claims = new();
+    private string metodoSelecionado = "visa";
+    
+    private double subtotal;
+    private double desconto = 1.90;
+    private double shipping = 5.90;
+    private double total;
+
+    protected override async Task OnInitializedAsync()
     {
-        // lógica de processamento do pagamento
+
+        await LoadClaims();
+        await CarregarDadosDoCarrinho();
     }
 
-    private string metodoSelecionado = "visa";
+    private async Task CarregarDadosDoCarrinho()
+    {
+        if (UserId > 0)
+        {
+            order = await _UnitOfWork.Orders.GetActiveOrderWithItemsAsync(UserId);
+            CalcularTotais();
+            StateHasChanged();
+        }
+    }
+
+    private void CalcularTotais()
+    {
+        subtotal = order?.Basket?.Items?.Sum(i => i.Price) ?? 0;
+        total = subtotal - desconto + shipping;
+    }
+
+    private async Task LoadClaims()
+    {
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            claims = authState.User.Claims.ToList();
+            userId = GetUserId();
+            
+            if (!string.IsNullOrEmpty(userId))
+            {
+                UserId = int.Parse(userId);
+                Console.WriteLine($"User ID: {UserId}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao carregar claims: {ex.Message}");
+        }
+    }
+
+    private string GetUserId()
+    {
+        return claims.FirstOrDefault(c =>
+            c.Type == ClaimTypes.NameIdentifier || c.Type == "sub")?.Value;
+    }
+
+    private async Task RemoverProduto(int itemId)
+    {
+        try
+        {
+            await _UnitOfWork.Orders.RemoveBasketItemAsync(itemId);
+            await _UnitOfWork.Orders.UpdateAsync(order);
+            await CarregarDadosDoCarrinho();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao remover item: {ex.Message}");
+        }
+    }
+
+    private void HandleSubmit()
+    {
+        // Implementar lógica de pagamento
+    }
 
     private void SelecionarMetodo(int metodo)
     {
-        switch (metodo)
+        metodoSelecionado = metodo switch
         {
-            case 1:
-                metodoSelecionado = "visa";
-                break;
-            case 2:
-                metodoSelecionado = "paypal";
-                break;
-            case 3:
-                metodoSelecionado = "mbway";
-                break;
-        }
+            1 => "visa",
+            2 => "paypal",
+            3 => "mbway",
+            _ => metodoSelecionado
+        };
         StateHasChanged();
     }
 
@@ -156,46 +229,4 @@
     {
         return metodoSelecionado == metodo ? "active" : "";
     }
-
-    
-    public class ProdutoCarrinho
-    {
-        public string Nome { get; set; }
-        public string Descricao { get; set; }
-        public string ImagemUrl { get; set; }
-        public double Preco { get; set; }
-    }
-
-    private List<ProdutoCarrinho> produtosCarrinho = new()
-    {
-        new ProdutoCarrinho {
-            Nome = "Bilhete Adulto x2",
-            Descricao = "Quantidade: 2",
-            ImagemUrl = "img/ticket.png",
-            Preco = 13.00
-        },
-        new ProdutoCarrinho {
-            Nome = "Menu Pipocas",
-            Descricao = "1 Pipoca + 1 Bebida",
-            ImagemUrl = "img/popcorn-menu.png",
-            Preco = 5.00
-        }
-    };
-
-    private void RemoverProduto(ProdutoCarrinho produto)
-    {
-        produtosCarrinho.Remove(produto);
-    }
-    
-    public double subtotal;
-    public double desconto = 1.90;
-    public double shipping = 5.90;
-    public double total;
-    
-    protected override void OnInitialized()
-    {
-        subtotal = produtosCarrinho.Sum(p => p.Preco);
-        total = subtotal - desconto + shipping;
-    }
-    
 }

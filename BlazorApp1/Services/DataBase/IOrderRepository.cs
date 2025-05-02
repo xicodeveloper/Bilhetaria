@@ -15,5 +15,8 @@ using System.Threading.Tasks;
         Task<IEnumerable<Order>> GetByUserIdAsync(int userId);
         Task UpdateAsync(Order order);
         Task SaveChangesAsync();
+        Task RemoveBasketItemAsync(int itemId);
+
+
     }
 }
