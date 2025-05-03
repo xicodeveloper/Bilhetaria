@@ -105,16 +105,28 @@
                     {
                         @foreach (var item in order.Basket.Items)
                         {
-                            <div class="product-item">
-                                <img src="@item.MoviePosterUrl" alt="@item.MovieTitle" class="product-image"/>
-                                <div class="product-info">
-                                    <div class="product-title">@item.MovieTitle</div>
-                                    <div>Descontos: @item.Discount %</div>
-                                    <div class="product-desc">(@item.ScreeningDate)</div>
-                                    <button type="button" class="remove-btn" @onclick="async () => await RemoverProduto(item.Id)">X Remover</button>
+                            @for (int i = 0; i < item.Quantity; i++)
+                            {
+                                <div class="product-item" key="@(item.Id)_@i">
+                                    <img src="@item.MoviePosterUrl" alt="@item.MovieTitle" class="product-image"/>
+                                    <div class="product-info">
+                                        <div class="product-title">@item.MovieTitle</div>
+                                        <div>Descontos: @item.Discount %</div>
+                                        <div class="product-desc">(@item.ScreeningDate)</div>
+                                        <button type="button" class="remove-btn"
+                                                @onclick="async () => await RemoverUnidade(item)">
+                                            X Remover
+                                        </button>
+                                    </div>
+                                    <div class="product-price">
+                                        @if (item.Discount > 0)
+                                        {
+                                            <s class="original-price">@item.Price.ToString("0.00")€</s>
+                                        }
+                                        <span class="discounted-price">@GetDiscountedPrice(item).ToString("0.00")€</span>
+                                    </div>
                                 </div>
-                                <div class="product-price">@item.Price.ToString("0.00")€</div>
-                            </div>
+                            }
                         }
                     }
                     else
@@ -159,7 +171,7 @@
     private string metodoSelecionado = "visa";
     
     private double subtotal;
-    private double desconto = 1.90;
+    private double desconto;
     private double shipping = 5.90;
     private double total;
     
@@ -170,7 +182,6 @@
     {
 
         await LoadClaims();
-        //ApplyDiscoutStrategy strategy = new ApplyDiscoutStrategy (discountStrategy, new TenDiscount());
         await CarregarDadosDoCarrinho();
     }
 
@@ -183,7 +194,20 @@
             StateHasChanged();
         }
     }
+    private double GetDiscountedPrice(BasketItem item)
+    {
+        IStrategyDiscount strategy = item.Discount switch
+        {
+            10 => new TenDiscount(),
+            25 => new TwentyFiveDiscount(),
+            70 => new SeventyDiscount(),
+            _ when item.Discount > 0 => new GenericDiscount(item.Discount),
+            _ => new WithoutDiscount()
+        };
 
+        ApplyDiscoutStrategy applier = new ApplyDiscoutStrategy(strategy);
+        return applier.ApplyDiscount(item.Price);
+    }
     private void CalcularTotais()
     {
         subtotal = 0;
@@ -202,14 +226,15 @@
                 10 => new TenDiscount(),
                 25 => new TwentyFiveDiscount(),
                 70 => new SeventyDiscount(),
+                _ when discountPercentage > 0 => new GenericDiscount(discountPercentage),
                 _ => new WithoutDiscount()
             };
 
             ApplyDiscoutStrategy discountApplier = new ApplyDiscoutStrategy(strategy);
             double discountedPrice = discountApplier.ApplyDiscount(originalPrice);
 
-            subtotal += discountedPrice;
-            desconto += originalPrice - discountedPrice;
+            subtotal += discountedPrice * item.Quantity;
+            desconto += (originalPrice - discountedPrice) * item.Quantity;
         }
 
         shipping = 5.90;
@@ -242,20 +267,26 @@
             c.Type == ClaimTypes.NameIdentifier || c.Type == "sub")?.Value;
     }
 
-    private async Task RemoverProduto(int itemId)
+    private async Task RemoverUnidade(BasketItem item)
     {
         try
         {
-            await _UnitOfWork.Orders.RemoveBasketItemAsync(itemId);
-            await _UnitOfWork.Orders.UpdateAsync(order);
+            if (item.Quantity > 1)
+            {
+                item.Quantity--;
+                await _UnitOfWork.Orders.UpdateAsync(order);
+            }
+            else
+            {
+                await _UnitOfWork.Orders.RemoveBasketItemAsync(item.Id);
+            }
             await CarregarDadosDoCarrinho();
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Erro ao remover item: {ex.Message}");
+            Console.WriteLine($"Erro ao remover unidade: {ex.Message}");
         }
     }
-
     private void HandleSubmit()
     {
         // Implementar lógica de pagamento

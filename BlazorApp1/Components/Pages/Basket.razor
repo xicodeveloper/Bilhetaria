@@ -3,6 +3,7 @@
 @using BlazorApp1.Services.DataBase
 @using BlazorApp1.Services.OrderFiles
 @using BlazorApp1.Services.Orders.Models
+@using BlazorApp1.Services.Discounts
 @inject IUnitOfWork _UnitOfWork
 @inject IHttpContextAccessor HttpContextAccessor
 @inject NavigationManager NavigationManager
@@ -20,7 +21,13 @@
                     <div class="item-header">
                         <img src="@item.MoviePosterUrl" alt="Poster do filme"/>
                         <h3 class="item-title">@item.MovieTitle</h3>
-                        <span class="item-price">@(item.Price.ToString("0.00"))€</span>
+                        <div class="item-price">
+                            @if (item.Discount > 0)
+                            {
+                                <s class="original-price">@(item.Price.ToString("0.00"))€</s>
+                            }
+                            <span class="discounted-price">@(GetDiscountedPrice(item).ToString("0.00"))€</span>
+                        </div>
                     </div>
                     <p class="item-type">@item.Type.ToString()</p>
                     <div class="quantity-controls">
@@ -34,7 +41,7 @@
             <div class="total-section">
                 <button class="clear-btn" @onclick="ClearBasket">Limpar Carrinho</button>
                 <div class="checkout-box">
-                    <p class="total-price">Total: @(order.Basket.Items.Sum(i => i.Price * i.Quantity).ToString("0.00"))€</p>
+                    <p class="total-price">Total: @(order.Basket.Items.Sum(i => GetDiscountedPrice(i) * i.Quantity).ToString("0.00"))€</p>
                     <button class="checkout-btn" @onclick="Pagamento">Checkout</button>
                 </div>
             </div>
@@ -47,18 +54,32 @@
 </div>
 
 @code {
-    private Order  order;
+    private Order order;
     private string userId;
 
     protected override async Task OnInitializedAsync()
     {
-        // Obter ID do utilizador autenticado
         userId = HttpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         
         if (!string.IsNullOrEmpty(userId) && int.TryParse(userId, out var userIdInt))
         {
              order = (await _UnitOfWork.Orders.GetByUserIdAsync(userIdInt)).FirstOrDefault();
         }
+    }
+
+    private double GetDiscountedPrice(BasketItem item)
+    {
+        IStrategyDiscount strategy = item.Discount switch
+        {
+            10 => new TenDiscount(),
+            25 => new TwentyFiveDiscount(),
+            70 => new SeventyDiscount(),
+            _ when item.Discount > 0 => new GenericDiscount(item.Discount),
+            _ => new WithoutDiscount()
+        };
+
+        ApplyDiscoutStrategy applier = new ApplyDiscoutStrategy(strategy);
+        return applier.ApplyDiscount(item.Price);
     }
 
     private async Task UpdateQuantity(BasketItem item, int change)
@@ -80,15 +101,9 @@
 
     private async Task Pagamento()
     {
-
-        if (order == null)
-        {
-            return;
-        }
-        else
+        if (order != null)
         {
             NavigationManager.NavigateTo("/pagamentoFinal");
         }
-        
     }
 }
