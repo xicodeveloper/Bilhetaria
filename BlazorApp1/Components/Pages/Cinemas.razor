@@ -31,17 +31,19 @@
                 <h1> Seleciona o horário</h1>
                 @foreach (var cinema in AvailableShows[SelectedDay])
                 {
+                    
                     <div class="Selector cinemaDetails">
                         <h2> @cinema.Cinema </h2>
                         <h3 class="cuadroCastanho"> @cinema.Format2D3D </h3>
                         <div class="horaDisplay">
                             @foreach (var Time in cinema.Times)
                             {
-                                <h4 class="timeButton cuadroCastanho"> @Time </h4>
+                                <a style="text-decoration: none; color: inherit;" href="/bilhetes"> <h4 class="timeButton cuadroCastanho"> @Time </h4></a>
                                 <!-- futuramente mudar por <a> para redirecionar a escolher lugares -->
                             }
                         </div>
                     </div>
+                    
                 }
             </div>
         }
