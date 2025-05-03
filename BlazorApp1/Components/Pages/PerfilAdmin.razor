@@ -17,7 +17,8 @@
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IUnitOfWork _unitOfWork
 @rendermode InteractiveServer
-@inject IDbContextFactory<ApplicationDbContext> DbContextFactory
+@inject ApplicationDbContext _context
+
 
 <div class="page-container">
     <div class="grid-container">
@@ -229,7 +230,7 @@
             userId = GetUserId();
 
             if (!int.TryParse(userId, out var userIdInt)) return;
-            await using var _context = await DbContextFactory.CreateDbContextAsync();
+            
             userEntity = await _unitOfWork.Users.GetByIdAsync(userIdInt);
         
             // Carregamento explícito se necessário

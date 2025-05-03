@@ -1,0 +1,28 @@
+.seat {
+    width: 30px;
+    height: 30px;
+    margin: 0 5px;
+    border-radius: 4px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.seat.livre {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.seat.ocupado {
+    background-color: #f44336;
+    color: white;
+    cursor: not-allowed;
+}
+
+.seat.selecionado {
+    background-color: #FFC107;
+    color: black;
+}

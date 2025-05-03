@@ -1,0 +1,202 @@
+@page "/bilhetes"
+@using Microsoft.AspNetCore.Authorization
+@inject IConfiguration Configuration
+@inject IJSRuntime JS
+@attribute [Authorize]
+
+<div class="bilhetes-container">
+
+    <h2 class="page-title">Bilhetes</h2>
+
+    @* nem aparece ???*@
+    <div class="texto">Seleciona os teus lugares</div>
+
+    <div class="screen">TELA</div>
+
+    <div class="seats-container">
+        @for (int row = 1; row <= 5; row++)
+        {
+            <div class="seat-row">
+                <!-- Lado esquerdo - 7 colunas (A-G) -->
+                @for (char col = 'A'; col <= 'G'; col++)
+                {
+                    var seatId = $"{row}{col}";
+                    if (!ShouldRemoveSeat(row, col, true))
+                    {
+                        <SeatComponent 
+                            SeatId="@seatId"
+                            IsOccupied="@occupiedSeats.Contains(seatId)"
+                            IsSelected="@selectedSeats.Contains(seatId)"
+                            OnSeatClicked="@((id) => ToggleSeat(seatId))" />
+                    }
+                    else
+                    {
+                        <div class="empty-seat"></div>
+                    }
+                }
+
+                <!-- Espaço do meio -->
+                @if (row == 5)
+                {
+                    @for (char col = 'H'; col <= 'I'; col++)
+                    {
+                        var seatId = $"{row}{col}";
+                        <SeatComponent 
+                            SeatId="@seatId"
+                            IsOccupied="@occupiedSeats.Contains(seatId)"
+                            IsSelected="@selectedSeats.Contains(seatId)"
+                             />
+                    }
+                }
+                else
+                {
+                    <div class="empty-space"></div>
+                }
+
+                <!-- Lado direito - 6 colunas (J-O) -->
+                @for (char col = 'J'; col <= 'O'; col++)
+                {
+                    var seatId = $"{row}{col}";
+                    if (!ShouldRemoveSeat(row, col, false))
+                    {
+                        <SeatComponent 
+                            SeatId="@seatId"
+                            IsOccupied="@occupiedSeats.Contains(seatId)"
+                            IsSelected="@selectedSeats.Contains(seatId)"
+                            OnSeatClicked="@((id) => ToggleSeat(seatId))" />
+                    }
+                    else
+                    {
+                        <div class="empty-seat"></div>
+                    }
+                }
+            </div>
+        }
+    </div>
+
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-color ocupado"></div>
+            <span>Ocupado</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color livre"></div>
+            <span>Livre</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color selecionado"></div>
+            <span>Selecionado</span>
+        </div>
+    </div>
+
+    <button class="confirm-button" @onclick="ConfirmSelection">
+        Confirmar (@selectedSeats.Count lugar@(selectedSeats.Count != 1 ? "es" : ""))
+    </button>
+</div>
+
+@code {
+    private List<string> selectedSeats = new();
+    private List<string> occupiedSeats = new();
+    private Random random = new();
+
+    private void ToggleSeat(string seatId)
+    {
+        var newSelectedSeats = new List<string>(selectedSeats);
+        
+        if (newSelectedSeats.Contains(seatId))
+        {
+            newSelectedSeats.Remove(seatId);
+        }
+        else
+        {
+            newSelectedSeats.Add(seatId);
+        }
+        
+        selectedSeats = newSelectedSeats;
+        StateHasChanged();
+        
+        // Debug avançado
+        Console.WriteLine($"Seat {seatId} toggled. New state:");
+        foreach (var seat in selectedSeats)
+        {
+            Console.WriteLine(seat);
+        }
+    }
+
+    private async Task ConfirmSelection()
+    {
+    await JS.InvokeVoidAsync("alert", $"Lugares selecionados: {string.Join(", ", selectedSeats)}");
+    }
+
+    
+    protected override void OnInitialized()
+    {
+        Console.WriteLine("Occupied seats: " + string.Join(", ", occupiedSeats));
+        Console.WriteLine("Selected seats: " + string.Join(", ", selectedSeats));
+
+        // Randomize (~20% de chance)
+        for (int row = 1; row <= 5; row++)
+        {
+            // Lado esquerdo (A-G)
+            for (char col = 'A'; col <= 'G'; col++)
+            {
+                if (!ShouldRemoveSeat(row, col, true) && random.Next(0, 5) == 0)
+                {
+                    occupiedSeats.Add($"{row}{col}");
+                }
+            }
+
+            // Centro (H-I)
+            if (row == 5)
+            {
+                for (char col = 'H'; col <= 'I'; col++)
+                {
+                    if (random.Next(0, 5) == 0)
+                    {
+                        occupiedSeats.Add($"{row}{col}");
+                    }
+                }
+            }
+
+            // Lado direito (J-O)
+            for (char col = 'J'; col <= 'O'; col++)
+            {
+                if (!ShouldRemoveSeat(row, col, false) && random.Next(0, 5) == 0)
+                {
+                    occupiedSeats.Add($"{row}{col}");
+                }
+            }
+        }
+
+        // pelo menos 1 lugar ocupado
+        if (occupiedSeats.Count == 0)
+        {
+            occupiedSeats.Add("3E");
+        }
+    }
+
+    private bool ShouldRemoveSeat(int row, char col, bool isLeftSide)
+    {
+        if (isLeftSide)
+        {
+            return (row == 1 && (col == 'A' || col == 'B' || col == 'C' || col == 'D')) ||
+                   (row == 2 && (col == 'A' || col == 'B' || col == 'C')) ||
+                   (row == 3 && col == 'A') ||
+                   (row == 4 && col == 'A');
+        }
+        else
+        {
+            return (row == 1 && (col == 'M' || col == 'N' || col == 'O')) ||
+                   (row == 2 && (col == 'N' || col == 'O')) ||
+                   (row == 3 && col == 'O') ||
+                   (row == 4 && col == 'O');
+        }
+    }
+
+    private string GetSeatClass(string seatId)
+    {
+        if (occupiedSeats.Contains(seatId)) return "ocupado";
+        if (selectedSeats.Contains(seatId)) return "selecionado";
+        return "livre";
+    }
+}
