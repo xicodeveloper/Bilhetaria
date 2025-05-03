@@ -3,6 +3,7 @@ using System;
 using BlazorApp1.Services.DataBase;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BlazorApp1.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250503155425_InitialCreate2")]
+    partial class InitialCreate2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.4");
@@ -208,32 +211,7 @@ namespace BlazorApp1.Migrations
                     b.ToTable("orders", (string)null);
                 });
 
-            modelBuilder.Entity("BlazorApp1.Services.WalletUser", b =>
-                {
-                    b.Property<int>("UserId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<decimal>("ApplePaySaldo")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("decimal(18,2)")
-                        .HasDefaultValue(100m);
-
-                    b.Property<decimal>("CreditCardSaldo")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("decimal(18,2)")
-                        .HasDefaultValue(100m);
-
-                    b.Property<decimal>("MbwaySaldo")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("decimal(18,2)")
-                        .HasDefaultValue(100m);
-
-                    b.HasKey("UserId");
-
-                    b.ToTable("wallet_users", (string)null);
-                });
-
-            modelBuilder.Entity("User", b =>
+            modelBuilder.Entity("BlazorApp1.Services.User", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -261,7 +239,7 @@ namespace BlazorApp1.Migrations
 
             modelBuilder.Entity("BlazorApp1.Services.Orders.Models.Adress", b =>
                 {
-                    b.HasOne("User", "User")
+                    b.HasOne("BlazorApp1.Services.User", "User")
                         .WithMany("Addresses")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -295,20 +273,38 @@ namespace BlazorApp1.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.OwnsOne("PaymentContext", "PaymentContext", b1 =>
+                        {
+                            b1.Property<int>("OrderId")
+                                .HasColumnType("INTEGER");
+
+                            b1.Property<string>("ErrorMessage")
+                                .IsRequired()
+                                .HasColumnType("TEXT");
+
+                            b1.Property<bool>("IsCompleted")
+                                .HasColumnType("INTEGER");
+
+                            b1.Property<string>("StateName")
+                                .IsRequired()
+                                .HasMaxLength(20)
+                                .HasColumnType("TEXT")
+                                .HasColumnName("PaymentState");
+
+                            b1.HasKey("OrderId");
+
+                            b1.ToTable("orders");
+
+                            b1.WithOwner()
+                                .HasForeignKey("OrderId");
+                        });
+
                     b.Navigation("Basket");
 
-                    b.Navigation("ShippingAddress");
-                });
-
-            modelBuilder.Entity("BlazorApp1.Services.WalletUser", b =>
-                {
-                    b.HasOne("User", "User")
-                        .WithOne("Wallet")
-                        .HasForeignKey("BlazorApp1.Services.WalletUser", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                    b.Navigation("PaymentContext")
                         .IsRequired();
 
-                    b.Navigation("User");
+                    b.Navigation("ShippingAddress");
                 });
 
             modelBuilder.Entity("BlazorApp1.Services.Orders.Models.Basket", b =>
@@ -316,12 +312,9 @@ namespace BlazorApp1.Migrations
                     b.Navigation("Items");
                 });
 
-            modelBuilder.Entity("User", b =>
+            modelBuilder.Entity("BlazorApp1.Services.User", b =>
                 {
                     b.Navigation("Addresses");
-
-                    b.Navigation("Wallet")
-                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

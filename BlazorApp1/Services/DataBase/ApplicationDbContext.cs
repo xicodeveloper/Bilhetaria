@@ -17,6 +17,7 @@ namespace BlazorApp1.Services.DataBase
         public DbSet<Order> Orders { get; set; }
         public DbSet<Basket> Baskets { get; set; }
         public DbSet<BasketItem> BasketItems { get; set; }
+        public DbSet<WalletUser> WalletUser { get; set; }
         public DbSet<Adress> Addresses { get; set; } 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -34,6 +35,7 @@ namespace BlazorApp1.Services.DataBase
             // Configurar o nome das tabelas
             modelBuilder.Entity<Film>().ToTable("movies");
             modelBuilder.Entity<User>().ToTable("users");
+            
             modelBuilder.Entity<Order>().ToTable("orders");
             modelBuilder.Entity<Basket>().ToTable("baskets");
             modelBuilder.Entity<BasketItem>().ToTable("basket_items");
@@ -71,6 +73,30 @@ namespace BlazorApp1.Services.DataBase
                 .WithOne(a => a.User)
                 .HasForeignKey(a => a.UserId);
             
+            
+            modelBuilder.Entity<WalletUser>(entity =>
+            {
+                entity.ToTable("wallet_users");
+                entity.HasKey(w => w.UserId);
+
+                entity.Property(w => w.MbwaySaldo)
+                    .HasColumnType("decimal(18,2)")
+                    .HasDefaultValue(100m);
+
+                entity.Property(w => w.ApplePaySaldo)
+                    .HasColumnType("decimal(18,2)")
+                    .HasDefaultValue(100m);
+
+                entity.Property(w => w.CreditCardSaldo)
+                    .HasColumnType("decimal(18,2)")
+                    .HasDefaultValue(100m);
+
+                entity.HasOne(w => w.User)
+                    .WithOne(u => u.Wallet)
+                    .HasForeignKey<WalletUser>(w => w.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
 
         }
         

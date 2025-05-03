@@ -86,9 +86,19 @@ namespace BlazorApp1.Services.RegLogin
             await _unitOfWork.Users.AddAsync(user);
             await _unitOfWork.CommitAsync();
 
+            var wallet = new WalletUser
+            {
+                UserId = user.Id, 
+                MbwaySaldo = 100m,
+                ApplePaySaldo = 100m,
+                CreditCardSaldo = 100m
+            };
+
+            await _unitOfWork.WalletUsers.AddAsync(wallet);
+            await _unitOfWork.CommitAsync();
+
             await _verificationService.SendVerificationCodeAsync(email);
         }
-
         public async Task<AuthResult> LoginAsync(string username, string password)
         {
             try

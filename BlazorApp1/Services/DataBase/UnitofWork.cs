@@ -10,6 +10,7 @@ namespace BlazorApp1.Services.DataBase
         private readonly ApplicationDbContext _context;
         private IUserRepository _users;
         private IOrderRepository _orders;
+        private IRepositoryWallet<WalletUser> _walletUsers;
 
         public UnitOfWork(ApplicationDbContext context)
         {
@@ -18,9 +19,12 @@ namespace BlazorApp1.Services.DataBase
 
         public IUserRepository Users => 
             _users ??= new UserRepository(_context);
-            
+    
         public IOrderRepository Orders => 
             _orders ??= new OrderRepository(_context);
+    
+        public IRepositoryWallet<WalletUser> WalletUsers => 
+            _walletUsers ??= new WalletUserRepository(_context);
 
         public async Task<int> CommitAsync()
         {

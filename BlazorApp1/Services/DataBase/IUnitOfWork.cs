@@ -9,6 +9,7 @@ namespace BlazorApp1.Services.DataBase
     {
         IUserRepository Users { get; }
         IOrderRepository Orders { get; }
+        IRepositoryWallet<WalletUser> WalletUsers { get; } // Add this line
         Task<int> CommitAsync();
         int Commit();
     }
