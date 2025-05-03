@@ -1,20 +1,20 @@
-namespace BlazorApp1.Services.Discounts;
+using BlazorApp1.Services.Discounts;
 
 public class ApplyDiscoutStrategy
 {
     private IStrategyDiscount _discountStrategy;
-    private double _discountValue;
 
-    public ApplyDiscoutStrategy(IStrategyDiscount discountStrategy, double discountValue)
+    public ApplyDiscoutStrategy(IStrategyDiscount discountStrategy)
     {
         _discountStrategy = discountStrategy;
-        _discountValue = discountValue;
     }
-    public double ApplyDiscount(float discount)
+
+    public double ApplyDiscount(double price)
     {
-        return _discountStrategy.CalculateDiscount(discount);
+        return _discountStrategy.CalculateDiscount(price);
     }
-    public void SetDiscount(IStrategyDiscount discountStrategy)
+
+    public void SetDiscountStrategy(IStrategyDiscount discountStrategy)
     {
         _discountStrategy = discountStrategy;
     }

@@ -163,7 +163,7 @@
     private double shipping = 5.90;
     private double total;
     
-    private ApplyDiscoutStrategy discountStrategy;
+    private IStrategyDiscount discountStrategy;
 
 
     protected override async Task OnInitializedAsync()
@@ -186,8 +186,34 @@
 
     private void CalcularTotais()
     {
-        subtotal = order?.Basket?.Items?.Sum(i => i.Price) ?? 0;
-        total = subtotal - desconto + shipping;
+        subtotal = 0;
+        desconto = 0;
+
+        if (order?.Basket?.Items == null)
+            return;
+
+        foreach (var item in order.Basket.Items)
+        {
+            double originalPrice = item.Price;
+            double discountPercentage = item.Discount;
+
+            IStrategyDiscount strategy = discountPercentage switch
+            {
+                10 => new TenDiscount(),
+                25 => new TwentyFiveDiscount(),
+                70 => new SeventyDiscount(),
+                _ => new WithoutDiscount()
+            };
+
+            ApplyDiscoutStrategy discountApplier = new ApplyDiscoutStrategy(strategy);
+            double discountedPrice = discountApplier.ApplyDiscount(originalPrice);
+
+            subtotal += discountedPrice;
+            desconto += originalPrice - discountedPrice;
+        }
+
+        shipping = 5.90;
+        total = subtotal + shipping;
     }
 
     private async Task LoadClaims()
