@@ -1,6 +1,8 @@
 // Services/Orders/Models/Order.cs
 using System;
+using System.ComponentModel.DataAnnotations.Schema;
 using BlazorApp1.Services.OrderFiles;
+using BlazorApp1.Services.Purchase.OrderState;
 
 namespace BlazorApp1.Services.Orders.Models
 {
@@ -13,11 +15,25 @@ namespace BlazorApp1.Services.Orders.Models
         public string Number { get; set; }
         public DateTime Date { get; set; }
         
+        [NotMapped]
+        public IOrderState State { get; set; }
+        
         // Relacionamentos
         public int BasketId { get; set; }
         public Basket Basket { get; set; }
         
         public int ShippingAddressId { get; set; } // Foreign key
         public Adress ShippingAddress { get; set; } // Navigation property
+        
+        public void Pay()
+        {
+            State.Pay();
+        }
+        
+        public void Cancel()
+        {
+            State.Cancel();
+        }
+        
     }
 }
