@@ -17,6 +17,8 @@ using System.Threading.Tasks;
         Task SaveChangesAsync();
         Task RemoveBasketItemAsync(int itemId);
 
+        Task<IEnumerable<BasketItem>> GetUniqueMoviesAsync(int userId);
+        Task<double> GetTotalPurchaseValueAsync(int userId);
 
     }
 }

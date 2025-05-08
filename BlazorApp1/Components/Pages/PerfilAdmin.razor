@@ -4,6 +4,7 @@
 @using BlazorApp1.Services.RegLogin
 @using System.Globalization
 @using System.Security.Claims
+@using System.Text.Json
 @using BlazorApp1.Services
 @using BlazorApp1.Services.Address
 @using BlazorApp1.Services.DataBase
@@ -19,6 +20,9 @@
 @inject IUnitOfWork _unitOfWork
 @rendermode InteractiveServer
 @inject ApplicationDbContext _context
+@inject IJSRuntime JS
+
+
 
 
 <div class="page-container">
@@ -68,25 +72,32 @@
             
         </div>
 
-        <div class="grid-item vertical" style="grid-column: span 2; grid-row: span 2">
+        <div class="grid-item vertical">
             Visto este mês:
 
-            <!-- Hardcoded -->
-            <div style="display: flex; justify-content: center; align-content: center">
-                lista de séries
+            <div class="movie-grid">
+                @if (uniqueMovies.Any())
+                {
+                    @foreach (var movie in uniqueMovies)
+                    {
+                       
+                        <div class="movie-poster">
+                            <h1>@movie.MovieTitle</h1>
+                            <img src="@movie.MoviePosterUrl" alt="@movie.MovieTitle"/>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="no-movies">Nenhum filme visualizado este mês</div>
+                }
             </div>
-            <!-- -->
-            
         </div>
         <div class="grid-item vertical" style="grid-column: span 1; grid-row: span 2">
             Géneros:
-            
-            <!-- Hardcoded -->
-            <div style="display: flex; justify-content: center; align-content: center">
-                display do grafico
+            <div class="chart-container">
+                <canvas id="genreChart" @ref="chartCanvas"></canvas>
             </div>
-            <!--  -->
-            
         </div>
 
         <div class="grid-item" style="grid-column: span 2; grid-row: span 2">
@@ -247,25 +258,39 @@
     private string userId { get; set; } = string.Empty;
     public string totalVisto = "525.678";
     public string paymentMethod = "MBWay";
-    public string totalPay = "32.99";
     
     
     private List<Claim> claims = new();
     private User userEntity { get; set; }
     
     private List<Order> userOrders = new();
-    
+    private List<BasketItem> uniqueMovies = new();
+    private double totalPayValue;
+    private string totalPay => totalPayValue.ToString("C2", CultureInfo.CreateSpecificCulture("pt-PT"));
+    private int totalMinutes;
+    private ElementReference chartCanvas;
+    private IJSObjectReference? chartModule;
+    private IJSObjectReference? chartInstance;
+    private Dictionary<string, int> genreCounts;
+
     protected override async Task OnInitializedAsync()
     {
 
         await LoadClaims();
         if (userEntity != null)
         {
-            var orders = await _unitOfWork.Orders.GetByUserIdAsync(userEntity.Id);
-            userOrders = orders.ToList();
+           
+            userOrders = (await _unitOfWork.Orders.GetByUserIdAsync(userEntity.Id)).ToList();
+            totalPayValue = await _unitOfWork.Orders.GetTotalPurchaseValueAsync(userEntity.Id);
+            uniqueMovies = (await _unitOfWork.Orders.GetUniqueMoviesAsync(userEntity.Id)).ToList();
+            //totalMinutes = await _unitOfWork.Orders.GetTotalMinutesWatchedAsync(userEntity.Id);
         }
         StateHasChanged();
+        
     }
+
+
+
     private string CalculateOrderTotal(Order order)
     {
         return order.Basket?.Items.Sum(i => i.Price * i.Quantity)
@@ -306,24 +331,9 @@
             Console.WriteLine($"Erro: {ex.Message}");
         }
     }
-    public List<Purchase> purchaseHistory = new List<Purchase>
-    {
-        new Purchase { Name = "Filme 1", Date = "15/05/2023", Type = "Digital", Price = "9.99" },
-        new Purchase { Name = "Filme 2", Date = "10/05/2023", Type = "Blu-ray", Price = "12.50" },
-        new Purchase { Name = "Filme 3", Date = "03/05/2023", Type = "Streaming", Price = "7.99" }
-    };
-
-    public class Purchase
-    {
-        public string Name { get; set; }
-        public string Date { get; set; }
-        public string Type { get; set; }
-        public string Price { get; set; }
-    }
     
     public Adress moradaSelecionada;
-
-
+    
    private async Task SelecionarMorada(Adress address)
     {
         try

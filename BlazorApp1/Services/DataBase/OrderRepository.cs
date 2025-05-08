@@ -94,5 +94,24 @@ namespace BlazorApp1.Services.DataBase
             await _context.Entry(order).ReloadAsync();
             await _context.Entry(order.Basket).Collection(b => b.Items).LoadAsync();
         }
+        public async Task<double> GetTotalPurchaseValueAsync(int userId)
+        {
+            return await _context.Orders
+                .Where(o => o.UserId == userId && o.Status == OrderStatus.Completed)
+                .SelectMany(o => o.Basket.Items)
+                .SumAsync(i => i.Price * i.Quantity);
+        }
+
+        public async Task<IEnumerable<BasketItem>> GetUniqueMoviesAsync(int userId)
+        {
+            return await _context.Orders
+                .Where(o => o.UserId == userId && o.Status == OrderStatus.Completed)
+                .SelectMany(o => o.Basket.Items)
+                .GroupBy(i => i.MovieId)
+                .Select(g => g.First())
+                .ToListAsync();
+        }
+
+
     }
 }
