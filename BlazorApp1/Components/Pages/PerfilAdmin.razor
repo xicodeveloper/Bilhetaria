@@ -7,6 +7,7 @@
 @using BlazorApp1.Services
 @using BlazorApp1.Services.Address
 @using BlazorApp1.Services.DataBase
+@using BlazorApp1.Services.OrderFiles
 @using BlazorApp1.Services.Orders.Models
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
@@ -139,24 +140,66 @@
                 }
             </div>
         </div>
-        <div class="grid-item" style="grid-column: span 1; grid-row: span 2; overflow: auto">
-            Histórico de Compras:
-            @foreach (var purchase in purchaseHistory)
+        <div class="grid-item" style="grid-column: span 2; grid-row: span 3; overflow: auto">
+            <h3>Minhas Ordens</h3>
+            @if (userOrders.Any())
             {
-                <div class="compraDiv horizontal" style="margin: 5px 0">
-                    <div class="vertical" style="width: 100%; gap: 10px">
-                        <div ><strong>@purchase.Name</strong> </div>
-                        <div class="smallFont">@purchase.Date - @purchase.Type </div>
-                    </div>
-                    
-                    <div style="align-items: flex-end; justify-content: flex-end;">
-                        <strong>@purchase.Price€</strong>
+                <div class="customer-card">
+                    <h4>@userEntity?.Username (ID: @userEntity?.Id)</h4>
+                    <div class="order-list">
+                        @foreach (var order in userOrders)
+                        {
+                            @if (order.Status == OrderStatus.Completed)
+                            {
+                                <div class="order-item">
+                                    <div class="order-header">
+                                        <span>Ordem #@order.Id</span>
+                                        <span>@order.Date.ToString("dd/MM/yyyy HH:mm")</span>
+                                        <span>Status: @order.Status</span>
+                                        <span>Total: @CalculateOrderTotal(order)</span>
+                                    </div>
+
+                                    @if (order.Basket?.Items?.Any() == true)
+                                    {
+                                        <div class="basket-items">
+                                            <h5>Itens do Pedido:</h5>
+                                            @foreach (var item in order.Basket.Items)
+                                            {
+                                                <div class="basket-item">
+                                                    <div class="item-poster">
+                                                        <img src="@item.MoviePosterUrl" alt="@item.MovieTitle" />
+                                                    </div>
+                                                    <div class="item-details">
+                                                        <div><strong>@item.MovieTitle</strong></div>
+                                                        <div>Quantidade: @item.Quantity</div>
+                                                        <div>Tipo: @item.Type</div>
+                                                        @if (item.ScreeningDate.HasValue)
+                                                        {
+                                                            <div>Sessão: @item.ScreeningDate.Value.ToString("dd/MM/yyyy HH:mm")</div>
+                                                        }
+                                                        <div>Preço Unitário: @item.Price.ToString("C2", CultureInfo.CreateSpecificCulture("pt-PT"))</div>
+                                                        <div>Total Item: @((item.Price * item.Quantity).ToString("C2", CultureInfo.CreateSpecificCulture("pt-PT")))</div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="no-items">Nenhum item encontrado neste pedido</div>
+                                    }
+                                </div>
+                            }
+                        }
                     </div>
                 </div>
             }
+            else
+            {
+                <div>Nenhuma ordem encontrada @userEntity?.Username !</div>
+            }
         </div>
-    </div>
-    <div>
+
         <EditForm Model="Model" OnValidSubmit="AddAddress" FormName="address-form" class="Addressform">
             <DataAnnotationsValidator />
             <ValidationSummary />
@@ -209,12 +252,24 @@
     
     private List<Claim> claims = new();
     private User userEntity { get; set; }
+    
+    private List<Order> userOrders = new();
+    
     protected override async Task OnInitializedAsync()
     {
 
         await LoadClaims();
+        if (userEntity != null)
+        {
+            var orders = await _unitOfWork.Orders.GetByUserIdAsync(userEntity.Id);
+            userOrders = orders.ToList();
+        }
         StateHasChanged();
-
+    }
+    private string CalculateOrderTotal(Order order)
+    {
+        return order.Basket?.Items.Sum(i => i.Price * i.Quantity)
+            .ToString("C2", CultureInfo.CreateSpecificCulture("pt-PT"));
     }
     private string GetUserId()
     {
