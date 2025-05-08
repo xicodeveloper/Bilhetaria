@@ -7,6 +7,7 @@ namespace BlazorApp1.Services.DataBase
     {
         Task AddAsync(T entity);
         Task<T> GetByIdAsync(int id);
+        Task<T> GetByUserIdAsync(int userId);
         void Update(T entity);
         Task DeleteAsync(int id);
     }

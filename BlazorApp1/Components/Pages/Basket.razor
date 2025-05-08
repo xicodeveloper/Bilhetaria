@@ -4,8 +4,9 @@
 @using BlazorApp1.Services.OrderFiles
 @using BlazorApp1.Services.Orders.Models
 @using BlazorApp1.Services.Discounts
+@using BlazorApp1.Services.RegLogin
 @inject IUnitOfWork _UnitOfWork
-@inject IHttpContextAccessor HttpContextAccessor
+@inject AuthService AuthService
 @inject NavigationManager NavigationManager
 @rendermode InteractiveServer
 
@@ -34,6 +35,7 @@
                         <button class="quantity-btn" @onclick="(() => UpdateQuantity(item, -1))">-</button>
                         <span class="quantity-display">@item.Quantity</span>
                         <button class="quantity-btn" @onclick="(() => UpdateQuantity(item, 1))">+</button>
+                        <button type="button" class="remove-btn" @onclick="async () => await RemoverUnidade(item)">Remove</button>
                     </div>
                 </div>
             }
@@ -55,15 +57,15 @@
 
 @code {
     private Order order;
-    private string userId;
+    private int userId;
 
     protected override async Task OnInitializedAsync()
     {
-        userId = HttpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        userId = await AuthService.GetUserId();
         
-        if (!string.IsNullOrEmpty(userId) && int.TryParse(userId, out var userIdInt))
+        if (userId != 0 )
         {
-             order = (await _UnitOfWork.Orders.GetByUserIdAsync(userIdInt)).FirstOrDefault();
+             order = (await _UnitOfWork.Orders.GetActiveOrderWithItemsAsync(userId));
         }
     }
 
@@ -91,6 +93,19 @@
         await _UnitOfWork.Orders.UpdateAsync(order);
         StateHasChanged();
     }
+    
+    private async Task RemoverUnidade(BasketItem item)
+    {
+        try
+        {
+            await _UnitOfWork.Orders.RemoveBasketItemAsync(item.Id);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao remover unidade: {ex.Message}");
+        }
+    }
 
     private async Task ClearBasket()
     {
@@ -98,6 +113,8 @@
         order = null;
         StateHasChanged();
     }
+    
+    
 
     private async Task Pagamento()
     {

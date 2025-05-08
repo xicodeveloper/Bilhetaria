@@ -1,7 +1,9 @@
 // Services/Orders/Builders/OrderBuilder.cs
 
+using BlazorApp1.Services.DataBase;
 using BlazorApp1.Services.OrderFiles;
 using BlazorApp1.Services.Orders.Models;
+using BlazorApp1.Services.Purchase.OrderState;
 
 namespace BlazorApp1.Services.Orders.Builders;
 
@@ -13,6 +15,7 @@ public class OrderBuilder
     private Basket _basket;
     private Adress _shippingAddress;
     private OrderStatus _state;
+    private readonly IUnitOfWork _unitOfWork;
 
     public static OrderBuilder Empty() => new();
 
@@ -60,6 +63,8 @@ public class OrderBuilder
         Number = _number,
         Date = _date,
         Basket = _basket,
-        ShippingAddress = _shippingAddress
+        ShippingAddress = _shippingAddress,
+        Status = _state
     };
+    
 }

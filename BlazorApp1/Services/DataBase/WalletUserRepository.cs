@@ -22,6 +22,11 @@ namespace BlazorApp1.Services.DataBase
         {
             return await _context.WalletUser.FindAsync(id);
         }
+        
+        public async Task<WalletUser> GetByUserIdAsync(int userId)
+        {
+            return await _context.WalletUser.FirstOrDefaultAsync(w => w.UserId == userId);
+        }
 
         public void Update(WalletUser entity)
         {
