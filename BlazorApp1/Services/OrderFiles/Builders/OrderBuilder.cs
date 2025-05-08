@@ -1,5 +1,6 @@
 // Services/Orders/Builders/OrderBuilder.cs
 
+using BlazorApp1.Services.DataBase;
 using BlazorApp1.Services.OrderFiles;
 using BlazorApp1.Services.Orders.Models;
 using BlazorApp1.Services.Purchase.OrderState;
@@ -14,7 +15,7 @@ public class OrderBuilder
     private Basket _basket;
     private Adress _shippingAddress;
     private OrderStatus _state;
-    private IOrderState _orderState;
+    private readonly IUnitOfWork _unitOfWork;
 
     public static OrderBuilder Empty() => new();
 
@@ -38,7 +39,6 @@ public class OrderBuilder
     public OrderBuilder WithOrderStatus(OrderStatus status)
     {
         _state = status;
-        _orderState = StateFromStatus(status);
         return this;
     }
     public OrderBuilder WithBasket(Action<BasketBuilder> config)
@@ -64,22 +64,7 @@ public class OrderBuilder
         Date = _date,
         Basket = _basket,
         ShippingAddress = _shippingAddress,
-        State = _orderState,
+        Status = _state
     };
-
-
-    private IOrderState StateFromStatus(OrderStatus status)
-    {
-        
-        switch (status)
-        {
-            case OrderStatus.Completed:
-                return new PaidState();
-            case OrderStatus.Pending:
-                return new PendingState();
-            default:
-                return new CanceledState();
-        }
-
-    }
+    
 }

@@ -83,6 +83,17 @@ h1 {
     font-size: 1.1rem;
 }
 
+.remove-btn {
+    background: none;
+    border: none;
+    color: #a35d00;
+    font-weight: 600;
+    margin-top: 4px;
+    cursor: pointer;
+    padding: 0;
+    align-self: start;
+}
+
 /* ========== TOTAL E AÇÕES ========== */
 .total-section {
     margin-top: 3rem;

@@ -1,6 +1,7 @@
 // Services/Orders/Models/Order.cs
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
+using BlazorApp1.Services.DataBase;
 using BlazorApp1.Services.OrderFiles;
 using BlazorApp1.Services.Purchase.OrderState;
 
@@ -25,14 +26,16 @@ namespace BlazorApp1.Services.Orders.Models
         public int ShippingAddressId { get; set; } // Foreign key
         public Adress ShippingAddress { get; set; } // Navigation property
         
-        public void Pay()
+        public async Task Pay(double price, PaymentMethod method, IStateFactory stateFactory)
         {
-            State.Pay();
+            State = stateFactory.CreateState(this);
+            await State.Pay(price, method);
         }
         
-        public void Cancel()
+        public async Task Cancel(StateFactory stateFactory)
         {
-            State.Cancel();
+            State = stateFactory.CreateState(this);
+            await State.Cancel();
         }
         
     }

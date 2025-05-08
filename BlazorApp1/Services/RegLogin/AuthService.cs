@@ -88,7 +88,7 @@ namespace BlazorApp1.Services.RegLogin
 
             var wallet = new WalletUser
             {
-                UserId = user.Id, 
+                UserId = user.Id,
                 MbwaySaldo = 100m,
                 ApplePaySaldo = 100m,
                 CreditCardSaldo = 100m
@@ -99,6 +99,7 @@ namespace BlazorApp1.Services.RegLogin
 
             await _verificationService.SendVerificationCodeAsync(email);
         }
+
         public async Task<AuthResult> LoginAsync(string username, string password)
         {
             try
@@ -107,9 +108,10 @@ namespace BlazorApp1.Services.RegLogin
 
                 if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
                 {
-                    return new AuthResult { 
-                        Success = false, 
-                        ErrorMessage = "Credenciais inválidas" 
+                    return new AuthResult
+                    {
+                        Success = false,
+                        ErrorMessage = "Credenciais inválidas"
                     };
                 }
 
@@ -158,6 +160,14 @@ namespace BlazorApp1.Services.RegLogin
         {
             await _httpContextAccessor.HttpContext.SignOutAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme);
+        }
+
+        public async Task<int> GetUserId()
+        {
+            var userId = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+
+            return int.TryParse(userId, out var id) ? id : 0;
         }
     }
 }

@@ -7,13 +7,17 @@
 @using BlazorApp1.Services.Discounts
 @using BlazorApp1.Services.OrderFiles
 @using BlazorApp1.Services.Orders.Models
+@using BlazorApp1.Services.Purchase.OrderState
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.EntityFrameworkCore
 @inject IAuthService AuthService
 @inject IHttpContextAccessor HttpContextAccessor
+
 @rendermode InteractiveServer
 @inject IUnitOfWork _UnitOfWork
 @inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager NavigationManager
+@inject IStateFactory _StateFactory
 
 
 <div class="page-container">
@@ -42,26 +46,26 @@
 
                 <!-- Formulário para Cartão -->
                 <div class="paymentType">
-                    @if (metodoSelecionado == "visa")
+                    @if (metodoSelecionado == PaymentMethod.CreditCard)
                     {
                         <input type="text" placeholder="Número do cartão" class="form-input"/>
                         <input type="text" placeholder="Validade (MM/AA)" class="form-input"/>
                         <input type="text" placeholder="CVC" class="form-input"/>
                     }
-                    else if (metodoSelecionado == "paypal")
+                    else if (metodoSelecionado == PaymentMethod.ApplePay)
                     {
                         <p>Será redirecionado para o site do PayPal para concluir o pagamento.</p>
                     }
-                    else if (metodoSelecionado == "mbway")
+                    else if (metodoSelecionado == PaymentMethod.Mbway)
                     {
                         <input type="text" placeholder="Número de telemóvel MBWay" class="form-input"/>
                     }
                 </div>
                 <!-- Botões para escolher método -->
                 <div class="payment-method-buttons">
-                    <button type="button" class="@GetButtonClass("visa")" @onclick="() => SelecionarMetodo(1)">Cartão</button>
-                    <button type="button" class="@GetButtonClass("paypal")" @onclick="() => SelecionarMetodo(2)">PayPal</button>
-                    <button type="button" class="@GetButtonClass("mbway")" @onclick="() => SelecionarMetodo(3)">MBWay</button>
+                    <button type="button" class="@GetButtonClass(PaymentMethod.CreditCard)" @onclick="() => SelecionarMetodo(PaymentMethod.CreditCard)">Cartão</button>
+                    <button type="button" class="@GetButtonClass(PaymentMethod.ApplePay)" @onclick="() => SelecionarMetodo(PaymentMethod.ApplePay)">PayPal</button>
+                    <button type="button" class="@GetButtonClass(PaymentMethod.Mbway)" @onclick="() => SelecionarMetodo(PaymentMethod.Mbway)">MBWay</button>
                 </div>
             </div>
 
@@ -168,7 +172,7 @@
     private string userId;
     private int UserId;
     private List<Claim> claims = new();
-    private string metodoSelecionado = "visa";
+    private PaymentMethod metodoSelecionado = PaymentMethod.CreditCard;
     
     private double subtotal;
     private double desconto;
@@ -287,24 +291,37 @@
             Console.WriteLine($"Erro ao remover unidade: {ex.Message}");
         }
     }
-    private void HandleSubmit()
+    private async Task HandleSubmit()
     {
-        // Implementar lógica de pagamento
+        try
+        {
+            if (order == null) return;
+
+           
+
+            // Procesar el pago
+            await order.Pay(total, metodoSelecionado, _StateFactory);
+
+            // Redirigir a página principal con estado de éxito
+            NavigationManager.NavigateTo("/", new NavigationOptions 
+            {
+                HistoryEntryState = "payment-success"
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error en el pago: {ex.Message}");
+            // Mostrar error al usuario (opcional)
+        }
     }
 
-    private void SelecionarMetodo(int metodo)
+    private void SelecionarMetodo(PaymentMethod metodo)
     {
-        metodoSelecionado = metodo switch
-        {
-            1 => "visa",
-            2 => "paypal",
-            3 => "mbway",
-            _ => metodoSelecionado
-        };
+        metodoSelecionado = metodo;
         StateHasChanged();
     }
 
-    private string GetButtonClass(string metodo)
+    private string GetButtonClass(PaymentMethod metodo)
     {
         return metodoSelecionado == metodo ? "active" : "";
     }
