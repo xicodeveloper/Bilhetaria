@@ -21,7 +21,7 @@
                 <div class="item-card" key="@item.MovieId">
                     <div class="item-header">
                         <img src="@item.MoviePosterUrl" alt="Poster do filme"/>
-                        <h3 class="item-title">@item.MovieTitle</h3>
+                        <h3 class="item-title">@item.MovieTitle (@item.Type.ToString())</h3>
                         <div class="item-price">
                             @if (item.Discount > 0)
                             {

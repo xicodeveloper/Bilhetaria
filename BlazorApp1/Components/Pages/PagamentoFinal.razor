@@ -109,28 +109,31 @@
                     {
                         @foreach (var item in order.Basket.Items)
                         {
-                            @for (int i = 0; i < item.Quantity; i++)
-                            {
-                                <div class="product-item" key="@(item.Id)_@i">
-                                    <img src="@item.MoviePosterUrl" alt="@item.MovieTitle" class="product-image"/>
-                                    <div class="product-info">
-                                        <div class="product-title">@item.MovieTitle</div>
-                                        <div>Descontos: @item.Discount %</div>
-                                        <div class="product-desc">(@item.ScreeningDate)</div>
-                                        <button type="button" class="remove-btn"
-                                                @onclick="async () => await RemoverUnidade(item)">
-                                            X Remover
-                                        </button>
-                                    </div>
-                                    <div class="product-price">
-                                        @if (item.Discount > 0)
-                                        {
-                                            <s class="original-price">@item.Price.ToString("0.00")€</s>
-                                        }
-                                        <span class="discounted-price">@GetDiscountedPrice(item).ToString("0.00")€</span>
-                                    </div>
+                            
+                            <div class="product-item" key="@(item.Id)">
+                                <img src="@item.MoviePosterUrl" alt="@item.MovieTitle" class="product-image"/>
+                                <div class="product-info">
+                                    <div class="product-title">@item.MovieTitle (@item.Type.ToString()) x @item.Quantity </div>
+                                    <div>Descontos: @item.Discount %</div>
+                                    
+                                    @if (item.Type == TicketType.Rental)
+                                    {
+                                        <div class="product-desc"> Válido até (@item.ScreeningDate)</div>
+                                    }
+                                    <button type="button" class="remove-btn"
+                                            @onclick="async () => await RemoverUnidade(item)">
+                                        Remover Unidade
+                                    </button>
                                 </div>
-                            }
+                                <div class="product-price">
+                                    @if (item.Discount > 0)
+                                    {
+                                        <s class="original-price">@item.Price.ToString("0.00")€</s>
+                                    }
+                                    <span class="discounted-price">@GetDiscountedPrice(item).ToString("0.00")€</span>
+                                </div>
+                            </div>
+                            
                         }
                     }
                     else
@@ -176,7 +179,7 @@
     
     private double subtotal;
     private double desconto;
-    private double shipping = 5.90;
+    private double shipping;
     private double total;
     
     private IStrategyDiscount discountStrategy;
@@ -216,10 +219,16 @@
     {
         subtotal = 0;
         desconto = 0;
+        shipping = 5.20;
 
         if (order?.Basket?.Items == null)
+        {
             return;
-
+        }
+        if (order.Basket.Items.Count == 0)
+        {
+            shipping = 0;
+        }
         foreach (var item in order.Basket.Items)
         {
             double originalPrice = item.Price;
@@ -241,7 +250,7 @@
             desconto += (originalPrice - discountedPrice) * item.Quantity;
         }
 
-        shipping = 5.90;
+        
         total = subtotal + shipping;
     }
 
