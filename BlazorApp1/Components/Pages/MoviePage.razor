@@ -80,7 +80,7 @@
             <div class="purchase-options">
                 <button class="btn-rent" @onclick="async () => await BuyAsync(PurchaseType.Aluga)">ALUGAR (2,49€)</button>
                 <button class="btn-tickets" @onclick="async () => await BuyAsync(PurchaseType.Forever)">COMPRAR</button>
-                <a href="/bilhetes" style="text-decoration: none;color: inherit;"><button class="btn-tickets">BILHETES</button></a>
+                <a href="/cinemas" style="text-decoration: none;color: inherit;"><button class="btn-tickets">BILHETES</button></a>
                 
             </div>
 
@@ -191,10 +191,10 @@ private async Task BuyAsync(PurchaseType type)
         }
 
         // Parâmetros específicos do tipo de compra
-        var (price, screeningDate) = type switch
+        var (price, screeningDate, ticketType) = type switch
         {
-            PurchaseType.Aluga => (2.49, DateTime.UtcNow.AddDays(1)),
-            PurchaseType.Forever => (9.99, DateTime.UtcNow),
+            PurchaseType.Aluga => (priceMovie * 0.25, DateTime.UtcNow.AddDays(7), TicketType.Rental),
+            PurchaseType.Forever => (priceMovie, DateTime.UtcNow, TicketType.Digital),
             _ => throw new ArgumentException("Tipo de compra inválido")
         };
 
@@ -206,9 +206,16 @@ private async Task BuyAsync(PurchaseType type)
 
         if (existingOrder != null)
         {
-            // Adicionar item à encomenda existente
-            existingOrder.Basket.Items.Add(new BasketItem
+            BasketItem item = existingOrder.Basket.Items.FirstOrDefault(i => i.MovieId == Id && i.Type == ticketType);
+            if (item != null)
             {
+                item.Quantity++;
+            }
+            else
+            {
+                // Adicionar item à encomenda existente
+                existingOrder.Basket.Items.Add(new BasketItem
+                {
                 MovieId = Id,
                 MovieTitle = title,
                 MoviePosterUrl = posterUrl,
@@ -216,9 +223,10 @@ private async Task BuyAsync(PurchaseType type)
                 ScreeningDate = screeningDate,
                 Price = priceMovie,
                 Discount = number_discount,
-                Type = TicketType.Digital,
-            });
-
+                Type = ticketType,
+                });
+            }
+            
             await _unitOfWork.Orders.UpdateAsync(existingOrder);
         }
         else

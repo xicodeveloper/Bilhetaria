@@ -127,14 +127,14 @@ label {
     font-size: 0.9rem;
     margin-bottom: 0.5rem;
 }
-
 .form-input {
+
     width: 100%;
     padding: 0.8rem;
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 8px;
-    color: #FFF;
+    color: blue;
     font-family: Poppins;
     font-size: 1rem;
 }
