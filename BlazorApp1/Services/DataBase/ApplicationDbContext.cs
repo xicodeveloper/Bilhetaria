@@ -1,3 +1,147 @@
+// using Microsoft.EntityFrameworkCore;
+// using BlazorApp1.Services.Movies;
+// using BlazorApp1.Services.Orders.Models;
+// using BlazorApp1.Services;
+
+// namespace BlazorApp1.Services.DataBase
+// {
+//     public class ApplicationDbContext : DbContext
+//     {
+//         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) 
+//             : base(options)
+//         {
+//         }
+
+//         public DbSet<User> Users { get; set; }
+//         public DbSet<Film> Movies { get; set; }
+//         public DbSet<Film> Filmes { get; set; }
+//         public DbSet<Order> Orders { get; set; }
+//         public DbSet<Basket> Baskets { get; set; }
+//         public DbSet<BasketItem> BasketItems { get; set; }
+//         public DbSet<WalletUser> WalletUser { get; set; }
+//         public DbSet<Adress> Addresses { get; set; } 
+
+//         protected override void OnModelCreating(ModelBuilder modelBuilder)
+//         {
+//             base.OnModelCreating(modelBuilder);
+
+//             modelBuilder.Entity<Film>().HasData(
+//                 new Film { Id = 1,
+//             Title = "Inception",
+//             ReleaseDate = new DateTime(2010, 7, 16),
+//             BackdropPath = "/backdrop_inception.jpg",
+//             PosterPath = "/poster_inception.jpg",
+//             Overview = "A thief who steals corporate secrets...",
+//             Popularity = 8.8,
+//             VoteAverage = 8.3,
+//             VoteCount = 21000,
+//             OriginalTitle = "Inception",
+//             OriginalLanguage = "en",
+//             Adult = false,
+//             Video = false,
+//             GenreIds = new List<int>() // Seed não suporta List<int> diretamente
+//         },
+//         new Film
+//         {
+//             Id = 2,
+//             Title = "The Matrix",
+//             ReleaseDate = new DateTime(1999, 3, 31),
+//             BackdropPath = "/backdrop_matrix.jpg",
+//             PosterPath = "/poster_matrix.jpg",
+//             Overview = "A computer hacker learns from mysterious rebels...",
+//             Popularity = 9.1,
+//             VoteAverage = 8.7,
+//             VoteCount = 17000,
+//             OriginalTitle = "The Matrix",
+//             OriginalLanguage = "en",
+//             Adult = false,
+//             Video = false,
+//             GenreIds = new List<int>() // Ignorado no seed
+//         }
+//     );
+
+//             modelBuilder.Entity<Film>()
+//                 .HasIndex(f => f.Title);
+//             modelBuilder.Entity<BasketItem>(entity =>
+//             {
+//                 entity.ToTable("basket_items");
+//                 entity.HasKey(e => e.Id);
+        
+//                 entity.HasOne(bi => bi.Basket)
+//                     .WithMany(b => b.Items)
+//                     .HasForeignKey(bi => bi.BasketId)
+//                     .OnDelete(DeleteBehavior.Cascade);
+//             });
+//             // Configurar o nome das tabelas
+//             modelBuilder.Entity<Film>().ToTable("movies");
+//             modelBuilder.Entity<User>().ToTable("users");
+            
+//             modelBuilder.Entity<Order>().ToTable("orders");
+//             modelBuilder.Entity<Basket>().ToTable("baskets");
+//             modelBuilder.Entity<BasketItem>().ToTable("basket_items");
+//             modelBuilder.Entity<Adress>().ToTable("addresses"); // Corrigido o nome
+
+//             // Configurar relacionamento Basket -> BasketItem
+//             modelBuilder.Entity<Basket>()
+//                 .HasMany(b => b.Items)
+//                 .WithOne(i => i.Basket) // Adicionar navegação inversa
+//                 .HasForeignKey(i => i.BasketId)
+//                 .OnDelete(DeleteBehavior.Cascade);
+
+//             // Configurar relacionamento Order -> Basket
+//             modelBuilder.Entity<Order>()
+//                 .HasOne(o => o.Basket)
+//                 .WithOne()
+//                 .HasForeignKey<Order>(o => o.BasketId) // Usar BasketId como FK
+//                 .OnDelete(DeleteBehavior.Cascade);
+
+//             // Configurar relacionamento User -> Address
+//             modelBuilder.Entity<Adress>()
+//                 .HasOne(a => a.User)
+//                 .WithMany(u => u.Addresses)
+//                 .HasForeignKey(a => a.UserId);
+
+//             // Configurar relacionamento Order -> Address
+//             modelBuilder.Entity<Order>()
+//                 .HasOne(o => o.ShippingAddress)
+//                 .WithMany()
+//                 .HasForeignKey(o => o.ShippingAddressId)
+//                 .OnDelete(DeleteBehavior.Restrict);
+            
+//             modelBuilder.Entity<User>()
+//                 .HasMany(u => u.Addresses)
+//                 .WithOne(a => a.User)
+//                 .HasForeignKey(a => a.UserId);
+            
+            
+//             modelBuilder.Entity<WalletUser>(entity =>
+//             {
+//                 entity.ToTable("wallet_users");
+//                 entity.HasKey(w => w.UserId);
+
+//                 entity.Property(w => w.MbwaySaldo)
+//                     .HasColumnType("decimal(18,2)")
+//                     .HasDefaultValue(100m);
+
+//                 entity.Property(w => w.ApplePaySaldo)
+//                     .HasColumnType("decimal(18,2)")
+//                     .HasDefaultValue(100m);
+
+//                 entity.Property(w => w.CreditCardSaldo)
+//                     .HasColumnType("decimal(18,2)")
+//                     .HasDefaultValue(100m);
+
+//                 entity.HasOne(w => w.User)
+//                     .WithOne(u => u.Wallet)
+//                     .HasForeignKey<WalletUser>(w => w.UserId)
+//                     .OnDelete(DeleteBehavior.Cascade);
+//             });
+            
+//         }
+        
+//     }
+// }
+
 using Microsoft.EntityFrameworkCore;
 using BlazorApp1.Services.Movies;
 using BlazorApp1.Services.Orders.Models;
@@ -32,6 +176,11 @@ namespace BlazorApp1.Services.DataBase
                     .HasForeignKey(bi => bi.BasketId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
+
+            modelBuilder.Entity<Film>()
+                .Ignore(f => f.GenreIds)
+                .Property<string>("GenreIdsSerialized");
+
             // Configurar o nome das tabelas
             modelBuilder.Entity<Film>().ToTable("movies");
             modelBuilder.Entity<User>().ToTable("users");

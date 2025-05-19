@@ -3,6 +3,12 @@
     background-color: #0f0f1a;
     color: white;
     font-family: 'Poppins';
+    overflow-y: hidden;
+}
+
+/* Body */
+.body{
+    overflow-y: hidden;
 }
 
 /* Header */
@@ -29,7 +35,7 @@
 .featured-section {
     padding: 100px 20px 40px;
     text-align: left;
-    background: url('img/minions_homepage.jpeg') center/cover no-repeat;
+    background: url('img/minions.jpg') center/cover no-repeat;
     position: relative;
     min-height: 60vh;
     display: flex;

@@ -4,135 +4,98 @@
 @using BlazorApp1.Services.RegLogin
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.EntityFrameworkCore
+@using BlazorApp1.Services.Movies
 @inherits LayoutComponentBase
+
 @inject IHttpContextAccessor HttpContextAccessor
 @inject AuthService AuthService
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject ApplicationDbContext _context
-@inject IUnitOfWork _UnitOfWork
+@inject IUnitOfWork UnitOfWork
 
-<div class="cinematic-navbar" xmlns="http://www.w3.org/1999/html">
-    <div class="navbar-container">
-        <div class="navbar-brand">
-            <br>
-            <a href="/" class="back-link">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
-                          stroke="white"
-                          stroke-width="2"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"/>
-                    <path d="M12 8L8 12L12 16"
-                          stroke="white"
-                          stroke-width="2"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"/>
-                    <path d="M16 12H8"
-                          stroke="white"
-                          stroke-width="2"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"/>
-                </svg>
-                VOLTAR
-            </a>
-            <h1 class="cinuma-title"><a href="/">CinUma</a></h1>
-            <h2><a href="/basket">Carrinho</a></h2>
-            <h2><a href="/cinemas">Bilhetes</a></h2>
-            <h2><a href="/about">Sobre</a></h2>
-
-            <div class="search-container">
-                <input type="text" id="movieSearch" class="search-input" placeholder="títulos, séries e géneros" oninput="searchMovies()"/>
-                <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z"
-                          stroke="white"
-                          stroke-width="2"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"/>
-                    <path d="M20.9999 21L16.6499 16.65"
-                          stroke="white"
-                          stroke-width="2"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"/>
-                </svg>
-                <div id="searchResults" class="search-results"></div>
-            </div>
-        </div>
-        <a href="/basket" style="text-decoration: none; color: inherit;">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none"
-                 xmlns="http://www.w3.org/2000/svg">
-                <!-- Carrinho maior e mais cheio -->
-                <path d="M8 17C7.44772 17 7 17.4477 7 18C7 18.5523 7.44772 19 8 19C8.55228 19 9 18.5523 9 18C9 17.4477 8.55228 17 8 17Z" fill="#FFA500"/>
-                <path d="M16 17C15.4477 17 15 17.4477 15 18C15 18.5523 15.4477 19 16 19C16.5523 19 17 18.5523 17 18C17 17.4477 16.5523 17 16 17Z" fill="#FFA500"/>
-                <path d="M5 3H7L8.5 10H18.5L20 5H9" stroke="#FFA500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-
-                <!-- Badge com quantidade -->
-                <circle cx="19" cy="5" r="4.5" fill="#FF4500"/>
-                <text x="19" y="6.5" text-anchor="middle" fill="white" font-size="6" font-family="Arial" font-weight="bold">@cartItemCount</text>
-            </svg>
-
-
-        </a>
-        <div class="user-profile">
-            <div class="nav-right">
-                <span class="username"><a href="/editProfile/@username">@username
-                        <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none">
-                    <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21"
-                          stroke="#F3A529"
-                          stroke-width="2"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"/>
-                    <path d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z"
-                          stroke="#F3A529"
-                          stroke-width="2"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"/>
-                </svg>
-                    </a></span>
-                <a href="/logout" @onclick="Logout" @onclick:preventDefault class="logout-button">
-                    SAIR
+<div class="main-layout">
+    <div class="cinematic-navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">
+                <br />
+                <a href="/" class="back-link">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-                        <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9"
-                              stroke="#F3A529"
-                              stroke-width="2"
-                              stroke-linecap="round"
-                              stroke-linejoin="round"/>
-                        <path d="M16 17L21 12L16 7"
-                              stroke="#F3A529"
-                              stroke-width="2"
-                              stroke-linecap="round"
-                              stroke-linejoin="round"/>
-                        <path d="M21 12H9"
-                              stroke="#F3A529"
-                              stroke-width="2"
-                              stroke-linecap="round"
-                              stroke-linejoin="round"/>
+                        <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
+                            stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M12 8L8 12L12 16" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M16 12H8" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                     </svg>
+                    VOLTAR
                 </a>
-              
+                <h1 class="cinuma-title"><a href="/">CinUma</a></h1>
+                <h2><a href="/basket">Carrinho</a></h2>
+                <h2><a href="/cinemas">Bilhetes</a></h2>
+                <h2><a href="/about">Sobre</a></h2>
+
+                <SearchBar />
+            </div>
+
+            <a href="/basket" style="text-decoration: none; color: inherit;">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8 17C7.44772 17 7 17.4477 7 18C7 18.5523 7.44772 19 8 19C8.55228 19 9 18.5523 9 18C9 17.4477 8.55228 17 8 17Z" fill="#FFA500" />
+                    <path d="M16 17C15.4477 17 15 17.4477 15 18C15 18.5523 15.4477 19 16 19C16.5523 19 17 18.5523 17 18C17 17.4477 16.5523 17 16 17Z" fill="#FFA500" />
+                    <path d="M5 3H7L8.5 10H18.5L20 5H9" stroke="#FFA500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="19" cy="5" r="4.5" fill="#FF4500" />
+                    <text x="19" y="6.5" text-anchor="middle" fill="white" font-size="6" font-family="Arial" font-weight="bold">@cartItemCount</text>
+                </svg>
+            </a>
+
+            <div class="user-profile">
+                <div class="nav-right">
+                    <span class="username">
+                        <a href="/editProfile/@username">@username
+                            <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none">
+                                <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21"
+                                    stroke="#F3A529" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                <path d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z"
+                                    stroke="#F3A529" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </a>
+                    </span>
+                    <a href="/logout" @onclick="Logout" @onclick:preventDefault class="logout-button">
+                        SAIR
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9"
+                                stroke="#F3A529" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M16 17L21 12L16 7"
+                                stroke="#F3A529" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M21 12H9"
+                                stroke="#F3A529" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </a>
+                </div>
             </div>
         </div>
     </div>
+
+    <div class="space"></div>
+    @Body
 </div>
-<div class="space"></div>
-@Body
 
 @code {
     private string? username;
     private int cartItemCount;
+
     protected override async Task OnInitializedAsync()
     {
         await LoadUserState();
-      await LoadCartCount();
+        await LoadCartCount();
     }
 
     private async Task LoadUserState()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         username = authState.User.Identity?.Name;
-
         StateHasChanged();
     }
+
     private async Task LoadCartCount()
     {
         try
@@ -142,14 +105,13 @@
 
             if (!string.IsNullOrEmpty(userIdClaim) && int.TryParse(userIdClaim, out var userId))
             {
+                var order = await _context.Orders
+                    .Include(o => o.Basket)
+                    .ThenInclude(b => b.Items)
+                    .FirstOrDefaultAsync(o => o.UserId == userId && o.Status == OrderStatus.Pending);
 
-                    var order = await _context.Orders
-                        .Include(o => o.Basket) 
-                        .ThenInclude(b => b.Items) 
-                        .FirstOrDefaultAsync(o => o.UserId == userId && o.Status == OrderStatus.Pending);
-
-                    cartItemCount = order?.Basket?.Items.Sum(item => item.Quantity) ?? 0;
-                    StateHasChanged();
+                cartItemCount = order?.Basket?.Items.Sum(item => item.Quantity) ?? 0;
+                StateHasChanged();
             }
         }
         catch (Exception ex)
@@ -157,13 +119,14 @@
             Console.WriteLine($"Erro ao carregar carrinho: {ex.Message}");
         }
     }
+
     private async Task Logout()
     {
         try
         {
             await AuthService.LogoutAsync();
             await ((CustomAuthStateProvider)AuthenticationStateProvider).UpdateAuthenticationStateAsync(new ClaimsPrincipal());
-            
+            NavigationManager.NavigateTo("/");
         }
         catch (Exception ex)
         {

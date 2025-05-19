@@ -1,0 +1,102 @@
+@page "/search/{query}"
+
+@using Newtonsoft.Json
+@inject NavigationManager NavigationManager
+@using BlazorApp1.Services.Movies
+@using Microsoft.AspNetCore.Authorization
+
+<header><br><br><div class="header"><h2>header</h2></div><br></header>
+<body><div class="search-header"><h2><b>Resultados para "@query"</b></h2></div></body>
+
+<div>
+@if (isLoading)
+{
+    <p>A carregar...</p>
+}
+else if (Movies.Count == 0)
+{
+    <p>Nenhum resultado encontrado para "@query".</p>
+}
+else
+{
+    <div class="movie-grid">
+        @foreach (var movie in Movies)
+        {
+            <div class="movie-card" @onclick="() => GoToMovie(movie.Id)">
+                @* <img src="https://image.tmdb.org/t/p/w200@(movie.PosterPath)" alt="@movie.Title" /> *@
+                <img src="@GetPosterUrl(movie.PosterPath)" alt="@movie.Title" />
+                <div class="movie-title">@movie.Title (@movie.ReleaseDate.Year)</div>
+            </div>
+        }
+    </div>
+}
+
+<input @bind="searchQuery" @bind:event="oninput" @onkeypress="HandleKeyPress" placeholder="Search for a movie..." />
+</div>
+@code {
+    [Parameter] public string query { get; set; } = string.Empty;
+    @* private List<Film> Movies { get; set; } = new List<Film>(); *@
+    private List<Film> Movies { get; set; } = new();
+
+    private string GetPosterUrl(string posterPath)
+    {
+        return string.IsNullOrEmpty(posterPath) 
+            ? "https://via.placeholder.com/200x300?text=No+Image" 
+            : $"https://image.tmdb.org/t/p/w200{posterPath}";
+    }
+    private bool isLoading = true;
+    private readonly HttpClient _httpClient = new();
+    private readonly MovieDeserializer deserializer = new();
+    
+    private readonly string[] _discountTiers = { "10", "70", "25" };
+    private readonly string[] _prices = { "2.99", "4.99", "9.99", "14.99" };
+
+    private string searchQuery = string.Empty;
+
+    private void HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(searchQuery))
+        {
+            NavigationManager.NavigateTo($"/search/{searchQuery}");
+        }
+    }
+    private string GetRandomPrice(int movieId)
+    {
+        int index = movieId % _prices.Length;
+        return _prices[index];
+    }
+
+    private string GetDeterministicDiscount(int movieId)
+    {
+        int index = movieId % _discountTiers.Length;
+        return _discountTiers[index];
+    }
+    protected override async Task OnParametersSetAsync()
+    {
+        isLoading = true;
+        Movies.Clear();
+
+        if (!string.IsNullOrWhiteSpace(query))
+        {
+            var apiKey = Environment.GetEnvironmentVariable("API_KEY");
+            var url = $"https://api.themoviedb.org/3/search/movie?api_key={apiKey}&query={Uri.EscapeDataString(query)}";
+
+            var response = await _httpClient.GetAsync(url);
+            if (response.IsSuccessStatusCode)
+            {
+                var jsonString = await response.Content.ReadAsStringAsync();
+                var result = JsonConvert.DeserializeObject<MovieResponse>(jsonString);
+                Movies = result?.Results?.OrderByDescending(m => m.Popularity).ToList() ?? new();
+            }
+        }
+
+        isLoading = false;
+    }
+
+    
+    private void GoToMovie(int id)
+    {
+        NavigationManager.NavigateTo($"/movie/{id}");
+    }
+    
+}

@@ -1,6 +1,6 @@
 
 using Newtonsoft.Json;
-
+using BlazorApp1.Services.Movies;
 namespace BlazorApp1.Services.Movies;
 
 public class Film
@@ -13,7 +13,14 @@ public class Film
     public string BackdropPath { get; set; }
 
     [JsonProperty("genre_ids")]
-    public List<int> GenreIds { get; set; }
+    // public List<int> GenreIds { get; set; }
+    [JsonIgnore]
+    public string GenreIdsSerialized
+    {
+        get => JsonConvert.SerializeObject(GenreIds);
+        set => GenreIds = JsonConvert.DeserializeObject<List<int>>(value) ?? new List<int>();
+    }
+    public List<int> GenreIds { get; set; } = new List<int>();
 
     [JsonProperty("id")]
     public int Id { get; set; }

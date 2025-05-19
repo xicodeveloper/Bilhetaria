@@ -89,6 +89,52 @@ builder.WebHost.ConfigureKestrel(serverOptions =>
 });
 
 var app = builder.Build();
+// using (var scope = app.Services.CreateScope())
+// {
+//     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+//     if (!context.Movies.Any())
+//     {
+//         context.Movies.AddRange(new[]
+//         {
+//             new Film {
+//                 Title = "Inception",
+//                 ReleaseDate = new DateTime(2010, 7, 16),
+//                 BackdropPath = "/backdrop_inception.jpg",
+//                 PosterPath = "/poster_inception.jpg",
+//                 Overview = "A thief who steals corporate secrets...",
+//                 Popularity = 8.8,
+//                 VoteAverage = 8.3,
+//                 VoteCount = 21000,
+//                 OriginalTitle = "Inception",
+//                 OriginalLanguage = "en",
+//                 Adult = false,
+//                 Video = false
+//             },
+//             new Film {
+//                 Title = "The Matrix",
+//                 ReleaseDate = new DateTime(1999, 3, 31),
+//                 BackdropPath = "/backdrop_matrix.jpg",
+//                 PosterPath = "/poster_matrix.jpg",
+//                 Overview = "A computer hacker learns from mysterious rebels...",
+//                 Popularity = 9.1,
+//                 VoteAverage = 8.7,
+//                 VoteCount = 17000,
+//                 OriginalTitle = "The Matrix",
+//                 OriginalLanguage = "en",
+//                 Adult = false,
+//                 Video = false
+//             }
+//         });
+
+//         await context.SaveChangesAsync();
+//         Console.WriteLine("[DEBUG] Filmes inseridos na BD com sucesso.");
+//     }
+//     else
+//     {
+//         Console.WriteLine("[DEBUG] Filmes já existem na base de dados.");
+//     }
+// }
 
 
 app.UseAuthentication();

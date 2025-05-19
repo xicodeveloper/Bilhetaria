@@ -109,46 +109,35 @@ h2 a, .cinuma-title a,  .username a{
     }
 }
 
-.search-container {
-    position: relative;
-    max-width: 400px;
-    margin: 20px 0;
-}
-
-.search-input {
-    width: 100%;
-    padding: 12px 45px 12px 20px;
-    border-radius: 30px;
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
-    color: white;
-    font-family: Poppins;
-    font-size: 16px;
-    transition: all 0.3s ease;
-}
-
-.search-input::placeholder {
-    color: rgba(255, 255, 255, 0.8);
-    font-family: Poppins;
-    font-size: 14px;
-}
-
-.search-input:focus {
-    outline: none;
-    background: rgba(255, 255, 255, 0.3);
-}
-
-.search-icon {
+.search-results {
     position: absolute;
-    right: 15px;
-    top: 50%;
-    transform: translateY(-50%);
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #222;
+    color: #fff;
+    max-height: 300px;
+    overflow-y: auto;
+    border-radius: 0 0 4px 4px;
+    z-index: 1000;
+}
+
+.search-result-item {
+    padding: 8px;
+    border-bottom: 1px solid #444;
     cursor: pointer;
 }
 
-.search-icon:hover path {
-    stroke: #F3A529;
+.search-result-item:hover,
+.search-result-item.selected {
+    background-color: #333;
 }
+
+.search-results.empty {
+    padding: 12px;
+    color: #888;
+}
+
 .space{
     margin: 0 1rem;
     

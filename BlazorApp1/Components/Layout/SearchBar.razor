@@ -1,0 +1,320 @@
+@* @using System.Net.Http
+@using Newtonsoft.Json
+@using BlazorApp1.Services.Movies
+@using Microsoft.AspNetCore.Components.Web
+@inject IConfiguration Configuration
+@inject NavigationManager NavigationManager
+@inject HttpClient Http
+@rendermode InteractiveServer
+@inherits LayoutComponentBase
+
+<div class="search-container" @onkeydown="HandleKeyDown">
+    <input 
+        type="text" 
+        class="search-input" 
+        placeholder="títulos, séries e géneros" 
+        @bind="SearchTerm" 
+        @bind:event="oninput" 
+    />
+
+    @if (SearchResults?.Any() == true)
+    {
+        <div class="search-results">
+            @for (int i = 0; i < SearchResults.Count; i++)
+            {
+                var movie = SearchResults[i];
+                var isSelected = i == selectedIndex;
+
+                <div class="search-result-item @(isSelected ? "selected" : "")"
+                     @onclick="() => NavigateToMovie(movie.Id)">
+                    @movie.Title (@movie.ReleaseDate.Year)
+                </div>
+            }
+        </div>
+    }
+    else if (!string.IsNullOrWhiteSpace(SearchTerm))
+    {
+        <div class="search-results empty">
+            Nenhum resultado encontrado.
+        </div>
+    }
+</div>
+
+@code {
+    private string _searchTerm = string.Empty;
+    private List<Film> SearchResults = new();
+    private int selectedIndex = -1;
+    private CancellationTokenSource _cts = new();
+    private MovieDeserializer deserializer = new();
+
+    private string SearchTerm
+    {
+        get => _searchTerm;
+        set
+        {
+            if (_searchTerm != value)
+            {
+                _searchTerm = value;
+                selectedIndex = -1;
+                _ = OnSearchTermChanged();
+            }
+        }
+    }
+
+    private async Task OnSearchTermChanged()
+    {
+        _cts.Cancel();
+        _cts = new CancellationTokenSource();
+        SearchResults.Clear();
+
+        if (string.IsNullOrWhiteSpace(SearchTerm))
+        {
+            StateHasChanged();
+            return;
+        }
+
+        try
+        {
+            SearchResults = await SearchMoviesFromApi(SearchTerm, _cts.Token);
+            selectedIndex = -1;
+            StateHasChanged();
+        }
+        catch (TaskCanceledException) { }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ERRO API] {ex.Message}");
+        }
+    }
+
+    private async Task<List<Film>> SearchMoviesFromApi(string query, CancellationToken token)
+    {
+        await Task.Delay(300, token); // debounce
+
+        var apiKey = Configuration["TmdbApi:ApiKey"];
+        if (string.IsNullOrEmpty(apiKey))
+            throw new InvalidOperationException("API key não configurada no appsettings.");
+
+        var url = $"https://api.themoviedb.org/3/search/movie?api_key={apiKey}&query={Uri.EscapeDataString(query)}";
+        var response = await Http.GetAsync(url, token);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            Console.WriteLine($"[API ERROR] {response.StatusCode}");
+            return new List<Film>();
+        }
+
+        var jsonString = await response.Content.ReadAsStringAsync(token);
+        var movieResponse = JsonConvert.DeserializeObject<MovieResponse>(jsonString);
+
+        return movieResponse?.Results?
+            .OrderBy(f => f.Title)
+            .Take(10)
+            .ToList() ?? new List<Film>();
+    }
+
+    private void NavigateToMovie(int id)
+    {
+        SearchTerm = string.Empty;
+        SearchResults.Clear();
+        selectedIndex = -1;
+        NavigationManager.NavigateTo($"/movie/{id}");
+    }
+
+    private void HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (SearchResults.Count == 0) return;
+
+        switch (e.Key)
+        {
+            case "ArrowDown":
+                selectedIndex = (selectedIndex + 1) % SearchResults.Count;
+                break;
+            case "ArrowUp":
+                selectedIndex = (selectedIndex - 1 + SearchResults.Count) % SearchResults.Count;
+                break;
+            case "Enter":
+                if (selectedIndex >= 0){
+                    NavigateToMovie(SearchResults[selectedIndex].Id);
+                }
+                else if (!string.IsNullOrWhiteSpace(SearchTerm)){
+                    NavigationManager.NavigateTo($"/search/{Uri.EscapeDataString(SearchTerm)}");
+                    SearchTerm = string.Empty;
+                    SearchResults.Clear();
+                }
+                break;
+            case "Escape":
+                SearchResults.Clear();
+                selectedIndex = -1;
+                break;
+        }
+    }
+} *@
+
+@using System.Net.Http
+@using Newtonsoft.Json
+@using BlazorApp1.Services.Movies
+@inject IConfiguration Configuration
+@inject NavigationManager NavigationManager
+@rendermode InteractiveServer
+@inherits LayoutComponentBase
+
+<div class="search-container" @onkeydown="HandleKeyDown">
+    <input 
+        type="text" 
+        class="search-input" 
+        placeholder="títulos, séries e géneros" 
+        @bind="SearchTerm" 
+        @bind:event="oninput" 
+        />
+
+    @if (SearchResults?.Any() == true)
+    {
+        <div class="search-results">
+            @for (int i = 0; i < SearchResults.Count; i++)
+            {
+                var movie = SearchResults[i];
+                var isSelected = i == selectedIndex;
+
+                <div class="search-result-item @(isSelected ? "selected" : "")"
+                     @onclick="() => NavigateToMovie(movie.Id)">
+                    @movie.Title (@movie.ReleaseDate.Year)
+                </div>
+            }
+        </div>
+    }
+    else if (!string.IsNullOrWhiteSpace(SearchTerm))
+    {
+        <div class="search-results empty">
+            Nenhum resultado encontrado.
+        </div>
+    }
+</div>
+
+@code {
+    private string _searchTerm = "";
+    private CancellationTokenSource _cts = new();
+    private List<Film> SearchResults = new();
+    private int selectedIndex = -1;
+
+    private readonly HttpClient _httpClient = new();
+    private readonly MovieDeserializer deserializer = new();
+
+    private string SearchTerm
+    {
+        get => _searchTerm;
+        set
+        {
+            if (_searchTerm != value)
+            {
+                _searchTerm = value;
+                selectedIndex = -1;
+                _ = OnSearchTermChanged();
+            }
+        }
+    }
+
+    private async Task OnSearchTermChanged()
+    {
+        _cts.Cancel();
+        _cts = new CancellationTokenSource();
+
+        SearchResults.Clear();
+
+        if (string.IsNullOrWhiteSpace(SearchTerm))
+        {
+            StateHasChanged();
+            return;
+        }
+
+        try
+        {
+            var results = await SearchMoviesFromApi(SearchTerm, _cts.Token);
+            SearchResults = results;
+            selectedIndex = -1;
+            StateHasChanged();
+        }
+        catch (TaskCanceledException) { }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ERRO API] {ex.Message}");
+        }
+    }
+
+    private async Task<List<Film>> SearchMoviesFromApi(string query, CancellationToken token)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+            return new List<Film>();
+
+        await Task.Delay(300, token); // debounce
+
+        var apiKey = Environment.GetEnvironmentVariable("API_KEY");
+        if (string.IsNullOrEmpty(apiKey))
+        {
+            throw new InvalidOperationException("API key não configurada no ambiente.");
+        }
+
+        var url = $"https://api.themoviedb.org/3/search/movie?api_key={apiKey}&query={Uri.EscapeDataString(query)}";
+        var response = await _httpClient.GetAsync(url, token);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            Console.WriteLine($"[API ERROR] {response.StatusCode}");
+            return new List<Film>();
+        }
+
+        var jsonString = await response.Content.ReadAsStringAsync(token);
+        var movieResponse = JsonConvert.DeserializeObject<MovieResponse>(jsonString);
+
+        if (movieResponse?.Results == null)
+            return new List<Film>();
+
+        return movieResponse.Results
+            .OrderBy(f => f.Title)
+            .Take(10)
+            .ToList();
+    }
+
+    private void NavigateToMovie(int id)
+    {
+        SearchTerm = "";
+        SearchResults.Clear();
+        selectedIndex = -1;
+        NavigationManager.NavigateTo($"/movie/{id}");
+    }
+
+    private void HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (SearchResults.Count == 0)
+            return;
+
+        switch (e.Key)
+        {
+            case "ArrowDown":
+                selectedIndex = (selectedIndex + 1) % SearchResults.Count;
+                break;
+            case "ArrowUp":
+                selectedIndex = (selectedIndex - 1 + SearchResults.Count) % SearchResults.Count;
+                break;
+            case "Enter":
+                @* if (selectedIndex >= 0){
+                    NavigateToMovie(SearchResults[selectedIndex].Id);
+                }
+                break; *@
+                if (selectedIndex >= 0)
+                {
+                    NavigateToMovie(SearchResults[selectedIndex].Id);
+                }
+                else if (!string.IsNullOrWhiteSpace(SearchTerm))
+                {
+                    NavigationManager.NavigateTo($"/search/{Uri.EscapeDataString(SearchTerm)}");
+                    SearchTerm = string.Empty;
+                    SearchResults.Clear();
+                }
+                break;
+            case "Escape":
+                SearchResults.Clear();
+                selectedIndex = -1;
+                break;
+        }
+    }
+}

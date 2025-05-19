@@ -30,7 +30,7 @@ namespace BlazorApp1.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.PrimitiveCollection<string>("GenreIds")
+                    b.Property<string>("GenreIdsSerialized")
                         .IsRequired()
                         .HasColumnType("TEXT");
 

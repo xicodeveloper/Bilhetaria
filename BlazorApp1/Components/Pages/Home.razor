@@ -11,11 +11,6 @@
 @rendermode  InteractiveServer
 
 <div class="homepage-container">
-    <!-- Header -->
-    <div class="header">
-        <h1 class="cinuma-title">CinUMa</h1>
-        <a href="/" class="back-link">VOLTAR</a>
-    </div>
 
     <!-- Featured Movie Section -->
     <section class="featured-section">
@@ -90,7 +85,7 @@
                         var price = GetRandomPrice(movie.Id);
                         var hash = DiscountHasher.GenerateHash(movie.Id, price);
                         <div class="carousel-item">
-                            <!-- Seção Promoções - Linha corrigida -->
+                            <!-- Seção Promoções-->
                             <NavLink href="@($"movie/{movie.Id}?price={price}&discount={GetDeterministicDiscount(movie.Id)}&hash={DiscountHasher.GenerateHash(movie.Id, price, GetDeterministicDiscount(movie.Id))}")">
                                 <span class="discount-tag">@GetDeterministicDiscount(movie.Id)%</span>
                                 <img src="@(LinkImage + movie.PosterPath)" alt="@movie.Title" class="movie-poster"/>
@@ -140,7 +135,7 @@
         </div>
     </section>
 
-    <!-- Newsletter Section -->
+    @* <!-- Newsletter Section --> corrigir isto *@
     <section class="footer-newsletter-container">
         <!-- Footer (lado esquerdo) -->
         <div class="footer-left">
