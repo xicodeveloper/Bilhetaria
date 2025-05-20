@@ -1,7 +1,7 @@
 using BlazorApp1.Components;
 using BlazorApp1.Services.DataBase;
+using BlazorApp1.Services.DataBase.OrderState;
 using BlazorApp1.Services.Movies;
-using BlazorApp1.Services.Purchase.OrderState;
 using BlazorApp1.Services.RegLogin;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;

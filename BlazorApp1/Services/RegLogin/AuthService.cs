@@ -1,6 +1,7 @@
 // Services/RegLogin/AuthService.cs
 using System.Security.Claims;
 using BlazorApp1.Services.DataBase;
+using BlazorApp1.Services.DataBase.DBEntities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
