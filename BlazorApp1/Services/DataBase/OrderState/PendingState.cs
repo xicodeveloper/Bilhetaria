@@ -16,13 +16,13 @@ public class PendingState : IOrderState
         _unitOfWork = unitOfWork;
     }
 
-    public async Task Pay(double price, PaymentMethod method)
+    public void Pay(double price, PaymentMethod method)
     {
         // Procesar pago
-        var wallet = (await _unitOfWork
+        var wallet = _unitOfWork
             .GetRepository<WalletUser>()
-            .GetWithQuery(q => q.Include(w => w.User).Where(w => w.User.Id == Order.UserId)))?
-            .FirstOrDefault();
+            .GetWithQuery(q => q.Include(w => w.User).Where(w => w.User.Id == Order.UserId))
+            ?.FirstOrDefault();
         if (wallet == null) throw new Exception("Wallet não encontrada");
 
         decimal amount = (decimal)price;
@@ -47,12 +47,12 @@ public class PendingState : IOrderState
 
         // Actualizar estado do pedido
         Order.Status = OrderStatus.Completed;
-        await _unitOfWork.CommitAsync();
+        _unitOfWork.Commit();
     }
 
-    public async Task Cancel()
+    public void Cancel()
     {
-        Order.Status = OrderStatus.Cancelled;
-        await _unitOfWork.CommitAsync();
+        Order.Status = OrderStatus.Cancelled; 
+        _unitOfWork.Commit();
     }
 }

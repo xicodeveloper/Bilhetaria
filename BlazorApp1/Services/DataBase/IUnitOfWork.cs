@@ -8,8 +8,6 @@ namespace BlazorApp1.Services.DataBase
     {
 
         IDatabaseRepository<TEntity>? GetRepository<TEntity>() where TEntity : DbItem;
-        Task<int> CommitAsync();
         int Commit();
-        Task<int> CompleteAsync(); // Added to match interface
     }
 }

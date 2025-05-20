@@ -68,12 +68,12 @@
         showDetails = false;
         try
         {
-            if (await AuthService.CheckUsernameExists(Model!.Username))
+            if (AuthService.CheckUsernameExists(Model!.Username))
             {
                 errorMessage = "Nome de utilizador já está em uso!";
                 return;
             }
-            if(await AuthService.CheckEmailExists(Model!.Email))
+            if(AuthService.CheckEmailExists(Model!.Email))
             {
                 errorMessage = "Email já está em uso!";
                 return;

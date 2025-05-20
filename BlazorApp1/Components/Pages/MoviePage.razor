@@ -258,7 +258,7 @@ private async Task BuyAsync(PurchaseType type)
             await _unitOfWork.Orders.AddAsync(orderBuilder.Build());
         }
 
-        await _unitOfWork.CommitAsync();
+        _unitOfWork.Commit();
         Navigation.NavigateTo("/basket");
     }
     catch (Exception ex)

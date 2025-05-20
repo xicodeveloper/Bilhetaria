@@ -12,25 +12,25 @@ public class DatabaseRepository<TItem> : IDatabaseRepository<TItem> where TItem 
         _context = context;
     }
 
-    public async Task<List<TItem>> GetAll()
+    public List<TItem> GetAll()
     {
-        return await _context.Set<TItem>().ToListAsync();
+        return _context.Set<TItem>().ToList();
     }
 
-    public async Task<TItem?> GetById(Guid id)
+    public TItem? GetById(Guid id)
     {
-        return await _context.Set<TItem>().FindAsync(id);
+        return _context.Set<TItem>().Find(id);
     }
 
-    public async Task Add(TItem item)
+    public void Add(TItem item)
     {
-        await _context.Set<TItem>().AddAsync(item);
+        _context.Set<TItem>().Add(item);
     }
 
-    public async Task Update(TItem item)
+    public void Update(TItem item)
     {
         var dbSet = _context.Set<TItem>();
-        var existingItem = await dbSet.FindAsync(item.Id);
+        var existingItem = dbSet.Find(item.Id);
         if (existingItem != null)
         {
             _context.Entry(existingItem).CurrentValues.SetValues(item);
@@ -41,19 +41,18 @@ public class DatabaseRepository<TItem> : IDatabaseRepository<TItem> where TItem 
         }
     }
 
-    public async Task Delete(TItem item)
+    public void Delete(TItem item)
     {
         _context.Set<TItem>().Remove(item);
-        await Task.CompletedTask;
     }
 
-    public async Task<ICollection<TItem>?> GetWithQuery(Func<IQueryable<TItem>, IQueryable<TItem>> query)
+    public ICollection<TItem>? GetWithQuery(Func<IQueryable<TItem>, IQueryable<TItem>> query)
     {
         if (query == null)
             throw new ArgumentNullException(nameof(query));
 
         var dbSet = _context.Set<TItem>();
-        var result = await query(dbSet).ToListAsync();
+        var result = query(dbSet).ToList();
         return result;
     }
 }

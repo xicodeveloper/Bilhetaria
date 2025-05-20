@@ -3,6 +3,7 @@
 @using System.Security.Claims
 @using BlazorApp1.Components.Layout
 @using BlazorApp1.Services
+@using BlazorApp1.Services.DataBase.DBEntities
 @using BlazorApp1.Services.RegLogin
 @using Microsoft.AspNetCore.Authorization
 @inject IAuthService AuthService
@@ -111,9 +112,9 @@
     private string EmailUser;
     private bool isSameUsername;
     
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        currentUser = await AuthService.FindUserByUsername(Username);
+        currentUser = AuthService.FindUserByUsername(Username);
         isSameUsername = currentUser.Username == Username;
         EmailUser = currentUser.Email;
         Console.WriteLine(currentUser);
@@ -146,7 +147,7 @@
             Console.WriteLine($"Email: {MyModel.Email}");
             Console.WriteLine($"Nova Password: {MyModel.NewPassword}");
 
-           var update = await AuthService.UpdateUser(
+           var update = AuthService.UpdateUser(
                currentUser.Id,
                 MyModel.Username,
                 MyModel.Email,

@@ -24,16 +24,16 @@ namespace BlazorApp1.Services.DataBase.DBEntities
         public Guid ShippingAddressId { get; set; } // Foreign key
         public Adress ShippingAddress { get; set; } // Navigation property
         
-        public async Task Pay(double price, PaymentMethod method, IStateFactory stateFactory)
+        public void Pay(double price, PaymentMethod method, IStateFactory stateFactory)
         {
             State = stateFactory.CreateState(this);
-            await State.Pay(price, method);
+            State.Pay(price, method);
         }
         
-        public async Task Cancel(StateFactory stateFactory)
+        public void Cancel(StateFactory stateFactory)
         {
             State = stateFactory.CreateState(this);
-            await State.Cancel();
+            State.Cancel();
         }
         
     }

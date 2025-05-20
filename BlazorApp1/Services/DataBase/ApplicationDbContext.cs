@@ -29,6 +29,7 @@ namespace BlazorApp1.Services.DataBase
             modelBuilder.Entity<RentalMovie>().ToTable("rental_movies");
             modelBuilder.Entity<PhysicalMovie>().ToTable("physical_movies");
             modelBuilder.Entity<DigitalMovie>().ToTable("digital_movies");
+            modelBuilder.Entity<Movie>().Property(m => m.Id).ValueGeneratedNever();
             
             modelBuilder.Entity<BasketItem>(entity =>
             {
@@ -36,6 +37,11 @@ namespace BlazorApp1.Services.DataBase
                     .WithMany(b => b.Items)
                     .HasForeignKey(bi => bi.OrderId)
                     .OnDelete(DeleteBehavior.Cascade);
+                
+                entity.HasOne(bi => bi.Movie)
+                    .WithMany()
+                    .HasForeignKey(bi => bi.MovieId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
             
             // Configurar o nome das tabelas
@@ -87,7 +93,7 @@ namespace BlazorApp1.Services.DataBase
 
                 entity.HasOne(w => w.User)
                     .WithOne(u => u.Wallet)
-                    .HasForeignKey<WalletUser>(w => w.Id)
+                    .HasForeignKey<WalletUser>(w => w.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
 

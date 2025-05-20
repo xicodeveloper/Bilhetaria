@@ -13,6 +13,7 @@ public class BasketItem  : DbItem
     public int Quantity { get; set; }
     public double Price { get; set; }
     public Order Order { get; set; }
+    public Movie Movie { get; set; }
     public double TotalPrice => Price * Quantity;
     public int Discount { get; set; } 
 }

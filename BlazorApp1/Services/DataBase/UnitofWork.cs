@@ -28,17 +28,7 @@ namespace BlazorApp1.Services.DataBase
             }
             return (IDatabaseRepository<TEntity>)repositories[typeof(TEntity)];
         }
-
-        public async Task<int> CommitAsync()
-        {
-            return await _context.SaveChangesAsync();
-        }
-
-        public async Task<int> CompleteAsync()
-        {
-            return await CommitAsync();
-        }
-
+        
         public int Commit()
         {
             return _context.SaveChanges();

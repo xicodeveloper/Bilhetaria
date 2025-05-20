@@ -15,12 +15,12 @@
     <div class="basket-items">
         @if (order != null)
         {
-            @foreach (var item in order.Basket.Items)
+            @foreach (var item in order.Items)
             {
                 <div class="item-card" key="@item.MovieId">
                     <div class="item-header">
-                        <img src="@item.MoviePosterUrl" alt="Poster do filme"/>
-                        <h3 class="item-title">@item.MovieTitle (@item.Type.ToString())</h3>
+                        <img src="@item.Movie.MoviePosterUrl" alt="Poster do filme"/>
+                        <h3 class="item-title">@item.Movie.MovieTitle </h3>
                         <div class="item-price">
                             @if (item.Discount > 0)
                             {
@@ -29,7 +29,6 @@
                             <span class="discounted-price">@(GetDiscountedPrice(item).ToString("0.00"))€</span>
                         </div>
                     </div>
-                    <p class="item-type">@item.Type.ToString()</p>
                     <div class="quantity-controls">
                         <button class="quantity-btn" @onclick="(() => UpdateQuantity(item, -1))">-</button>
                         <span class="quantity-display">@item.Quantity</span>
@@ -42,7 +41,7 @@
             <div class="total-section">
                 <button class="clear-btn" @onclick="ClearBasket">Limpar Carrinho</button>
                 <div class="checkout-box">
-                    <p class="total-price">Total: @(order.Basket.Items.Sum(i => GetDiscountedPrice(i) * i.Quantity).ToString("0.00"))€</p>
+                    <p class="total-price">Total: @(order.Items.Sum(i => GetDiscountedPrice(i) * i.Quantity).ToString("0.00"))€</p>
                     <button class="checkout-btn" @onclick="Pagamento">Checkout</button>
                 </div>
             </div>
@@ -60,7 +59,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        userId = await AuthService.GetUserId();
+        userId = AuthService.GetUserId();
         
         if (userId != 0 )
         {
