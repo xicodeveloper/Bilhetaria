@@ -9,3 +9,5 @@ obj/
 
 # Ignore Visual Studio Code files
 .vscode/
+*.db-wal
+*.db-shm
