@@ -173,7 +173,8 @@ namespace BlazorApp1.Migrations
                     MovieId = table.Column<Guid>(type: "TEXT", nullable: false),
                     Quantity = table.Column<int>(type: "INTEGER", nullable: false),
                     Price = table.Column<double>(type: "REAL", nullable: false),
-                    Discount = table.Column<int>(type: "INTEGER", nullable: false)
+                    Discount = table.Column<int>(type: "INTEGER", nullable: false),
+                    Validade = table.Column<DateTime>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {

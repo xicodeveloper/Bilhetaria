@@ -113,7 +113,7 @@
                             <div class="product-item" key="@(item.Id)">
                                 <img src="@item.Movie.MoviePosterUrl" alt="@item.Movie.MovieTitle" class="product-image"/>
                                 <div class="product-info">
-                                    <div class="product-title">@item.Movie.MovieTitle x @item.Quantity </div>
+                                    <div class="product-title">@item.Movie.MovieTitle (@item.GetTicketType()) x @item.Quantity </div>
                                     <div>Descontos: @item.Discount %</div>
                                     
                                     <button type="button" class="remove-btn"
