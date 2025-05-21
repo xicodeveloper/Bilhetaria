@@ -4,17 +4,16 @@
 @using BlazorApp1.Services.RegLogin
 @using System.Globalization
 @using System.Security.Claims
-@using System.Text.Json
-@using BlazorApp1.Services
+
 @using BlazorApp1.Services.Address
 @using BlazorApp1.Services.DataBase
-@using BlazorApp1.Services.OrderFiles
-@using BlazorApp1.Services.Orders.Models
+@using BlazorApp1.Services.DataBase.DBEntities
+@using BlazorApp1.Services.DataBase.DBEntities.Enum
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.EntityFrameworkCore
 
-@inherits LayoutComponentBase // NavBar.razor?
+@inherits LayoutComponentBase 
 @inject IAuthService AuthService
 @inject IHttpContextAccessor HttpContextAccessor
 @attribute [Authorize]
@@ -144,24 +143,19 @@
                                         <span>Total: @CalculateOrderTotal(order)</span>
                                     </div>
 
-                                    @if (order.Basket?.Items?.Any() == true)
+                                    @if (order.Items?.Any() == true)
                                     {
                                         <div class="basket-items">
                                             <h5>Itens do Pedido:</h5>
-                                            @foreach (var item in order.Basket.Items)
+                                            @foreach (var item in order.Items)
                                             {
                                                 <div class="basket-item">
                                                     <div class="item-poster">
-                                                        <img src="@item.MoviePosterUrl" alt="@item.MovieTitle" />
+                                                        <img src="@item.Movie.MoviePosterUrl" alt="@item.Movie.MovieTitle" />
                                                     </div>
                                                     <div class="item-details">
-                                                        <div><strong>@item.MovieTitle</strong></div>
+                                                        <div><strong>@item.Movie.MovieTitle</strong></div>
                                                         <div>Quantidade: @item.Quantity</div>
-                                                        <div>Tipo: @item.Type</div>
-                                                        @if (item.ScreeningDate.HasValue)
-                                                        {
-                                                            <div>Sessão: @item.ScreeningDate.Value.ToString("dd/MM/yyyy HH:mm")</div>
-                                                        }
                                                         <div>Preço Unitário: @item.Price.ToString("C2", CultureInfo.CreateSpecificCulture("pt-PT"))</div>
                                                         <div>Total Item: @((item.Price * item.Quantity).ToString("C2", CultureInfo.CreateSpecificCulture("pt-PT")))</div>
                                                     </div>
@@ -259,9 +253,10 @@
     
     private List<Claim> claims = new();
     private User userEntity { get; set; }
+    public Address moradaSelecionada;
     
     private List<Order> userOrders = new();
-    private List<BasketItem> uniqueMovies = new();
+    private List<Movie> uniqueMovies = new();
     private double totalPayValue;
     private string totalPay => totalPayValue.ToString("C2", CultureInfo.CreateSpecificCulture("pt-PT"));
     private int totalMinutes;
@@ -276,28 +271,55 @@
         await LoadClaims();
         if (userEntity != null)
         {
-           
-            userOrders = (await _unitOfWork.Orders.GetByUserIdAsync(userEntity.Id)).ToList();
-            totalPayValue = await _unitOfWork.Orders.GetTotalPurchaseValueAsync(userEntity.Id);
-            uniqueMovies = (await _unitOfWork.Orders.GetUniqueMoviesAsync(userEntity.Id)).ToList();
-            //totalMinutes = await _unitOfWork.Orders.GetTotalMinutesWatchedAsync(userEntity.Id);
+            userOrders = GetPurchasedOrders();
+            totalPayValue = CalculateTotalPaid();
+            uniqueMovies = GetUniquePurchasedMovies();
         }
         StateHasChanged();
         
     }
 
-
-
+    private List<Order> GetPurchasedOrders()
+    {
+        var purchasedOrders= _unitOfWork.GetRepository<Order>()
+            .GetWithQuery(q => q
+                .Where(o=> o.UserId == userEntity.Id && o.Status == OrderStatus.Completed)
+                .Include(o=> o.Items)
+                .ThenInclude(i => i.Movie))
+            .ToList();
+        return purchasedOrders;
+    }
+    
+    private double CalculateTotalPaid()
+    {
+        var totalPaid = userOrders.
+            SelectMany(o => o.Items)
+            .Sum(i => i.Price * i.Quantity);
+        return totalPaid;
+    }
+    
+    private List<Movie> GetUniquePurchasedMovies()
+    {
+        var uniqueMovies = userOrders
+            .SelectMany(o => o.Items)
+            .Select(i => i.Movie)
+            .Distinct()
+            .ToList();
+        return uniqueMovies;
+    }
+    
     private string CalculateOrderTotal(Order order)
     {
-        return order.Basket?.Items.Sum(i => i.Price * i.Quantity)
+        return order.Items.Sum(i => i.Price * i.Quantity)
             .ToString("C2", CultureInfo.CreateSpecificCulture("pt-PT"));
     }
+    
     private string GetUserId()
     {
         return claims.FirstOrDefault(c =>
             c.Type == ClaimTypes.NameIdentifier || c.Type == "sub")?.Value;
     }
+    
     private async Task LoadClaims()
     {
         try
@@ -306,9 +328,10 @@
             claims = authState.User.Claims.ToList();
             userId = GetUserId();
 
-            if (!int.TryParse(userId, out var userIdInt)) return;
-            
-            userEntity = await _unitOfWork.Users.GetByIdAsync(userIdInt);
+            if (!Guid.TryParse(userId, out var userIdGuid)) return;
+
+            userEntity = _unitOfWork.GetRepository<User>().GetById(userIdGuid);
+                //Users.GetByIdAsync(userIdInt);
         
             // Carregamento explícito se necessário
             if (userEntity != null && userEntity.Addresses == null)
@@ -329,23 +352,19 @@
         }
     }
     
-    public Adress moradaSelecionada;
-    
-   private async Task SelecionarMorada(Adress address)
+   private async Task SelecionarMorada(Address address)
     {
         try
         {
-
             foreach (var addr in userEntity.Addresses)
             {
                 addr.IstheOne = false;
             }
-        
-
+            
             address.IstheOne = true;
             moradaSelecionada = address;
 
-            await _unitOfWork.CommitAsync(); 
+            _unitOfWork.Commit(); 
             StateHasChanged();
         }
         catch (Exception ex)
@@ -357,7 +376,7 @@
     {
         try
         {
-            var newAddress = new Adress 
+            var newAddress = new Address 
             {
                 Street = Model.Street,
                 Number = Model.Number,
@@ -369,8 +388,9 @@
                 IstheOne = userEntity.Addresses.Count == 0
             };
 
-             _unitOfWork.Users.AddAddress(userEntity, newAddress);
-            userEntity = await _unitOfWork.Users.GetByIdAddressAsync(userEntity.Id);
+            userEntity.Addresses.Add(newAddress);
+            _unitOfWork.GetRepository<Address>().Add(newAddress);
+            _unitOfWork.Commit();
             StateHasChanged();
         }
         catch (Exception ex)
@@ -380,70 +400,3 @@
     }
 
 }
-
-@* protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            // Conta géneros
-            genreCounts = uniqueMovies
-                .GroupBy(m => m.Genre)
-                .ToDictionary(g => g.Key, g => g.Count());
-
-            await LoadChartAsync();
-        }
-    } *@
-
-    @* private async Task LoadChartAsync()
-    {
-        if (chartModule == null)
-        {
-            chartModule = await JS.InvokeAsync<IJSObjectReference>("import", "/js/chartHelper.js");
-        }
-
-        if (genreCounts?.Any() == true)
-        {
-            var labels = genreCounts.Keys.ToArray();
-            var values = genreCounts.Values.ToArray();
-
-            await chartModule.InvokeVoidAsync("renderPieChart", "genreChart", labels, values);
-        }
-    } *@
-
-@* <script>
-    export function renderPieChart(canvasId, labels, data) {
-    const ctx = document.getElementById(canvasId).getContext("2d");
-
-    if (window.genreChartInstance) {
-        window.genreChartInstance.destroy();
-    }
-
-    window.genreChartInstance = new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: labels,
-            datasets: [{
-                data: data,
-                backgroundColor: [
-                    '#FF6384', '#36A2EB', '#FFCE56', '#8BC34A', '#E91E63', '#03A9F4'
-                ]
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'right'
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function (tooltipItem) {
-                            return tooltipItem.label + ': ' + tooltipItem.raw;
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
-</script> *@

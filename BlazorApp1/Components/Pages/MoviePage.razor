@@ -1,35 +1,31 @@
-@page "/movie/{Id:int}"
-@inherits BlazorApp1.Components.Layout.MainLayout
-@implements IDisposable
-@attribute [Authorize]
-@inject IUnitOfWork _unitOfWork
+@page "/movie/{movieId:int}"
+
 @using System.Globalization
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Components
-@using BlazorApp1.Services.Models
-@using System.Threading
+@using Microsoft.AspNetCore.Components.Authorization
 @using BlazorApp1.Services
 @using BlazorApp1.Services.DataBase
-@using BlazorApp1.Services.OrderFiles
-@using BlazorApp1.Services.Orders.Builders
-@using BlazorApp1.Services.Orders.Models
-@using Microsoft.AspNetCore.Authorization
-@using Microsoft.AspNetCore.Components.Authorization
+@using BlazorApp1.Services.DataBase.DBEntities
+@using BlazorApp1.Services.DataBase.DBEntities.BasketItems
+@using BlazorApp1.Services.DataBase.DBEntities.Builders
+@using BlazorApp1.Services.DataBase.DBEntities.Enum
+@using BlazorApp1.Services.Models
 @using Microsoft.AspNetCore.WebUtilities
-@using Microsoft.EntityFrameworkCore.Metadata.Internal
+@using Microsoft.EntityFrameworkCore
 
 @inject IConfiguration Configuration
 @inject HttpClient Http
 @inject NavigationManager Navigation
-@inject IHttpContextAccessor HttpContextAccessor
 @inject AuthenticationStateProvider AuthStateProvider
-@inject IUserRepository UserRepository
+@inject IUnitOfWork _unitOfWork
+
 @rendermode InteractiveServer
 
 <section class="movie-details-section">
 </section>
-    <div class="movie-background" style="background-image: url('@_backdropImage');"></div>
-    <div class="movie-background-overlay"></div>
+<div class="movie-background" style="background-image: url('@_backdropImage');"></div>
+<div class="movie-background-overlay"></div>
 
 <div class="movie-container">
     @if (_movie == null)
@@ -59,8 +55,8 @@
                 </div>
 
                 <div class="purchase-buttons">
-                    <button class="btn-rent" @onclick="async () => await BuyAsync(PurchaseType.Aluga)">ALUGAR</button>
-                    <button class="btn-buy" @onclick="async () => await BuyAsync(PurchaseType.Forever)">COMPRAR</button>
+                    <button class="btn-rent" @onclick="Rent">ALUGAR</button>
+                    <button class="btn-buy" @onclick="Buy">COMPRAR</button>
                     <a href="/cinemas"><button class="btn-tickets">BILHETES</button></a>
                 </div>
 
@@ -68,16 +64,13 @@
                     <p>@_movie.Overview</p>
                 </div>
 
-                <!-- Favorites -->
                 <button class="btn-favorite">FAVORITE</button>
 
-            <!-- Cast & Genre -->
-            <div class="cast-genre">
-                <p><strong>Elenco:</strong> @string.Join(", ", _credits?.Cast?.Take(5).Select(c => c.Name) ?? Enumerable.Empty<string>())</p>
-                <p><strong>Género:</strong> @string.Join(", ", _movie.Genres.Select(g => g.Name))</p>
+                <div class="cast-genre">
+                    <p><strong>Elenco:</strong> @string.Join(", ", _credits?.Cast?.Take(5).Select(c => c.Name) ?? Enumerable.Empty<string>())</p>
+                    <p><strong>Género:</strong> @string.Join(", ", _movie.Genres.Select(g => g.Name))</p>
+                </div>
             </div>
-            </div>
-            
         </div>
 
         @if (_similarMovies != null && _similarMovies.Any())
@@ -89,11 +82,7 @@
                     {
                         <div class="similar-movie-card">
                             <a href="/movie/@movie.Id">
-                                <img class="movie-poster" src="@($"{LinkImage}{movie.PosterPath ?? "default-poster.jpg"}")" alt="@movie.Title" />
-                                <img src="https://image.tmdb.org/t/p/w200@(movie.PosterPath)" alt="@movie.Title" />
-                                <img src="@($"{LinkImage}{movie.PosterPath}")" alt="@movie.Title" />
-                                <img src="@GetPosterUrl(movie.PosterPath)" alt="@movie.Title" />
-
+                                <img class="movie-poster" src="@GetPosterUrl(movie.PosterPath)" alt="@movie.Title" />
                             </a>
                         </div>
                     }
@@ -104,39 +93,37 @@
         @if (_keywords?.Keywords != null && _keywords.Keywords.Any())
         {
             <div class="keywords-section">
-            <h3>Palavras-chave</h3>
-            <div class="keywords">
-                @foreach (var keyword in _keywords.Keywords.Take(15))
-                {
-                <span class="keyword-link">@keyword.Name.ToUpper()</span>
-                }
-            </div>
+                <h3>Palavras-chave</h3>
+                <div class="keywords">
+                    @foreach (var keyword in _keywords.Keywords.Take(15))
+                    {
+                        <span class="keyword-link">@keyword.Name.ToUpper()</span>
+                    }
+                </div>
             </div>
         }
     }
-    </div>
+</div>
 
-    @if (!string.IsNullOrEmpty(discount))
-    {
-        <div class="discount-banner">
-            Promoção Ativa: @discount
-        </div>
-        <p>Numero : @number_discount ! Ola</p>
-        <p>Preco: @priceMovie %</p>
-    }
-    else
-    {
-        <p>Não houve desconto</p>
-    }
+@if (!string.IsNullOrEmpty(discount))
+{
+    <div class="discount-banner">
+        Promoção Ativa: @discount
+    </div>
+    <p>Numero : @number_discount ! Ola</p>
+    <p>Preco: @priceMovie %</p>
+}
+else
+{
+    <p>Não houve desconto</p>
+}
 
 @code {
-   
-    // Parameters
-    [Parameter] public int Id { get; set; }
+    [Parameter] public int movieId { get; set; }
     private Order order;
     private User user;
 
-    private string userId { get; set; }
+    private Guid userId { get; set; }
     private string _posterUrl;
     private string ApiKey = Environment.GetEnvironmentVariable("API_KEY");
     private string LinkImage => Configuration["TmdbApi:ImageBaseUrl"] ?? string.Empty;
@@ -145,7 +132,6 @@
 
     private List<Claim> claims = new();
 
-    // State
     private MovieDetails _movie;
     private CreditsResponse _credits;
     private KeywordsResponse _keywords;
@@ -178,8 +164,8 @@
     {
         try
         {
-            var response = await Http.GetFromJsonAsync<MovieListResponse>($"{BaseUrl}/movie/{Id}/similar?api_key={ApiKey}");
-            _similarMovies = response?.Results?.Take(20).ToList(); // limita a 10 filmes semelhantes
+            var response = await Http.GetFromJsonAsync<MovieListResponse>($"{BaseUrl}/movie/{movieId}/similar?api_key={ApiKey}");
+            _similarMovies = response?.Results?.Take(20).ToList();
         }
         catch (Exception ex)
         {
@@ -187,119 +173,207 @@
             _similarMovies = new();
         }
     }
-        public enum PurchaseType
-        {
-            Aluga,
-            Forever
-        }
-    private async Task BuyAsync(PurchaseType type)
+
+    public enum PurchaseType
     {
+        Aluga,
+        Forever
+    }
+   
+    private void Rent()
+    {
+        AddMovietoDb();
         try
         {
-            if (!int.TryParse(userId, out var userIdInt)) return;
-            
-            user = await _unitOfWork.Users.GetByIdAsync(userIdInt);
+            if (userId == Guid.Empty) return;
+            user = GetUser();
+
             if (user?.Addresses == null || user.Addresses.Count == 0)
             {
                 Console.WriteLine("Tem que inserir morada primeiro");
                 Navigation.NavigateTo("/perfilAdmin");
                 return;
             }
-
-            // Obter morada principal
-            var shippingAddress = user.Addresses.FirstOrDefault(a => a.IstheOne);
-            if (shippingAddress == null)
+            
+            var existingOrder = GetOrder();
+            var movieDb = GetMovie();
+            
+            var newItem = new RentalMovie()
             {
-                Console.WriteLine("Nenhum endereço principal encontrado.");
-                return;
-            }
-
-            // Parâmetros específicos do tipo de compra
-            var (price, screeningDate, ticketType) = type switch
-            {
-                PurchaseType.Aluga => (priceMovie * 0.25, DateTime.UtcNow.AddDays(7), TicketType.Rental),
-                PurchaseType.Forever => (priceMovie, DateTime.UtcNow, TicketType.Digital),
-                _ => throw new ArgumentException("Tipo de compra inválido")
+                MovieId = movieDb.Id,
+                Quantity = 1,
+                Price = priceMovie* 0.25,
+                Discount = number_discount,
             };
-
-            // Verificar encomenda existente
-            var existingOrder = await _unitOfWork.Orders.GetActiveOrderWithItemsAsync(userIdInt);
-
-            var title = _movie?.Title ?? "Sem Título";
-            var posterUrl = _backdropImage ?? "Poster não definido";
 
             if (existingOrder != null)
             {
-                BasketItem item = existingOrder.Basket.Items.FirstOrDefault(i => i.MovieId == Id && i.Type == ticketType);
-                if (item != null)
+                var ExistingItem = _unitOfWork.GetRepository<RentalMovie>().GetWithQuery(q => q
+                    .Where(i => i.MovieId == movieDb.Id && i.OrderId == existingOrder.Id)).FirstOrDefault();
+                
+                if (ExistingItem != null)
                 {
-                    item.Quantity++;
+                    ExistingItem.Quantity++;
                 }
                 else
                 {
-                    // Adicionar item à encomenda existente
-                    existingOrder.Basket.Items.Add(new BasketItem
-                    {
-                    MovieId = Id,
-                    MovieTitle = title,
-                    MoviePosterUrl = posterUrl,
-                    Quantity = 1,
-                    ScreeningDate = screeningDate,
-                    Price = priceMovie,
-                    Discount = number_discount,
-                    Type = ticketType,
-                    });
+                    existingOrder.Items.Add(newItem);
                 }
                 
-                await _unitOfWork.Orders.UpdateAsync(existingOrder);
+                _unitOfWork.GetRepository<Order>().Update(existingOrder);
             }
             else
             {
-                // Criar nova encomenda
-                var orderBuilder = new OrderBuilder()
-                    .WithUserId(userIdInt)
-                    .WithNumber(type == PurchaseType.Aluga ? Id.ToString() : Guid.NewGuid().ToString())
-                    .WithDate(DateTime.UtcNow)
-                    .WithShippingAddress(a => a
-                        .WithStreet(shippingAddress.Street)
-                        .WithNumber(shippingAddress.Number)
-                        .WithCity(shippingAddress.City)
-                        .WithState(shippingAddress.State)
-                        .WithZipCode(shippingAddress.ZipCode)
-                        .WithCountry(shippingAddress.Country)
-                        .WithUser(user))
-                    .WithBasket(b => b
-                        .WithDigitalTicket(
-                            movieId: Id,
-                            title: title,
-                            posterUrl: posterUrl,
-                            quantity: 1,
-                            screeningDate: screeningDate,
-                            price: priceMovie,
-                            discount: number_discount));
-
-                if (type == PurchaseType.Forever)
-                {
-                    orderBuilder.WithOrderStatus(OrderStatus.Pending);
-                }
-
-                await _unitOfWork.Orders.AddAsync(orderBuilder.Build());
+                var address = GetUsersAddress(user);
+                var newOrder = CreateNewOrderWithAddressAndItem(newItem, address); 
+                _unitOfWork.GetRepository<Order>().Add(newOrder);
             }
 
-            await _unitOfWork.CommitAsync();
+            _unitOfWork.Commit();
             Navigation.NavigateTo("/basket");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Erro em BuyAsync: {ex.Message}");
+            Console.WriteLine($"Erro em Rent: {ex.Message}");
+        }  
+    }
+
+    private void Buy()
+    {
+        AddMovietoDb();
+        try
+        {
+            if (userId == Guid.Empty) return;
+            user = GetUser();
+
+            if (user?.Addresses == null || user.Addresses.Count == 0)
+            {
+                Console.WriteLine("Tem que inserir morada primeiro");
+                Navigation.NavigateTo("/perfilAdmin");
+                return;
+            }
+            
+            var existingOrder = GetOrder();
+            var movieDb = GetMovie();
+            
+            var newItem = new DigitalMovie()
+            {
+                MovieId = movieDb.Id,
+                Quantity = 1,
+                Price = priceMovie,
+                Discount = number_discount,
+            };
+
+            if (existingOrder != null)
+            {
+                var ExistingItem = _unitOfWork.GetRepository<DigitalMovie>().GetWithQuery(q => q
+                    .Where(i => i.MovieId == movieDb.Id && i.OrderId == existingOrder.Id)).FirstOrDefault();
+                if (ExistingItem != null)
+                {
+                    ExistingItem.Quantity++;
+                }
+                else
+                {
+                    existingOrder.Items.Add(newItem);
+                }
+                
+                _unitOfWork.GetRepository<Order>().Update(existingOrder);
+            }
+            else
+            {
+                var address = GetUsersAddress(user);
+                var newOrder = CreateNewOrderWithAddressAndItem(newItem, address); 
+                _unitOfWork.GetRepository<Order>().Add(newOrder);
+            }
+
+            _unitOfWork.Commit();
+            Navigation.NavigateTo("/basket");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro em Buy: {ex.Message}");
         }
     }
 
+    private void AddMovietoDb()
+    {
+        bool isInDb = _unitOfWork.GetRepository<Movie>().GetWithQuery(q =>
+                        q.Where(m => m.ApiId == movieId)
+                    ).Any();
+        
+        if (!isInDb)
+        {
+            Movie movie = new Movie
+            {
+                ApiId = movieId,
+                MovieTitle = _movie.Title,
+                MoviePosterUrl = _backdropImage,
+            };
+            _unitOfWork.GetRepository<Movie>().Add(movie);
+            _unitOfWork.Commit();
+        }
+    }
+    
+    private User GetUser()
+    {
+        user = _unitOfWork.GetRepository<User>().GetWithQuery(
+            q => q
+                .Where(u => u.Id == userId)
+                .Include(i => i.Addresses)
+        ).FirstOrDefault();
+        return user;
+    }
+    
+    private Order GetOrder()
+    {
+        var existingOrder = _unitOfWork.GetRepository<Order>().GetWithQuery(
+            q => q
+                .Where(o => o.UserId == userId && o.Status == OrderStatus.Pending)
+                .Include(o => o.Items)
+                .ThenInclude((BasketItem i) => i.Movie)
+        ).FirstOrDefault();
+        return existingOrder;
+    }
+    
+    private Movie GetMovie()
+    {
+        var movieDb = _unitOfWork.GetRepository<Movie>().GetWithQuery(
+                q => q.Where(m => m.ApiId == movieId)
+            ).FirstOrDefault();
+        return movieDb;
+    }
+
+    private Order CreateNewOrderWithAddressAndItem(BasketItem newItem, Address address)
+    {
+        var orderBuilder = new OrderBuilder()
+            .WithUserId(userId)
+            .WithDate(DateTime.UtcNow)
+            .WithShippingAddress(address)
+            .WithItems(new List<BasketItem>())
+            .AddItem(newItem);
+        
+        return orderBuilder.Build();
+    }
+
+    private Address GetUsersAddress(User user)
+    {
+        var shippingAddress = user.Addresses.FirstOrDefault(a => a.IstheOne);
+        var address = new AddressBuilder()
+            .WithStreet(shippingAddress.Street)
+            .WithNumber(shippingAddress.Number)
+            .WithCity(shippingAddress.City)
+            .WithState(shippingAddress.State)
+            .WithZipCode(shippingAddress.ZipCode)
+            .WithCountry(shippingAddress.Country)
+            .WithUser(user)
+            .Build();
+        return address;
+    }
+    
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            await LoadSimilarMovies();
             await LoadClaims();
             await LoadMovieData();
             await LoadCredits();
@@ -311,7 +385,6 @@
 
             var parameters = new List<string>();
             
-            // Coletar price corretamente
             if (query.TryGetValue("price", out var priceValues) && priceValues.Count > 0)
             {
                 _priceValue = priceValues[0];
@@ -322,7 +395,6 @@
                 }
             }
 
-            // Coletar discount corretamente
             if (query.TryGetValue("discount", out var discountValues) && discountValues.Count > 0)
             {
                 discount = discountValues[0];
@@ -333,11 +405,10 @@
                 }
             }
 
-            // Validação do hash com logging
             if (query.TryGetValue("hash", out var hashValues) && hashValues.Count > 0)
             {
                 var providedHash = hashValues[0];
-                var isValid = DiscountHasher.ValidateHash(Id, parameters.ToArray(), providedHash);
+                var isValid = DiscountHasher.ValidateHash(movieId, parameters.ToArray(), providedHash);
 
                 Console.WriteLine($"Parâmetros usados: {string.Join(", ", parameters)}");
                 Console.WriteLine($"Hash recebido: {providedHash}");
@@ -360,29 +431,30 @@
     private void ResetValues()
     {
         number_discount = 0;
-
     }
-        
-        //api
-    private async Task LoadMovieData() =>
-        _movie = await Http.GetFromJsonAsync<MovieDetails>($"{BaseUrl}/movie/{Id}?api_key={ApiKey}");
+    
+    private async Task LoadMovieData()
+    {
+        _movie = await Http.GetFromJsonAsync<MovieDetails>($"{BaseUrl}/movie/{movieId}?api_key={ApiKey}");
+    }
 
-    private async Task LoadCredits() =>
-        _credits = await Http.GetFromJsonAsync<CreditsResponse>($"{BaseUrl}/movie/{Id}/credits?api_key={ApiKey}");
+    private async Task LoadCredits()
+    {
+        _credits = await Http.GetFromJsonAsync<CreditsResponse>($"{BaseUrl}/movie/{movieId}/credits?api_key={ApiKey}");
+    }
 
-    private async Task LoadKeywords() =>
-        _keywords = await Http.GetFromJsonAsync<KeywordsResponse>($"{BaseUrl}/movie/{Id}/keywords?api_key={ApiKey}");
+    private async Task LoadKeywords()
+    {
+        _keywords = await Http.GetFromJsonAsync<KeywordsResponse>($"{BaseUrl}/movie/{movieId}/keywords?api_key={ApiKey}");
+    }
 
     private async Task LoadTrailer()
     {
-        var videos = await Http.GetFromJsonAsync<VideosResponse>($"{BaseUrl}/movie/{Id}/videos?api_key={ApiKey}");
+        var videos = await Http.GetFromJsonAsync<VideosResponse>($"{BaseUrl}/movie/{movieId}/videos?api_key={ApiKey}");
         var trailer = videos?.Results?.FirstOrDefault(v => v.Type == "Trailer");
         _trailerUrl = trailer != null ? $"https://www.youtube.com/embed/{trailer.Key}" : null;
     }
 
-
-
-//claims do user
     private string GetUserId()
     {
         return claims.FirstOrDefault(c =>
@@ -396,29 +468,23 @@
             var authState = await AuthStateProvider.GetAuthenticationStateAsync();
             claims = authState.User.Claims.ToList();
 
-            userId = GetUserId();
+            userId = Guid.Parse(GetUserId());
 
             Console.WriteLine($"User ID: {userId}");
             StateHasChanged();
         }
         catch (Exception ex)
         {
-
+            Console.WriteLine($"Erro ao carregar claims: {ex.Message}");
         }
     }
+
     private string FormatRuntime(int runtime)
     {
         var hours = runtime / 60;
         var minutes = runtime % 60;
         return $"{hours}h {minutes}m";
-    }    
-    @* string GetPosterUrl(string posterPath)
-    {
-        var baseUrl = Configuration["TmdbApi:ImageBaseUrl"] ?? "https://image.tmdb.org/t/p/w500";
-        return string.IsNullOrEmpty(posterPath)
-            ? "https://via.placeholder.com/200x300?text=No+Image"
-            : $"{baseUrl}{posterPath}";
-    } *@
+    }
 
     string GetPosterUrl(string posterPath)
     {
@@ -427,7 +493,6 @@
             return "https://via.placeholder.com/200x300?text=No+Image";
         }
 
-        // Garante que o posterPath começa com /
         if (!posterPath.StartsWith("/"))
         {
             posterPath = "/" + posterPath;
@@ -441,5 +506,4 @@
     {
         // Cleanup resources if needed
     }
-
 }

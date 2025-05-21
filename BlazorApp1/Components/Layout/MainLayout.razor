@@ -1,6 +1,6 @@
 ﻿@using System.Security.Claims
 @using BlazorApp1.Services.DataBase
-@using BlazorApp1.Services.OrderFiles
+@using BlazorApp1.Services.DataBase.DBEntities.Enum
 @using BlazorApp1.Services.RegLogin
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.EntityFrameworkCore
@@ -103,14 +103,14 @@
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
             var userIdClaim = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            if (!string.IsNullOrEmpty(userIdClaim) && int.TryParse(userIdClaim, out var userId))
+            if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var userId))
             {
                 var order = await _context.Orders
-                    .Include(o => o.Basket)
-                    .ThenInclude(b => b.Items)
+                    .Include(o => o.Items)
                     .FirstOrDefaultAsync(o => o.UserId == userId && o.Status == OrderStatus.Pending);
 
-                cartItemCount = order?.Basket?.Items.Sum(item => item.Quantity) ?? 0;
+
+                cartItemCount = order?.Items.Sum(item => item.Quantity) ?? 0;
                 StateHasChanged();
             }
         }

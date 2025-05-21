@@ -1,51 +1,34 @@
-// Services/DataBase/UnitOfWork.cs
-using System;
-using System.Threading.Tasks;
-using BlazorApp1.Services.Movies;
-using BlazorApp1.Services.Purchase;
-using BlazorApp1.Services.Purchase.OrderState;
-using BlazorApp1.Services.RegLogin;
-using Microsoft.EntityFrameworkCore;
-using BlazorApp1.Services.Orders.Models;
-using BlazorApp1.Services.Orders;
+
+
+using BlazorApp1.Services.DataBase.DBEntities;
+using BlazorApp1.Services.DataBase.Repository;
 
 namespace BlazorApp1.Services.DataBase
 {
     public class UnitOfWork : IUnitOfWork
     {
         private readonly ApplicationDbContext _context;
-        private IUserRepository _users;
-        private IOrderRepository _orders;
-        private IRepositoryWallet<WalletUser> _walletUsers;
-        private IMovieRepository _movies;
+        private readonly IRepositoryFactory _repositoryFactory;
+        
+        private readonly IDictionary<Type, object> repositories = new Dictionary<Type, object>();
+        
 
         public UnitOfWork(ApplicationDbContext context)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _repositoryFactory = new RepositoryFactory(_context);
         }
 
-        public IMovieRepository Movies => 
-            _movies ??= new MovieRepository(_context);
 
-        public IUserRepository Users => 
-            _users ??= new UserRepository(_context);
-
-        public IOrderRepository Orders => 
-            _orders ??= new OrderRepository(_context);
-
-        public IRepositoryWallet<WalletUser> WalletUsers => 
-            _walletUsers ??= new WalletUserRepository(_context);
-
-        public async Task<int> CommitAsync()
+        public IDatabaseRepository<TEntity>? GetRepository<TEntity>() where TEntity : DbItem
         {
-            return await _context.SaveChangesAsync();
+            if(!repositories.ContainsKey(typeof(TEntity)))
+            {
+                repositories[typeof(TEntity)] = _repositoryFactory.CreateRepository<TEntity>();
+            }
+            return (IDatabaseRepository<TEntity>)repositories[typeof(TEntity)];
         }
-
-        public async Task<int> CompleteAsync()
-        {
-            return await CommitAsync();
-        }
-
+        
         public int Commit()
         {
             return _context.SaveChanges();

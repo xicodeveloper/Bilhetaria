@@ -67,7 +67,7 @@
     {
         try
         {
-            var success = await AuthService.VerifyUserAsync(
+            var success = AuthService.VerifyUser(
                 confirmationModel!.Email,
                 confirmationModel.Code
             );

@@ -1,6 +1,7 @@
 // Services/RegLogin/AuthService.cs
 using System.Security.Claims;
 using BlazorApp1.Services.DataBase;
+using BlazorApp1.Services.DataBase.DBEntities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
@@ -22,20 +23,28 @@ namespace BlazorApp1.Services.RegLogin
             _verificationService = verificationService;
         }
 
-        public async Task<User> FindUserByUsername(string username)
+        
+        public User FindUserByUsername(string username)
         {
-            return await _unitOfWork.Users.FindByUsernameAsync(username);
+            var repository = _unitOfWork.GetRepository<User>();
+            
+            
+            var list = repository.GetWithQuery(
+                q => q.Where(
+                    u => u.Username == username));
+            
+            return list.FirstOrDefault();
         }
 
-        public async Task<bool> UpdateUser(int id, string username, string email, string newPassword, bool sameUserName)
+        public bool UpdateUser(Guid id, string username, string email, string newPassword, bool sameUserName)
         {
-            var user = await _unitOfWork.Users.GetByIdAsync(id);
+            var user = _unitOfWork.GetRepository<User>().GetById(id);
             if (user == null) throw new KeyNotFoundException("Usuário não encontrado");
 
-            if (user.Username != username && await CheckUsernameExists(username) && sameUserName)
+            if (user.Username != username && CheckUsernameExists(username) && sameUserName)
                 throw new InvalidOperationException("Nome de usuário já está em uso!");
 
-            if (user.Email != email && await CheckEmailExists(email))
+            if (user.Email != email && CheckEmailExists(email))
                 throw new InvalidOperationException("Email já está em uso!");
 
             user.Username = username;
@@ -44,33 +53,39 @@ namespace BlazorApp1.Services.RegLogin
             if (!string.IsNullOrEmpty(newPassword))
                 user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
 
-            await _unitOfWork.CommitAsync();
+            _unitOfWork.Commit();
             return true;
         }
 
-        public async Task<bool> VerifyUserAsync(string email, string code)
+        public bool VerifyUser(string email, string code)
         {
-            var user = await _unitOfWork.Users.FindByEmailAsync(email);
+            var user = _unitOfWork.GetRepository<User>().GetWithQuery(q => q.Where(u => u.Email == email)).FirstOrDefault();
             if (user == null) return false;
 
             if (_verificationService.ValidateCode(email, code))
             {
                 user.IsSucess = true;
-                await _unitOfWork.CommitAsync();
+                _unitOfWork.Commit();
                 return true;
             }
 
             return false;
         }
 
-        public async Task<bool> CheckUsernameExists(string username)
+        public bool CheckUsernameExists(string username)
         {
-            return await _unitOfWork.Users.UsernameExistsAsync(username);
+            var exists = _unitOfWork.GetRepository<User>()
+                .GetWithQuery(q => q.Where(u => u.Username == username))
+                .Any();
+            return exists;
         }
 
-        public async Task<bool> CheckEmailExists(string email)
+        public bool CheckEmailExists(string email)
         {
-            return await _unitOfWork.Users.EmailExistsAsync(email);
+            var exists = _unitOfWork.GetRepository<User>()
+                .GetWithQuery(q => q.Where(u => u.Email == email))
+                .Any();
+            return exists;
         }
 
         public async Task CreateUser(string username, string password, string email)
@@ -83,8 +98,8 @@ namespace BlazorApp1.Services.RegLogin
                 IsSucess = false
             };
 
-            await _unitOfWork.Users.AddAsync(user);
-            await _unitOfWork.CommitAsync();
+            _unitOfWork.GetRepository<User>().Add(user);
+            _unitOfWork.Commit();
 
             var wallet = new WalletUser
             {
@@ -94,8 +109,8 @@ namespace BlazorApp1.Services.RegLogin
                 CreditCardSaldo = 100m
             };
 
-            await _unitOfWork.WalletUsers.AddAsync(wallet);
-            await _unitOfWork.CommitAsync();
+            _unitOfWork.GetRepository<WalletUser>().Add(wallet);
+            _unitOfWork.Commit();
 
             await _verificationService.SendVerificationCodeAsync(email);
         }
@@ -104,7 +119,7 @@ namespace BlazorApp1.Services.RegLogin
         {
             try
             {
-                var user = await FindUser(username);
+                var user = FindUserByUsername(username);
 
                 if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
                 {
@@ -151,23 +166,17 @@ namespace BlazorApp1.Services.RegLogin
             }
         }
 
-        public async Task<User> FindUser(string usernameOrEmail)
-        {
-            return await _unitOfWork.Users.FindByUsernameOrEmailAsync(usernameOrEmail);
-        }
-
+        
         public async Task LogoutAsync()
         {
             await _httpContextAccessor.HttpContext.SignOutAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme);
         }
 
-        public async Task<int> GetUserId()
+        public Guid GetUserId()
         {
             var userId = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-
-            return int.TryParse(userId, out var id) ? id : 0;
+            return Guid.TryParse(userId, out var id) ? id : Guid.Empty;
         }
     }
 }

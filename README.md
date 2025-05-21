@@ -1,11 +1,7 @@
 # Instruções para a instalação e execução do projeto do projeto
 
-## 1. Instalação da base de dados:
-- Para este projeto é preciso ter instalado o XAMPP Control Panel com a Apache e o MySQL
-- Dentro do XAMPP Control Panel, inicie o Apache e o MySQL
-- no http://localhost/phpmyadmin/ criar uma nova base de dados chamada ``ticketzone``
 
-## 2. Fazer as Migrations iniciais:
+## 1. Fazer as Migrations iniciais:
 no terminal:
 ```
 cd .\BlazorApp1\
@@ -15,13 +11,10 @@ dotnet ef database update
 ```
 
 
-## 3. Importe da API-KEY:
+## 2. Importe da API-KEY:
 - criar um ficheiro .env dentro da pasta de BlazorApp1
 - escrever as variaveis de ambiente
 
-## 4. Executar o projeto:
-- incie o XAMPP Control Panel
-- inicie o Apache e o MySQL
 
 na terminal:
 ```
