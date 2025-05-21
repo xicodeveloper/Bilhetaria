@@ -97,6 +97,7 @@
         if (item.Quantity < 1) item.Quantity = 1;
         
         _UnitOfWork.GetRepository<Order>().Update(order);
+        _UnitOfWork.Commit();
         StateHasChanged();
     }
     
@@ -106,6 +107,7 @@
         {
             order.Items.Remove(item);
             _UnitOfWork.GetRepository<Order>().Update(order);
+            _UnitOfWork.Commit();
             StateHasChanged();
         }
         catch (Exception ex)
@@ -118,10 +120,8 @@
     {
         if (order?.Items != null)
         {
-            var itemRepo = _UnitOfWork.GetRepository<BasketItem>();
             foreach (var item in order.Items.ToList())
             {
-                itemRepo.Delete(item);
                 order.Items.Remove(item);
             }
             _UnitOfWork.GetRepository<Order>().Update(order);

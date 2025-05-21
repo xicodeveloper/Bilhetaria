@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BlazorApp1.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250520232157_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20250521192122_InitialCreate2")]
+    partial class InitialCreate2
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -90,7 +90,7 @@ namespace BlazorApp1.Migrations
 
                     b.HasIndex("OrderId");
 
-                    b.ToTable("BasketItems");
+                    b.ToTable((string)null);
 
                     b.UseTpcMappingStrategy();
                 });
@@ -220,6 +220,9 @@ namespace BlazorApp1.Migrations
             modelBuilder.Entity("BlazorApp1.Services.DataBase.DBEntities.BasketItems.RentalMovie", b =>
                 {
                     b.HasBaseType("BlazorApp1.Services.DataBase.DBEntities.BasketItem");
+
+                    b.Property<DateTime>("Validade")
+                        .HasColumnType("TEXT");
 
                     b.ToTable("rental_movies", (string)null);
                 });

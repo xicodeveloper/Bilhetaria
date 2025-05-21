@@ -29,7 +29,6 @@ namespace BlazorApp1.Services.DataBase
             modelBuilder.Entity<RentalMovie>().ToTable("rental_movies");
             modelBuilder.Entity<PhysicalMovie>().ToTable("physical_movies");
             modelBuilder.Entity<DigitalMovie>().ToTable("digital_movies");
-            //modelBuilder.Entity<Movie>().Property(m => m.Id).ValueGeneratedNever();
             
             modelBuilder.Entity<BasketItem>(entity =>
             {

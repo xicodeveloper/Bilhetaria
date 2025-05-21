@@ -6,8 +6,6 @@ namespace BlazorApp1.Services.DataBase.DBEntities;
 
 public class Address  : DbItem
 {
-    [Key]
-    public Guid Id { get; set; }
     public string Street { get; set; }
     public string Number { get; set; }
     public string ZipCode { get; set; }

@@ -8,7 +8,6 @@ namespace BlazorApp1.Services.DataBase.DBEntities
 {
     public class Order  : DbItem
     {
-        public Guid Id { get; set; }
         
         public OrderStatus Status { get; set; }
         public Guid UserId { get; set; }

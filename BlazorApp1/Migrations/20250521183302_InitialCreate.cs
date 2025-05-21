@@ -70,10 +70,10 @@ namespace BlazorApp1.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    UserId = table.Column<Guid>(type: "TEXT", nullable: false),
                     MbwaySaldo = table.Column<decimal>(type: "decimal(18,2)", nullable: false, defaultValue: 100m),
                     ApplePaySaldo = table.Column<decimal>(type: "decimal(18,2)", nullable: false, defaultValue: 100m),
-                    CreditCardSaldo = table.Column<decimal>(type: "decimal(18,2)", nullable: false, defaultValue: 100m)
+                    CreditCardSaldo = table.Column<decimal>(type: "decimal(18,2)", nullable: false, defaultValue: 100m),
+                    UserId = table.Column<Guid>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -105,34 +105,6 @@ namespace BlazorApp1.Migrations
                         principalTable: "addresses",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "BasketItems",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    OrderId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    MovieId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    Quantity = table.Column<int>(type: "INTEGER", nullable: false),
-                    Price = table.Column<double>(type: "REAL", nullable: false),
-                    Discount = table.Column<int>(type: "INTEGER", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_BasketItems", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_BasketItems_Movies_MovieId",
-                        column: x => x.MovieId,
-                        principalTable: "Movies",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_BasketItems_orders_OrderId",
-                        column: x => x.OrderId,
-                        principalTable: "orders",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -256,16 +228,6 @@ namespace BlazorApp1.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_BasketItems_MovieId",
-                table: "BasketItems",
-                column: "MovieId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_BasketItems_OrderId",
-                table: "BasketItems",
-                column: "OrderId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_digital_movies_MovieId",
                 table: "digital_movies",
                 column: "MovieId");
@@ -320,9 +282,6 @@ namespace BlazorApp1.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "BasketItems");
-
             migrationBuilder.DropTable(
                 name: "digital_movies");
 

@@ -12,6 +12,7 @@
 @using BlazorApp1.Services
 @using BlazorApp1.Services.DataBase
 @using BlazorApp1.Services.DataBase.DBEntities
+@using BlazorApp1.Services.DataBase.DBEntities.BasketItems
 @using BlazorApp1.Services.DataBase.DBEntities.Builders
 @using BlazorApp1.Services.DataBase.DBEntities.Enum
 @using Microsoft.AspNetCore.Authorization
@@ -79,7 +80,7 @@
             </div>
 
             <div class="purchase-options">
-                <button class="btn-rent" @onclick="async () => Buy()">ALUGAR (2,49€)</button>
+                <button class="btn-rent" @onclick="async () => Rent()">ALUGAR (2,49€)</button>
                 <button class="btn-tickets" @onclick="async () => Buy()">COMPRAR</button>
                 <a href="/cinemas" style="text-decoration: none;color: inherit;"><button class="btn-tickets">BILHETES</button></a>
                 
@@ -159,23 +160,13 @@ else
         ? null
         : $"{ImageBaseUrl}{_movie.backdrop_path}";
 
-    private async Task Rent()
+    private void Rent()
     {
-        
-    }
-    private void Buy()
-    {
-
         AddMovietoDb();
-
         try
         {
-            Console.WriteLine(userId);
             if (userId == Guid.Empty) return;
-
-
-            user = _unitOfWork.GetRepository<User>().GetById(userId);
-
+            user = GetUser();
 
             if (user?.Addresses == null || user.Addresses.Count == 0)
             {
@@ -183,35 +174,13 @@ else
                 Navigation.NavigateTo("/perfilAdmin");
                 return;
             }
-
-
+            
             // Obter morada principal
-            var shippingAddress = user.Addresses.FirstOrDefault(a => a.IstheOne);
-
-            if (shippingAddress == null)
-            {
-                Console.WriteLine("Nenhum endereço principal encontrado.");
-                return;
-            }
+            var existingOrder = GetOrder();
+            var movieDb = GetMovie();
 
             
-            
-            
-            // Verificar encomenda existente
-            var existingOrder = _unitOfWork.GetRepository<Order>().GetWithQuery(
-                q => q
-                    .Where(o => o.UserId == userId && o.Status == OrderStatus.Pending)
-                    .Include(o => o.Items)
-                    .ThenInclude((BasketItem i) => i.Movie)
-            ).FirstOrDefault();
-
-           
-            var movieDb = _unitOfWork.GetRepository<Movie>().GetWithQuery(
-                q => q.Where(m => m.ApiId == movieId)
-            ).FirstOrDefault();
-
-            
-            var newItem = new BasketItem
+            var newItem = new RentalMovie()
             {
                 MovieId = movieDb.Id,
                 Quantity = 1,
@@ -222,10 +191,12 @@ else
 
             if (existingOrder != null)
             {
-                BasketItem item = existingOrder.Items.FirstOrDefault(i => i.MovieId == movieDb.Id);
-                if (item != null)
+                var ExistingItem = _unitOfWork.GetRepository<RentalMovie>().GetWithQuery(q => q
+                    .Where(i => i.MovieId == movieDb.Id && i.OrderId == existingOrder.Id)).FirstOrDefault();
+                
+                if (ExistingItem != null)
                 {
-                    item.Quantity++;
+                    ExistingItem.Quantity++;
                 }
                 else
                 {
@@ -237,26 +208,74 @@ else
             }
             else
             {
-                // Criar nova encomenda
-                var address = new AddressBuilder()
-                    .WithStreet(shippingAddress.Street)
-                    .WithNumber(shippingAddress.Number)
-                    .WithCity(shippingAddress.City)
-                    .WithState(shippingAddress.State)
-                    .WithZipCode(shippingAddress.ZipCode)
-                    .WithCountry(shippingAddress.Country)
-                    .WithUser(user)
-                    .Build();
+                var address = GetUsersAddress(user);
+                var newOrder = CreateNewOrderWithAddressAndItem(newItem, address); 
                 
-                var orderBuilder = new OrderBuilder()
-                    .WithUserId(userId)
-                    .WithDate(DateTime.UtcNow)
-                    .WithShippingAddress(address)
-                    .WithItems(new List<BasketItem>())
-                    .AddItem(newItem);
+                _unitOfWork.GetRepository<Order>().Add(newOrder);
+            }
 
+            _unitOfWork.Commit();
+            Navigation.NavigateTo("/basket");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro em BuyAsync: {ex.Message}");
+        }  
+    }
+    private void Buy()
+    {
+        AddMovietoDb();
+        try
+        {
+            if (userId == Guid.Empty) return;
+            user = GetUser();
+
+            if (user?.Addresses == null || user.Addresses.Count == 0)
+            {
+                Console.WriteLine("Tem que inserir morada primeiro");
+                Navigation.NavigateTo("/perfilAdmin");
+                return;
+            }
+            
+            // Obter morada principal
+            var existingOrder = GetOrder();
+            var movieDb = GetMovie();
+
+            
+            var newItem = new DigitalMovie()
+            {
+                MovieId = movieDb.Id,
+                Quantity = 1,
+                Price = priceMovie,
+                Discount = number_discount,
+            };
+
+
+            if (existingOrder != null)
+            {
+
+                var ExistingItem = _unitOfWork.GetRepository<DigitalMovie>().GetWithQuery(q => q
+                    .Where(i => i.MovieId == movieDb.Id && i.OrderId == existingOrder.Id)).FirstOrDefault();
+                if (ExistingItem != null)
+                {
+                    ExistingItem.Quantity++;
+
+                }
+                else
+                {
+                    
+                    // Adicionar item à encomenda existente
+                    existingOrder.Items.Add(newItem);
+                }
                 
-                _unitOfWork.GetRepository<Order>().Add(orderBuilder.Build());
+                _unitOfWork.GetRepository<Order>().Update(existingOrder);
+            }
+            else
+            {
+                var address = GetUsersAddress(user);
+                var newOrder = CreateNewOrderWithAddressAndItem(newItem, address); 
+                
+                _unitOfWork.GetRepository<Order>().Add(newOrder);
             }
 
             _unitOfWork.Commit();
@@ -286,7 +305,65 @@ else
             _unitOfWork.Commit();
         }
     }
+    
+    private User GetUser()
+    {
+        user = _unitOfWork.GetRepository<User>().GetWithQuery(
+            q => q
+                .Where(u => u.Id == userId)
+                .Include(i => i.Addresses)
+        ).FirstOrDefault();
+        return user;
+    }
+    
+    private Order GetOrder()
+    {
+        // Verificar encomenda existente
+        var existingOrder = _unitOfWork.GetRepository<Order>().GetWithQuery(
+            q => q
+                .Where(o => o.UserId == userId && o.Status == OrderStatus.Pending)
+                .Include(o => o.Items)
+                .ThenInclude((BasketItem i) => i.Movie)
+        ).FirstOrDefault();
+        return existingOrder;
+    }
+    
+    private Movie GetMovie()
+    {
+        var movieDb = _unitOfWork.GetRepository<Movie>().GetWithQuery(
+                q => q.Where(m => m.ApiId == movieId)
+            ).FirstOrDefault();
+        return movieDb;
+    }
 
+    private Order CreateNewOrderWithAddressAndItem(BasketItem newItem, Address address )
+    {
+        var orderBuilder = new OrderBuilder()
+            .WithUserId(userId)
+            .WithDate(DateTime.UtcNow)
+            .WithShippingAddress(address)
+            .WithItems(new List<BasketItem>())
+            .AddItem(newItem);
+        
+        return orderBuilder.Build();
+    }
+
+    private Address GetUsersAddress(User user)
+    {
+        var shippingAddress = user.Addresses.FirstOrDefault(a => a.IstheOne);
+        // Criar nova encomenda
+        var address = new AddressBuilder()
+            .WithStreet(shippingAddress.Street)
+            .WithNumber(shippingAddress.Number)
+            .WithCity(shippingAddress.City)
+            .WithState(shippingAddress.State)
+            .WithZipCode(shippingAddress.ZipCode)
+            .WithCountry(shippingAddress.Country)
+            .WithUser(user)
+            .Build();
+        return address;
+    }
+    
     protected override async Task OnInitializedAsync()
     {
         try
