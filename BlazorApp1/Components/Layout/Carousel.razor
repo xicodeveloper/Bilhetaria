@@ -1,0 +1,38 @@
+@using BlazorApp1.Services.Movies
+@inject IJSRuntime JS
+@inherits LayoutComponentBase
+@* @using BlazorApp1.Services.Movies *@
+
+
+<div class="movies-section">
+    <h3 class="section-title">@Title</h3>
+    <div class="movies-carousel" @ref="carouselContainer">
+        <div class="carousel-track">
+            @foreach (var movie in Movies)
+            {
+                <MovieCard Movie="movie" ShowDiscount="@ShowDiscount" />
+            }
+        </div>
+    </div>
+    <div class="carousel-nav">
+        <button class="carousel-btn prev" @onclick="() => Scroll(-1)">◀</button>
+        <button class="carousel-btn next" @onclick="() => Scroll(1)">▶</button>
+    </div>
+</div>
+
+
+@code {
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public IEnumerable<Film> Movies { get; set; } = Enumerable.Empty<Film>();
+    [Parameter] public bool ShowDiscount { get; set; } = false;
+    
+    private ElementReference carouselContainer;
+    private int currentIndex = 0;
+
+    private async Task Scroll(int direction)
+    {
+        currentIndex += direction;
+        if (currentIndex < 0) currentIndex = 0;
+        await JS.InvokeVoidAsync("scrollCarousel", carouselContainer, currentIndex);
+    }
+}

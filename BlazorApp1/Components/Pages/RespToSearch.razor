@@ -31,11 +31,9 @@ else
     </div>
 }
 
-<input @bind="searchQuery" @bind:event="oninput" @onkeypress="HandleKeyPress" placeholder="Search for a movie..." />
 </div>
 @code {
     [Parameter] public string query { get; set; } = string.Empty;
-    @* private List<Film> Movies { get; set; } = new List<Film>(); *@
     private List<Film> Movies { get; set; } = new();
 
     private string GetPosterUrl(string posterPath)

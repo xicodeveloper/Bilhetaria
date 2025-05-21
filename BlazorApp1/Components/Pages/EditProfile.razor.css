@@ -120,6 +120,28 @@
     margin-bottom: 1.5rem;
 }
 
+::deep input.form-input {
+    margin: 0;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    width: 60%;
+    padding: 0.8rem;
+    background: rgb(178 178 178 / 15%);
+    border: 1px solid rgb(255 255 255 / 59%);
+    border-radius: 20px;
+    color: #b1b1b1;
+    font-family: Poppins;
+    font-size: 1rem;
+    outline: none;
+    transition: background 0.3s ease;
+}
+
+::deep input.form-input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+    font-style: italic;
+}
+
 label {
     display: block;
     color: #F5F5F5;
@@ -127,28 +149,18 @@ label {
     font-size: 0.9rem;
     margin-bottom: 0.5rem;
 }
-.form-input {
-
-    width: 100%;
-    padding: 0.8rem;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 8px;
-    color: blue;
-    font-family: Poppins;
-    font-size: 1rem;
-}
 
 .save-btn {
     background: #F3A529;
-    color: #000;
+    color: #ffffff;
     font-family: Poppins;
+    font-size: small;
     font-weight: 600;
     padding: 0.8rem 2rem;
     border: none;
     border-radius: 25px;
     cursor: pointer;
-    width: 100%;
+    width: 30%;
     margin-top: 1rem;
     transition: all 0.3s ease;
 }

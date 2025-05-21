@@ -1,6 +1,5 @@
 @page "/perfilAdmin"
 @layout MainLayout
-
 @using BlazorApp1.Components.Layout
 @using BlazorApp1.Services.RegLogin
 @using System.Globalization
@@ -14,7 +13,7 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.EntityFrameworkCore
 
-
+@inherits LayoutComponentBase // NavBar.razor?
 @inject IAuthService AuthService
 @inject IHttpContextAccessor HttpContextAccessor
 @attribute [Authorize]
@@ -24,65 +23,42 @@
 @inject ApplicationDbContext _context
 @inject IJSRuntime JS
 
-
-
-
 <div class="page-container">
     <div class="grid-container">
-        <div class="grid-item horizontal" style="grid-column: span 1; grid-row: span 1">
-            
+    <!-- LADO ESQUERDO -->
+    <div class="vertical" style="display: flex; flex-direction: column; gap: 2rem">
+        
+        <!-- Total visto -->
+        <div class="grid-item horizontal" style="position: relative; overflow: hidden;">
             <div class="vertical" style="display: flex; gap: 10px; width: 100%">
                 Total visto: <br/>
-                <div class="horizontal" style="display: flex; gap: 10px; margin-top: auto">
+                <div class="horizontal" style="display: flex; gap: 10px; margin-top: auto; align-items: center;">
                     <h3>@totalVisto</h3>
                     <p>minutos</p>
                 </div>
-                
             </div>
-            <!-- Hardcoded -->
-            <div>
-                logo
-            </div>
-            <!--  -->
-            
+            <img src="/img/logo.png" alt="Logo"/>
         </div>
-        <div class="grid-item horizontal" style="grid-column: span 1; grid-row: span 1">
+
+
+
+        <!-- Método de Pagamento -->
+        <div class="grid-item horizontal">
             <div class="vertical" style="display: flex; gap: 10px; width: 100%; justify-content: space-between">
                 Metodo de Pagamento:
-                
                 <h3>@paymentMethod</h3>
             </div>
-            <!-- Hardcoded -->
-            <div>
-                logo
-            </div>
-            <!--  -->
-            
-        </div>
-        <div class="grid-item horizontal" style="grid-column: span 1; grid-row: span 1">
-            <div class="vertical" style="display: flex; gap: 10px; width: 100%; justify-content: space-between">
-                Valor total em compra:
-
-                <h3>@totalPay€</h3>
-            </div>
-            
-            <!-- Hardcoded -->
-            <div>
-                logo
-            </div>
-            <!--  -->
-            
+            <img src="/img/logo.png" alt="Logo"/>
         </div>
 
+        <!-- Vistos este mês -->
         <div class="grid-item vertical">
             Visto este mês:
-
             <div class="movie-grid">
                 @if (uniqueMovies.Any())
                 {
                     @foreach (var movie in uniqueMovies)
                     {
-                       
                         <div class="movie-poster">
                             <h1>@movie.MovieTitle</h1>
                             <img src="@movie.MoviePosterUrl" alt="@movie.MovieTitle"/>
@@ -95,18 +71,11 @@
                 }
             </div>
         </div>
-        <div class="grid-item vertical" style="grid-column: span 1; grid-row: span 2">
-            Géneros:
-            <div class="chart-container">
-                <canvas id="genreChart" @ref="chartCanvas"></canvas>
-            </div>
-        </div>
 
-        <div class="grid-item" style="grid-column: span 2; grid-row: span 2">
-            
-
+        <!-- As tuas moradas -->
+        <div class="grid-item">
             As tuas moradas:
-            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px; overflow: auto">
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px; overflow: auto; width: 500px; height: 500px;">
                 @if (userEntity == null || userEntity.Addresses == null || userEntity.Addresses.Count == 0)
                 {
                     <div style="text-align: center; font-style: italic;">Nenhuma morada encontrada.</div>
@@ -153,11 +122,13 @@
                 }
             </div>
         </div>
-        <div class="grid-item" style="grid-column: span 2; grid-row: span 3; overflow: auto">
+
+        <!-- Minhas ordens -->
+        <div class="grid-item" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;  width: 500px; height: 500px;">
             <h3>Minhas Ordens</h3>
             @if (userOrders.Any())
             {
-                <div class="customer-card">
+                <div class="customer-card"style="overflow: auto;">
                     <h4>@userEntity?.Username (ID: @userEntity?.Id)</h4>
                     <div class="order-list">
                         @foreach (var order in userOrders)
@@ -207,44 +178,67 @@
                 <div>Nenhuma ordem encontrada @userEntity?.Username !</div>
             }
         </div>
-
-        <EditForm Model="Model" OnValidSubmit="AddAddress" FormName="address-form" class="Addressform">
-            <DataAnnotationsValidator />
-            <ValidationSummary />
-
-            <div class="form-group">
-                <label>Rua</label>
-                <InputText @bind-Value="Model!.Street" class="form-control" placeholder="Rua" />
-            </div>
-
-            <div class="form-group">
-                <label>Número</label>
-                <InputText @bind-Value="Model!.Number" class="form-control" placeholder="Número" />
-            </div>
-
-            <div class="form-group">
-                <label>Código Postal</label>
-                <InputText @bind-Value="Model!.ZipCode" class="form-control" placeholder="0000-000" />
-            </div>
-
-            <div class="form-group">
-                <label>Cidade</label>
-                <InputText @bind-Value="Model!.City" class="form-control" placeholder="Cidade" />
-            </div>
-
-            <div class="form-group">
-                <label>Estado/Distrito</label>
-                <InputText @bind-Value="Model!.State" class="form-control" placeholder="Estado ou distrito" />
-            </div>
-
-            <div class="form-group">
-                <label>País</label>
-                <InputText @bind-Value="Model!.Country" class="form-control" placeholder="País" />
-            </div>
-
-            <button type="submit" class="loginsub">Guardar Endereço</button>
-        </EditForm>
     </div>
+
+    <!-- LADO DIREITO -->
+    <div class="vertical" style="display: flex; flex-direction: column; gap: 2rem">
+        
+        <!-- Valor total em compra -->
+        <div class="grid-item horizontal">
+            <div class="vertical" style="display: flex; gap: 10px; width: 100%; justify-content: space-between">
+                Valor total em compra:
+                <h3>@totalPay€</h3>
+            </div>
+            <img src="/img/logo_2.png" alt="Logo"/>
+        </div>
+
+        <!-- Géneros -->
+        <div class="grid-item vertical">
+            Géneros:
+            <div class="chart-container">
+                @* <canvas id="genreChart" @ref="chartCanvas"></canvas> *@
+                <img src="/img/chart_generos.png" alt="Chart"/>
+            </div>
+        </div>
+
+        <!-- Formulário: Rua, Número, etc -->
+        <div class="grid-item">
+            <EditForm Model="Model" OnValidSubmit="AddAddress" FormName="address-form" class="Addressform">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="form-group">
+                    <label>Rua</label>
+                    <InputText @bind-Value="Model!.Street" class="form-control" placeholder="Rua" />
+                </div>
+                <div class="form-group">
+                    <label>Número</label>
+                    <InputText @bind-Value="Model!.Number" class="form-control" placeholder="Número" />
+                </div>
+                <div class="form-group">
+                    <label>Código Postal</label>
+                    <InputText @bind-Value="Model!.ZipCode" class="form-control" placeholder="0000-000" />
+                </div>
+                <div class="form-group">
+                    <label>Cidade</label>
+                    <InputText @bind-Value="Model!.City" class="form-control" placeholder="Cidade" />
+                </div>
+                <div class="form-group">
+                    <label>Estado/Distrito</label>
+                    <InputText @bind-Value="Model!.State" class="form-control" placeholder="Estado ou distrito" />
+                </div>
+                <div class="form-group">
+                    <label>País</label>
+                    <InputText @bind-Value="Model!.Country" class="form-control" placeholder="País" />
+                </div>
+                <div class="submit-button">
+                <button type="submit" class="moradasub">Guardar</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
 </div>
 
 @code {

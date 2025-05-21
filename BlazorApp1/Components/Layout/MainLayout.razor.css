@@ -10,11 +10,12 @@
 }
 
 .navbar-container {
-    max-width: 1400px;
+    max-width: var(--max-width);
     margin: 0 auto;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
 }
 
 .navbar-brand {

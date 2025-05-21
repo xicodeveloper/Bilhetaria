@@ -135,29 +135,35 @@
         </div>
     </section>
 
-    @* <!-- Newsletter Section --> corrigir isto *@
-    <section class="footer-newsletter-container">
-        <!-- Footer (lado esquerdo) -->
-        <div class="footer-left">
-            <p class="footer-text">© melhor conteúdo de séries para ti</p>
-            <p class="copyright">
-                © 2025 - Todos os direitos reservados - CinUMa
-            </p>
-            <div class="footer-links">
-                <a href="#">Termos de serviço</a>
-                <a href="#">Política de privacidade</a>
-            </div>
+    <!-- Newsletter Section -->
+<section class="footer-newsletter-container">
+    <!-- Footer (lado esquerdo) -->
+    <div class="footer-left">
+        <p class="footer-text">O melhor conteúdo de séries <span class="destaque">para ti</span></p>
+        <div class="footer-socials">
+            <a href="#"><i class="fab fa-instagram"></i></a>
+            <a href="#"><i class="fab fa-facebook-f"></i></a>
+            <a href="#"><i class="fab fa-twitter"></i></a>
         </div>
+        <p class="copyright">
+            © 2025 - Todos os direitos reservados - Fseries
+        </p>
+        <div class="footer-links">
+            <a href="#">Termos de serviço</a>
+            <a href="#">Política de privacidade</a>
+        </div>
+    </div>
 
-        <!-- Newsletter (lado direito) -->
-        <div class="newsletter-right">
-            <h3 class="newsletter-title">Newsletter</h3>
-            <p class="newsletter-text">Inscreve-te no nosso newsletter</p>
-            <div class="newsletter-form">
-                <input type="email" placeholder="Email" />
-            </div>
+    <!-- Newsletter (lado direito) -->
+    <div class="newsletter-right">
+        <h3 class="newsletter-title">Newsletter</h3>
+        <p class="newsletter-text">Inscreve-te no nosso newsletter</p>
+        <div class="newsletter-form">
+            <input type="email" placeholder="Email" />
+            <span class="newsletter-icon"><i class="fas fa-envelope"></i></span>
         </div>
-    </section>
+    </div>
+</section>
 </div>
 
 @code {
@@ -238,3 +244,108 @@
         });
     }
 </script>
+
+@* @page "/"
+@using BlazorApp1.Services.Movies
+@using Microsoft.AspNetCore.Authorization
+@inject IConfiguration Configuration
+@inject HttpClient Http
+@inherits BlazorApp1.Components.Layout.MainLayout
+@attribute [Authorize]
+@rendermode InteractiveServer
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IJSRuntime JS
+
+<div class="homepage-container">
+    <!-- Featured Movie Section (mantido igual) -->
+    
+    <!-- Popular Movies Section -->
+    <Carousel Title="Mais Populares" Movies="_movies?.Take(25)" />
+
+    <!-- Promotions Section -->
+    <Carousel Title="Promoções" Movies="_movies?.Skip(7).Take(25)" ShowDiscount="true" />
+
+    <!-- Coming Soon Section -->
+    <Carousel Title="Coming Soon" Movies="_movies?.Skip(14).Take(25)" />
+
+    <!-- Newsletter Section -->
+</div>
+
+@code {
+    private string ApIlink => $"{Configuration["TmdbApi:BaseUrl"]}/movie/popular";
+    private string LinkImage => Configuration["TmdbApi:ImageBaseUrl"] ?? string.Empty;
+    private List<Film>? _movies;
+    private MovieDeserializer deserializer = new MovieDeserializer();
+
+    private ElementReference carouselContainer;
+    private ElementReference promoCarouselContainer;
+    private ElementReference comingSoonCarouselContainer;
+    private int currentIndex = 0;
+    private int promoCurrentIndex = 0;
+    private int comingSoonCurrentIndex = 0;
+
+    
+    private readonly string[] _discountTiers = { "10", "70", "25" };
+    
+    private readonly string [] _prices = { "2.99", "4.99", "9.99", "14.99" };
+    
+    private string GetRandomPrice(int movieId) {
+        int index = movieId % _prices.Length;
+        return _prices[index];
+    }
+
+    private string GetDeterministicDiscount(int movieId) {
+        // Cálculo determinístico baseado no ID do filme
+        int index = movieId % _discountTiers.Length;
+        return _discountTiers[index];
+    }
+
+    private async Task ScrollCarousel(int direction)
+    {
+        currentIndex += direction;
+        if (currentIndex < 0) currentIndex = 0;
+        await JS.InvokeVoidAsync("scrollCarousel", carouselContainer, currentIndex);
+    }
+
+    private async Task ScrollPromoCarousel(int direction)
+    {
+        promoCurrentIndex += direction;
+        if (promoCurrentIndex < 0) promoCurrentIndex = 0;
+        await JS.InvokeVoidAsync("scrollCarousel", promoCarouselContainer, promoCurrentIndex);
+    }
+
+    private async Task ScrollComingSoonCarousel(int direction)
+    {
+        comingSoonCurrentIndex += direction;
+        if (comingSoonCurrentIndex < 0) comingSoonCurrentIndex = 0;
+        await JS.InvokeVoidAsync("scrollCarousel", comingSoonCarouselContainer, comingSoonCurrentIndex);
+    }
+    
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var response = deserializer.FetchPopularMovies(ApIlink);
+            _movies = response.Results;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro: {ex.Message}");
+        }
+    }
+
+    public void Dispose()
+    {
+        deserializer?.Dispose();
+    }
+}
+
+<script>
+    function scrollCarousel(element, direction) {
+        const scrollAmount = 300; // Ajuste conforme necessário
+        element.scrollBy({
+            left: scrollAmount * direction,
+            behavior: 'smooth'
+        });
+    }
+</script>  *@

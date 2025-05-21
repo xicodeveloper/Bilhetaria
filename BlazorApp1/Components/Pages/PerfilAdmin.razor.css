@@ -9,11 +9,17 @@
     align-items: center;
 }
 
-.grid-container {
+/* .grid-container {
     display: grid;
     grid-template-columns: repeat(3, minmax(300px, 1fr));
-    /* antes: grid-auto-rows: 100px; */
+    // antes: grid-auto-rows: 100px;
     grid-auto-rows: auto;
+    gap: 2rem;
+} */
+
+.grid-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 2 colunas principais */
     gap: 2rem;
 }
 
@@ -23,6 +29,9 @@
     flex-direction: column;
     border-radius: 10px;
     padding: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    overflow: hidden;
 }
 
 .horizontal {
@@ -57,11 +66,12 @@ p{
 .movie-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 16px;
-    padding: 10px;
-    /* se quiseres rolagem interna em Y caso tenha MUITOS filmes: */
     max-height: 100%;
-    overflow-y: auto;
+    gap: 10px;
+    margin-top: 10px; 
+    overflow: scroll;
+    width: 500px; 
+    height: 500px;
 }
 /* Container geral de cada cliente */
 .customer-card {
@@ -159,6 +169,53 @@ p{
     padding: 1rem;
     font-style: italic;
     color: #666;
+}
+
+.chart-container {
+    width: 100%;
+    max-width: 400px;
+    height: auto;
+    margin-top: 1rem;
+}
+
+.Logo {
+    height: auto;
+    width: auto;
+    position: absolute;
+    right: 20px;
+    max-width: 200px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.moradasub{
+    background: #F3A529;
+    color: #ffffff;
+    font-family: Poppins;
+    font-size: small;
+    font-weight: 600;
+    padding: 0.8rem 2rem;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    width: 30%;
+    margin-top: 1rem;
+    transition: all 0.3s ease;
+}
+
+.save-btn {
+    background: #F3A529;
+    color: #ffffff;
+    font-family: Poppins;
+    font-size: small;
+    font-weight: 600;
+    padding: 0.8rem 2rem;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    width: 30%;
+    margin-top: 1rem;
+    transition: all 0.3s ease;
 }
 
 /* Se quiser responsividade nas colunas do cabeçalho */

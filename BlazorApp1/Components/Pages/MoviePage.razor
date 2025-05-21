@@ -4,6 +4,7 @@
 @attribute [Authorize]
 @inject IUnitOfWork _unitOfWork
 @using System.Globalization
+@using System.Net
 @using System.Security.Claims
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.AspNetCore.Components
@@ -19,6 +20,10 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.WebUtilities
 @using Microsoft.EntityFrameworkCore.Metadata.Internal
+@using BlazorApp1.Services.DataBase
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Authorization
 
 @inject IConfiguration Configuration
 @inject HttpClient Http
@@ -27,6 +32,11 @@
 @inject AuthenticationStateProvider AuthStateProvider
 
 @rendermode InteractiveServer
+
+<section class="movie-details-section">
+</section>
+    <div class="movie-background" style="background-image: url('@_backdropImage');"></div>
+    <div class="movie-background-overlay"></div>
 
 <div class="movie-container">
     @if (_movie == null)
@@ -38,99 +48,94 @@
     }
     else
     {
-        <div class="movie-header" style="background-image: url('@_backdropImage');">
-            <div class="header-content">
-                <!-- Header Actors -->
-                <div class="header-actors">
-                    @if (_credits?.Cast != null)
-                    {
-                        @foreach (var actor in _credits.Cast.Take(2))
-                        {
-                            <h2>@actor.Name</h2>
-                        }
-                    }
+        <div class="movie-details-layout">
+            <div class="left-column">
+                <img class="movie-poster" src="@($"{ImageBaseUrl}{_movie.poster_path}")" alt="Capa do filme" />
+                @if (!string.IsNullOrEmpty(_trailerUrl))
+                {
+                    <a href="@_trailerUrl" target="_blank" class="btn-trailer">Ver Trailer</a>
+                }
+            </div>
+
+            <div class="right-column">
+                <h1 class="movie-title">@_movie.Title.ToUpper()</h1>
+
+                <div class="time-relevance">
+                    <span>@FormatRuntime(_movie.Runtime)</span>
+                    <span class="relevance">@((_movie.VoteAverage * 10).ToString("0"))% relevância</span>
                 </div>
 
-                <!-- Tagline -->
-                <p class="tagline">@_movie.Tagline</p>
-
-                <!-- Title Section -->
-                <div class="movie-title-section">
-                    <h1>@_movie.Title.ToUpper()</h1>
-                    @if (!string.IsNullOrEmpty(_trailerUrl))
-                    {
-                        <a href="@_trailerUrl" target="_blank" class="btn-trailer">TRAILER</a>
-                    }
-                    else
-                    {
-                        <button class="btn-trailer" disabled>TRAILER INDISPONÍVEL</button>
-                    }
+                <div class="purchase-buttons">
+                    <button class="btn-rent" @onclick="async () => await BuyAsync(BlazorApp1.Components.Pages.MoviePage.PurchaseType.Aluga)">ALUGAR</button>
+                    <button class="btn-buy" @onclick="async () => await BuyAsync(BlazorApp1.Components.Pages.MoviePage.PurchaseType.Forever)">COMPRAR</button>
+                    <a href="/cinemas"><button class="btn-tickets">BILHETES</button></a>
                 </div>
-            </div>
-        </div>
 
-        <!-- Movie Details -->
-        <div class="movie-details">
-            <h2>@_movie.OriginalTitle</h2>
+                <div class="synopsis">
+                    <p>@_movie.Overview</p>
+                </div>
 
-            <!-- Runtime & Relevance -->
-            <div class="time-relevance">
-                <span>@FormatRuntime(_movie.Runtime)</span>
-                <span class="relevance">@((_movie.VoteAverage * 10).ToString("0"))% relevância</span>
-            </div>
-
-            <div class="purchase-options">
-                <button class="btn-rent" @onclick="async () => Rent()">ALUGAR (2,49€)</button>
-                <button class="btn-tickets" @onclick="async () => Buy()">COMPRAR</button>
-                <a href="/cinemas" style="text-decoration: none;color: inherit;"><button class="btn-tickets">BILHETES</button></a>
-                
-            </div>
-
-            <!-- Favorites -->
-            <button class="btn-favorite">FAVORITAR</button>
-
-            <!-- Synopsis -->
-            <div class="synopsis">
-                <p>@_movie.Overview</p>
-            </div>
+                <!-- Favorites -->
+                <button class="btn-favorite">FAVORITE</button>
 
             <!-- Cast & Genre -->
             <div class="cast-genre">
                 <p><strong>Elenco:</strong> @string.Join(", ", _credits?.Cast?.Take(5).Select(c => c.Name) ?? Enumerable.Empty<string>())</p>
                 <p><strong>Género:</strong> @string.Join(", ", _movie.Genres.Select(g => g.Name))</p>
             </div>
+            </div>
+            
         </div>
 
-        <!-- Keywords Section -->
-        <div class="keywords-section">
-            <div class="keywords">
-                @if (_keywords?.Keywords != null)
-                {
-                    @foreach (var keyword in _keywords.Keywords.Take(15))
+        @if (_similarMovies != null && _similarMovies.Any())
+        {
+            <div class="similar-movies">
+                <h2>Filmes Semelhantes</h2>
+                <div class="similar-movie-list">
+                    @foreach (var movie in _similarMovies)
                     {
-                        <a href="/movie/@keyword.Id" class="keyword-link">
-                            @keyword.Name.ToUpper()
-                        </a>
+                        <div class="similar-movie-card">
+                            <a href="/movie/@movie.Id">
+                                <img class="movie-poster" src="@($"{LinkImage}{movie.PosterPath ?? "default-poster.jpg"}")" alt="@movie.Title" />
+                                <img src="https://image.tmdb.org/t/p/w200@(movie.PosterPath)" alt="@movie.Title" />
+                                <img src="@($"{LinkImage}{movie.PosterPath}")" alt="@movie.Title" />
+                                <img src="@GetPosterUrl(movie.PosterPath)" alt="@movie.Title" />
+
+                            </a>
+                        </div>
                     }
+                </div>
+            </div>
+        }
+
+        @if (_keywords?.Keywords != null && _keywords.Keywords.Any())
+        {
+            <div class="keywords-section">
+            <h3>Palavras-chave</h3>
+            <div class="keywords">
+                @foreach (var keyword in _keywords.Keywords.Take(15))
+                {
+                <span class="keyword-link">@keyword.Name.ToUpper()</span>
                 }
             </div>
+            </div>
+        }
+    }
+    </div>
+
+    @if (!string.IsNullOrEmpty(discount))
+    {
+        <div class="discount-banner">
+            Promoção Ativa: @discount
         </div>
+        <p>Numero : @number_discount ! Ola</p>
+        <p>Preco: @priceMovie %</p>
+    }
+    else
+    {
+        <p>Não houve desconto</p>
     }
 
-
-</div>
-@if (!string.IsNullOrEmpty(discount))
-{
-    <div class="discount-banner">
-        Promoção Ativa: @discount
-    </div>
-    <p>Numero : @number_discount ! Ola</p>
-    <p>Preco: @priceMovie %</p>
-}
-else
-{
-    <p>Nao houve desconto</p>
-}
 @code {
    
     // Parameters
@@ -139,7 +144,9 @@ else
     private User user;
 
     private Guid userId { get; set; }
+    private string _posterUrl;
     private string ApiKey = Environment.GetEnvironmentVariable("API_KEY");
+    private string LinkImage => Configuration["TmdbApi:ImageBaseUrl"] ?? string.Empty;
     private string BaseUrl => Configuration["TmdbApi:BaseUrl"];
     private string ImageBaseUrl => Configuration["TmdbApi:ImageBaseUrl"];
 
@@ -159,7 +166,60 @@ else
     private string _backdropImage => string.IsNullOrEmpty(_movie?.backdrop_path)
         ? null
         : $"{ImageBaseUrl}{_movie.backdrop_path}";
+    
+    private List<MovieSummary> _similarMovies;
 
+    public class MovieListResponse
+    {
+        public List<MovieSummary> Results { get; set; }
+    }
+
+    public class MovieSummary
+    {
+        public int Id { get; set; }
+        public string Title { get; set; }
+        public string PosterPath { get; set; }
+    }
+
+    private async Task LoadSimilarMovies()
+    {
+        try
+        {
+            var response = await WebRequestMethods.Http.GetFromJsonAsync<MovieListResponse>($"{BaseUrl}/movie/{Id}/similar?api_key={ApiKey}");
+            _similarMovies = response?.Results?.Take(20).ToList(); // limita a 10 filmes semelhantes
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao carregar filmes semelhantes: {ex.Message}");
+            _similarMovies = new();
+        }
+    }
+        public enum PurchaseType
+        {
+            Aluga,
+            Forever
+        }
+    private async Task BuyAsync(PurchaseType type)
+    {
+        try
+        {
+            if (!int.TryParse(userId, out var userIdInt)) return;
+            
+            user = await _unitOfWork.Users.GetByIdAsync(userIdInt);
+            if (user?.Addresses == null || user.Addresses.Count == 0)
+            {
+                Console.WriteLine("Tem que inserir morada primeiro");
+                Navigation.NavigateTo("/perfilAdmin");
+                return;
+            }
+
+            // Obter morada principal
+            var shippingAddress = user.Addresses.FirstOrDefault(a => a.IstheOne);
+            if (shippingAddress == null)
+            {
+                Console.WriteLine("Nenhum endereço principal encontrado.");
+                return;
+            }
     private void Rent()
     {
         AddMovietoDb();
@@ -433,17 +493,17 @@ else
     
     //api
     private async Task LoadMovieData() =>
-        _movie = await Http.GetFromJsonAsync<MovieDetails>($"{BaseUrl}/movie/{movieId}?api_key={ApiKey}");
+        _movie = await WebRequestMethods.Http.GetFromJsonAsync<MovieDetails>($"{BaseUrl}/movie/{movieId}?api_key={ApiKey}");
 
     private async Task LoadCredits() =>
-        _credits = await Http.GetFromJsonAsync<CreditsResponse>($"{BaseUrl}/movie/{movieId}/credits?api_key={ApiKey}");
+        _credits = await WebRequestMethods.Http.GetFromJsonAsync<CreditsResponse>($"{BaseUrl}/movie/{movieId}/credits?api_key={ApiKey}");
 
     private async Task LoadKeywords() =>
-        _keywords = await Http.GetFromJsonAsync<KeywordsResponse>($"{BaseUrl}/movie/{movieId}/keywords?api_key={ApiKey}");
+        _keywords = await WebRequestMethods.Http.GetFromJsonAsync<KeywordsResponse>($"{BaseUrl}/movie/{movieId}/keywords?api_key={ApiKey}");
 
     private async Task LoadTrailer()
     {
-        var videos = await Http.GetFromJsonAsync<VideosResponse>($"{BaseUrl}/movie/{movieId}/videos?api_key={ApiKey}");
+        var videos = await WebRequestMethods.Http.GetFromJsonAsync<VideosResponse>($"{BaseUrl}/movie/{movieId}/videos?api_key={ApiKey}");
         var trailer = videos?.Results?.FirstOrDefault(v => v.Type == "Trailer");
         _trailerUrl = trailer != null ? $"https://www.youtube.com/embed/{trailer.Key}" : null;
     }
@@ -480,6 +540,31 @@ else
         var minutes = runtime % 60;
         return $"{hours}h {minutes}m";
     }    
+    @* string GetPosterUrl(string posterPath)
+    {
+        var baseUrl = Configuration["TmdbApi:ImageBaseUrl"] ?? "https://image.tmdb.org/t/p/w500";
+        return string.IsNullOrEmpty(posterPath)
+            ? "https://via.placeholder.com/200x300?text=No+Image"
+            : $"{baseUrl}{posterPath}";
+    } *@
+
+    string GetPosterUrl(string posterPath)
+    {
+        if (string.IsNullOrEmpty(posterPath))
+        {
+            return "https://via.placeholder.com/200x300?text=No+Image";
+        }
+
+        // Garante que o posterPath começa com /
+        if (!posterPath.StartsWith("/"))
+        {
+            posterPath = "/" + posterPath;
+        }
+
+        var baseUrl = Configuration["TmdbApi:ImageBaseUrl"] ?? "https://image.tmdb.org/t/p/w500";
+        return $"{baseUrl}{posterPath}";
+    }
+
     public void Dispose()
     {
         // Cleanup resources if needed
