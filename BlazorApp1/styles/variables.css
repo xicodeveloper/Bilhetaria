@@ -1,0 +1,23 @@
+:root {
+    /* Cores */
+    --primary: #F3A529;
+    --primary-dark: #e6951f;
+    --secondary: #ff4d4d;
+    --accent: #2196F3;
+    --dark: #0f0f1a;
+    --darker: #0a0a0a;
+    --dark-light: #1a1a2e;
+    --light: #F5F5F5;
+    --gray: #aaa;
+    --gray-dark: #777;
+  
+    /* Tamanhos */
+    --header-height: 80px;
+    --max-width: 1400px;
+    --border-radius: 8px;
+    --box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  
+    /* Fontes */
+    --font-primary: 'Poppins', sans-serif;
+    --font-secondary: 'Inter', sans-serif;
+  }

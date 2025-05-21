@@ -1,0 +1,52 @@
+@using Microsoft.AspNetCore.Components.Routing´
+@using BlazorApp1.Services.Movies
+
+<NavLink href="@GetMovieLink()" class="carousel-item">
+    @if (ShowDiscount)
+    {
+        <span class="discount-tag">@GetDeterministicDiscount(Movie.Id)%</span>
+    }
+    <img src="@GetPosterUrl(Movie.PosterPath)" alt="@Movie.Title" class="movie-poster"/>
+    <div class="movie-hover-info">
+        <h4>@Movie.Title</h4>
+        <p>💰 @GetRandomPrice(Movie.Id)</p>
+        <p>⭐ @Movie.VoteAverage.ToString("0.0") </p>
+    </div>
+</NavLink>
+
+@code {
+    [Parameter] public required Film Movie { get; set; }
+    [Parameter] public bool ShowDiscount { get; set; } = false;
+    private readonly string[] _discountTiers = { "10", "70", "25" };
+    private readonly string[] _prices = { "2.99", "4.99", "9.99", "14.99" };
+
+    private string GetMovieLink()
+    {
+        var price = GetRandomPrice(Movie.Id);
+        if (ShowDiscount)
+        {
+            var discount = GetDeterministicDiscount(Movie.Id);
+            return $"movie/{Movie.Id}?price={price}&discount={discount}&hash={DiscountHasher.GenerateHash(Movie.Id, price, discount)}";
+        }
+        return $"movie/{Movie.Id}?price={price}&hash={DiscountHasher.GenerateHash(Movie.Id, price)}";
+    }
+
+    private string GetPosterUrl(string posterPath)
+    {
+        return string.IsNullOrEmpty(posterPath) 
+            ? "https://via.placeholder.com/200x300?text=No+Image" 
+            : $"https://image.tmdb.org/t/p/w200{posterPath}";
+    }
+
+    private string GetRandomPrice(int movieId)
+    {
+        int index = movieId % _prices.Length;
+        return _prices[index];
+    }
+
+    private string GetDeterministicDiscount(int movieId)
+    {
+        int index = movieId % _discountTiers.Length;
+        return _discountTiers[index];
+    }
+}
