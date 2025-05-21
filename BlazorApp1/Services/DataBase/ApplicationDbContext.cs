@@ -18,7 +18,7 @@ namespace BlazorApp1.Services.DataBase
         public DbSet<PhysicalMovie> PhysicalMovies { get; set; }
         public DbSet<DigitalMovie> DigitalMovies { get; set; }
         public DbSet<WalletUser> WalletUser { get; set; }
-        public DbSet<Adress> Addresses { get; set; } 
+        public DbSet<DBEntities.Address> Addresses { get; set; } 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -29,7 +29,7 @@ namespace BlazorApp1.Services.DataBase
             modelBuilder.Entity<RentalMovie>().ToTable("rental_movies");
             modelBuilder.Entity<PhysicalMovie>().ToTable("physical_movies");
             modelBuilder.Entity<DigitalMovie>().ToTable("digital_movies");
-            modelBuilder.Entity<Movie>().Property(m => m.Id).ValueGeneratedNever();
+            //modelBuilder.Entity<Movie>().Property(m => m.Id).ValueGeneratedNever();
             
             modelBuilder.Entity<BasketItem>(entity =>
             {
@@ -53,10 +53,10 @@ namespace BlazorApp1.Services.DataBase
             modelBuilder.Entity<DigitalMovie>().ToTable("digital_movies");
             
             modelBuilder.Entity<Order>().ToTable("orders");
-            modelBuilder.Entity<Adress>().ToTable("addresses"); // Corrigido o nome
+            modelBuilder.Entity<DBEntities.Address>().ToTable("addresses"); // Corrigido o nome
             
             // Configurar relacionamento User -> Address
-            modelBuilder.Entity<Adress>()
+            modelBuilder.Entity<DBEntities.Address>()
                 .HasOne(a => a.User)
                 .WithMany(u => u.Addresses)
                 .HasForeignKey(a => a.UserId);

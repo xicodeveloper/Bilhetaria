@@ -12,7 +12,6 @@ namespace BlazorApp1.Services.DataBase.DBEntities
         
         public OrderStatus Status { get; set; }
         public Guid UserId { get; set; }
-        public string Number { get; set; }
         public DateTime Date { get; set; }
         
         [NotMapped]
@@ -22,7 +21,7 @@ namespace BlazorApp1.Services.DataBase.DBEntities
         public List<BasketItem> Items { get; set; } = new();
         
         public Guid ShippingAddressId { get; set; } // Foreign key
-        public Adress ShippingAddress { get; set; } // Navigation property
+        public Address ShippingAddress { get; set; } // Navigation property
         
         public void Pay(double price, PaymentMethod method, IStateFactory stateFactory)
         {

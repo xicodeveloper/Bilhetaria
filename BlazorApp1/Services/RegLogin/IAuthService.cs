@@ -17,6 +17,6 @@ namespace BlazorApp1.Services.RegLogin
         Task<AuthResult> LoginAsync(string username, string password);
         bool VerifyUser(string email, string code);
         Task LogoutAsync();
-        int GetUserId();
+        Guid GetUserId();
     }
 }

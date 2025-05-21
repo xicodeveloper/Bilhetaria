@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace BlazorApp1.Services.DataBase.DBEntities;
 
-public class Adress  : DbItem
+public class Address  : DbItem
 {
     [Key]
     public Guid Id { get; set; }

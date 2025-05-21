@@ -2,8 +2,10 @@
 @using System.Security.Claims
 @using BlazorApp1.Services.DataBase
 @using BlazorApp1.Services.DataBase.DBEntities
+@using BlazorApp1.Services.DataBase.DBEntities.Enum
 @using BlazorApp1.Services.Discounts
 @using BlazorApp1.Services.RegLogin
+@using Microsoft.EntityFrameworkCore
 @inject IUnitOfWork _UnitOfWork
 @inject AuthService AuthService
 @inject NavigationManager NavigationManager
@@ -55,15 +57,21 @@
 
 @code {
     private Order order;
-    private int userId;
+    private Guid userId;
 
     protected override async Task OnInitializedAsync()
     {
-        userId = AuthService.GetUserId();
+        userId= AuthService.GetUserId();
         
-        if (userId != 0 )
+        if (userId != Guid.Empty )
         {
-             order = (await _UnitOfWork.Orders.GetActiveOrderWithItemsAsync(userId));
+            order = _UnitOfWork.GetRepository<Order>().GetWithQuery(
+                q => q
+                    .Where(o => o.UserId == userId && o.Status == OrderStatus.Pending)
+                    .Include(i => i.Items)
+                    .ThenInclude(m=> m.Movie)
+            ).FirstOrDefault();
+            //(await _UnitOfWork.Orders.GetActiveOrderWithItemsAsync(userId));
         }
     }
 
@@ -88,7 +96,7 @@
         
         if (item.Quantity < 1) item.Quantity = 1;
         
-        await _UnitOfWork.Orders.UpdateAsync(order);
+        _UnitOfWork.GetRepository<Order>().Update(order);
         StateHasChanged();
     }
     
@@ -96,7 +104,8 @@
     {
         try
         {
-            await _UnitOfWork.Orders.RemoveBasketItemAsync(item.Id);
+            order.Items.Remove(item);
+            _UnitOfWork.GetRepository<Order>().Update(order);
             StateHasChanged();
         }
         catch (Exception ex)
@@ -107,9 +116,18 @@
 
     private async Task ClearBasket()
     {
-        await _UnitOfWork.Orders.ClearBasketAsync(order.Id);
-        order = null;
-        StateHasChanged();
+        if (order?.Items != null)
+        {
+            var itemRepo = _UnitOfWork.GetRepository<BasketItem>();
+            foreach (var item in order.Items.ToList())
+            {
+                itemRepo.Delete(item);
+                order.Items.Remove(item);
+            }
+            _UnitOfWork.GetRepository<Order>().Update(order);
+            _UnitOfWork.Commit();
+            StateHasChanged();
+        }
     }
     
     

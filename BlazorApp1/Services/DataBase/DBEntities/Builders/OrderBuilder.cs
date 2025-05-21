@@ -5,22 +5,15 @@ using BlazorApp1.Services.DataBase.DBEntities.Enum;
     
     public class OrderBuilder
     {
-        private string _number;
         private Guid _userId;
         private DateTime _date;
         private List<BasketItem> _items = new();
-        private Adress _shippingAddress;
+        private Address _shippingAddress;
         private Guid _shippingAddressId;
         private OrderStatus _status;
     
         public static OrderBuilder Empty() => new();
-    
-        public OrderBuilder WithNumber(string number)
-        {
-            _number = number;
-            return this;
-        }
-    
+        
         public OrderBuilder WithUserId(Guid userId)
         {
             _userId = userId;
@@ -51,7 +44,7 @@ using BlazorApp1.Services.DataBase.DBEntities.Enum;
             return this;
         }
     
-        public OrderBuilder WithShippingAddress(Adress address)
+        public OrderBuilder WithShippingAddress(Address address)
         {
             _shippingAddress = address;
             _shippingAddressId = address?.Id ?? Guid.Empty;
@@ -67,7 +60,6 @@ using BlazorApp1.Services.DataBase.DBEntities.Enum;
         public Order Build() => new()
         {
             UserId = _userId,
-            Number = _number,
             Date = _date,
             Status = _status,
             Items = _items,

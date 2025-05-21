@@ -56,7 +56,7 @@ public class AddressBuilder
         _userId = user.Id;
         return this;
     }
-    public Adress Build() => new()
+    public Address Build() => new()
     {
         Street = _street,
         City = _city,

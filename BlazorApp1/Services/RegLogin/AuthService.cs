@@ -173,10 +173,10 @@ namespace BlazorApp1.Services.RegLogin
                 CookieAuthenticationDefaults.AuthenticationScheme);
         }
 
-        public int GetUserId()
+        public Guid GetUserId()
         {
             var userId = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            return int.TryParse(userId, out var id) ? id : 0;
+            return Guid.TryParse(userId, out var id) ? id : Guid.Empty;
         }
     }
 }

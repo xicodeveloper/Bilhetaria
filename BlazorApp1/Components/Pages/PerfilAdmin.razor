@@ -259,7 +259,7 @@
     
     private List<Claim> claims = new();
     private User userEntity { get; set; }
-    public Adress moradaSelecionada;
+    public Address moradaSelecionada;
     
     private List<Order> userOrders = new();
     private List<Movie> uniqueMovies = new();
@@ -358,7 +358,7 @@
         }
     }
     
-   private async Task SelecionarMorada(Adress address)
+   private async Task SelecionarMorada(Address address)
     {
         try
         {
@@ -382,7 +382,7 @@
     {
         try
         {
-            var newAddress = new Adress 
+            var newAddress = new Address 
             {
                 Street = Model.Street,
                 Number = Model.Number,
@@ -395,7 +395,7 @@
             };
 
             userEntity.Addresses.Add(newAddress);
-            _unitOfWork.GetRepository<Adress>().Add(newAddress);
+            _unitOfWork.GetRepository<Address>().Add(newAddress);
             _unitOfWork.Commit();
             StateHasChanged();
         }
