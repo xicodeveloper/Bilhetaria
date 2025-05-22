@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BlazorApp1.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250521225807_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20250522164755_InicialCreate")]
+    partial class InicialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -230,6 +230,10 @@ namespace BlazorApp1.Migrations
             modelBuilder.Entity("BlazorApp1.Services.DataBase.DBEntities.BasketItems.TicketMovie", b =>
                 {
                     b.HasBaseType("BlazorApp1.Services.DataBase.DBEntities.BasketItem");
+
+                    b.Property<string>("Cinema")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Seat")
                         .IsRequired()

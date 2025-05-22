@@ -228,6 +228,10 @@ namespace BlazorApp1.Migrations
                 {
                     b.HasBaseType("BlazorApp1.Services.DataBase.DBEntities.BasketItem");
 
+                    b.Property<string>("Cinema")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Seat")
                         .IsRequired()
                         .HasColumnType("TEXT");

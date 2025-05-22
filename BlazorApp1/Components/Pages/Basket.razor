@@ -2,6 +2,7 @@
 @using System.Security.Claims
 @using BlazorApp1.Services.DataBase
 @using BlazorApp1.Services.DataBase.DBEntities
+@using BlazorApp1.Services.DataBase.DBEntities.BasketItems
 @using BlazorApp1.Services.DataBase.DBEntities.Enum
 @using BlazorApp1.Services.Discounts
 @using BlazorApp1.Services.RegLogin
@@ -22,7 +23,13 @@
                 <div class="item-card" key="@item.MovieId">
                     <div class="item-header">
                         <img src="@item.Movie.MoviePosterUrl" alt="Poster do filme"/>
-                        <h3 class="item-title">@item.Movie.MovieTitle (@item.GetTicketType()) </h3>
+                        <h3 class="item-title">@item.Movie.MovieTitle (@item.GetTicketType())
+                        @if (item.GetTicketType() == TicketType.Ticket)
+                        {
+                            <br/>
+                            @printSeat(item);
+                        }
+                        </h3>
                         <div class="item-price">
                             @if (item.Discount > 0)
                             {
@@ -32,9 +39,14 @@
                         </div>
                     </div>
                     <div class="quantity-controls">
-                        <button class="quantity-btn" @onclick="(() => UpdateQuantity(item, -1))">-</button>
-                        <span class="quantity-display">@item.Quantity</span>
-                        <button class="quantity-btn" @onclick="(() => UpdateQuantity(item, 1))">+</button>
+                        
+                        @if (item.GetTicketType() != TicketType.Ticket)
+                        {
+                            <button class="quantity-btn" @onclick="(() => UpdateQuantity(item, -1))">-</button>
+                            <span class="quantity-display">@item.Quantity</span>
+                            <button class="quantity-btn" @onclick="(() => UpdateQuantity(item, 1))">+</button>
+                        }
+                        
                         <button type="button" class="remove-btn" @onclick="async () => await RemoverUnidade(item)">Remove</button>
                     </div>
                 </div>
@@ -130,13 +142,17 @@
         }
     }
     
-    
-
     private async Task Pagamento()
     {
         if (order != null)
         {
             NavigationManager.NavigateTo("/pagamentoFinal");
         }
+    }
+
+    private string printSeat(BasketItem item)
+    {
+        var ticket = item as TicketMovie;
+        return "Seat: " + ticket.Seat;
     }
 }

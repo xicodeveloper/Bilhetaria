@@ -1,7 +1,12 @@
 @page "/bilhetes"
+@using System.Security.Claims
+@using BlazorApp1.Services
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
 @inject IConfiguration Configuration
 @inject IJSRuntime JS
+@inject IAddItemService addItemService 
+@inject AuthenticationStateProvider AuthStateProvider
 @attribute [Authorize]
 @rendermode InteractiveServer
 
@@ -96,44 +101,38 @@
 </div>
 
 @code {
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public int movieId { get; set; }
+    
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? cinema { get; set; }
+    
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? hora { get; set; }
+    
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? data { get; set; }
+    
+    
+    private DateTime dataDate;
+    private Guid userId { get; set; }
+    
     private List<string> selectedSeats = new();
     private List<string> occupiedSeats = new();
     private Random random = new();
+    private List<Claim> claims = new();
 
-    private void ToggleSeat(string seatId)
-    {
-        var newSelectedSeats = new List<string>(selectedSeats);
-        
-        if (newSelectedSeats.Contains(seatId))
-        {
-            newSelectedSeats.Remove(seatId);
-        }
-        else
-        {
-            newSelectedSeats.Add(seatId);
-        }
-        
-        selectedSeats = newSelectedSeats;
-        StateHasChanged();
-        
-        // Debug avançado
-        Console.WriteLine($"Seat {seatId} toggled. New state:");
-        foreach (var seat in selectedSeats)
-        {
-            Console.WriteLine(seat);
-        }
-    }
-
-    private async Task ConfirmSelection()
-    {
-    await JS.InvokeVoidAsync("alert", $"Lugares selecionados: {string.Join(", ", selectedSeats)}");
-    }
-
-    
     protected override void OnInitialized()
     {
+        LoadClaims();
         Console.WriteLine("Occupied seats: " + string.Join(", ", occupiedSeats));
         Console.WriteLine("Selected seats: " + string.Join(", ", selectedSeats));
+
+        ConvertData();
 
         // Randomize (~20% de chance)
         for (int row = 1; row <= 5; row++)
@@ -175,7 +174,50 @@
             occupiedSeats.Add("3E");
         }
     }
-
+    
+    private void ConvertData()
+    {
+        if (!string.IsNullOrEmpty(data) && DateTime.TryParse(data, out var parsedDate))
+        {
+            int hour = 0, minute = 0;
+            if (!string.IsNullOrEmpty(hora))
+            {
+                // Espera formato "HH:mm"
+                var parts = hora.Split(':');
+                if (parts.Length == 2)
+                {
+                    int.TryParse(parts[0], out hour);
+                    int.TryParse(parts[1], out minute);
+                }
+            }
+            dataDate = new DateTime(parsedDate.Year, parsedDate.Month, parsedDate.Day, hour, minute, 0);
+        }
+    }
+    
+    private void ToggleSeat(string seatId)
+    {
+        var newSelectedSeats = new List<string>(selectedSeats);
+        
+        if (newSelectedSeats.Contains(seatId))
+        {
+            newSelectedSeats.Remove(seatId);
+        }
+        else
+        {
+            newSelectedSeats.Add(seatId);
+        }
+        
+        selectedSeats = newSelectedSeats;
+        StateHasChanged();
+        
+        // Debug avançado
+        Console.WriteLine($"Seat {seatId} toggled. New state:");
+        foreach (var seat in selectedSeats)
+        {
+            Console.WriteLine(seat);
+        }
+    }
+    
     private bool ShouldRemoveSeat(int row, char col, bool isLeftSide)
     {
         if (isLeftSide)
@@ -200,4 +242,44 @@
         if (selectedSeats.Contains(seatId)) return "selecionado";
         return "livre";
     }
+    
+    private async Task ConfirmSelection()
+    {
+        if (selectedSeats.Count != 0)
+        {
+            foreach (var seat in selectedSeats)
+            {
+                addItemService.AddTicketMovie(movieId, userId, 7.50,  0,  dataDate,  seat,  cinema);   
+            }
+        }
+        
+    }
+    
+    
+
+    private async Task LoadClaims()
+    {
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            claims = authState.User.Claims.ToList();
+
+            userId = Guid.Parse(GetUserId());
+
+            Console.WriteLine($"User ID: {userId}");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao carregar claims: {ex.Message}");
+        }
+    }
+    
+    private string GetUserId()
+    {
+        return claims.FirstOrDefault(c =>
+            c.Type == ClaimTypes.NameIdentifier || c.Type == "sub")?.Value;
+    }
+
+    
 }

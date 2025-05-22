@@ -5,6 +5,7 @@
 @using BlazorApp1.Services.RegLogin
 @using BlazorApp1.Services.DataBase
 @using BlazorApp1.Services.DataBase.DBEntities
+@using BlazorApp1.Services.DataBase.DBEntities.BasketItems
 @using BlazorApp1.Services.DataBase.DBEntities.Enum
 @using BlazorApp1.Services.DataBase.OrderState
 @using BlazorApp1.Services.Discounts
@@ -114,6 +115,7 @@
                                 <img src="@item.Movie.MoviePosterUrl" alt="@item.Movie.MovieTitle" class="product-image"/>
                                 <div class="product-info">
                                     <div class="product-title">@item.Movie.MovieTitle (@item.GetTicketType()) x @item.Quantity </div>
+                                    <div>@printAditionalInfo(item)</div>  
                                     <div>Descontos: @item.Discount %</div>
                                     
                                     <button type="button" class="remove-btn"
@@ -334,5 +336,26 @@
     private string GetButtonClass(PaymentMethod metodo)
     {
         return metodoSelecionado == metodo ? "active" : "";
+    }
+    private string printAditionalInfo(BasketItem item)
+    {
+        
+        switch (item.GetTicketType())
+        {
+            case TicketType.Ticket:
+                var ticketMovie = item as TicketMovie;
+                return "Seat: " + ticketMovie?.Seat;
+                
+            case TicketType.Rental:
+                var rentalMovie = item as RentalMovie;
+                return "Valido até: " + rentalMovie?.Validade.ToString("dd/MM/yyyy");
+                
+            case TicketType.Physical:
+                var physicalMovie = item as PhysicalMovie;
+                return "Formato: " + physicalMovie?.Type;
+                
+            default:
+                return "";
+        }
     }
 }

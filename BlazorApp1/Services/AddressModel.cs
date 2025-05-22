@@ -1,8 +1,7 @@
 using System.ComponentModel.DataAnnotations;
-using BlazorApp1.Services.DataBase;
 using BlazorApp1.Services.DataBase.DBEntities;
 
-namespace BlazorApp1.Services.Address;
+namespace BlazorApp1.Services;
 
 
 public class AddressModel : DbItem

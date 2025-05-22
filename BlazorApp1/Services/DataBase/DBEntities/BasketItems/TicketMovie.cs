@@ -6,6 +6,7 @@ public class TicketMovie : BasketItem
 {
     public DateTime ViewingDate { get; set; }
     public string Seat { get; set; } = string.Empty;
+    public string Cinema { get; set; } = string.Empty;
     
     public override TicketType GetTicketType()
     {

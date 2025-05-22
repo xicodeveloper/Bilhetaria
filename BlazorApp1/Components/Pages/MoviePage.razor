@@ -19,6 +19,7 @@
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IUnitOfWork _unitOfWork
+@inject IAddItemService addItemService 
 
 @rendermode InteractiveServer
 
@@ -57,7 +58,7 @@
                 <div class="purchase-buttons">
                     <button class="btn-rent" @onclick="Rent">ALUGAR</button>
                     <button class="btn-buy" @onclick="Buy">COMPRAR</button>
-                    <a href="/cinemas"><button class="btn-tickets">BILHETES</button></a>
+                    <a href="@($"/cinemas?movieId={movieId}")"><button class="btn-tickets">BILHETES</button></a>
                 </div>
 
                 <div class="synopsis">
@@ -119,6 +120,7 @@ else
 }
 
 @code {
+    
     [Parameter] public int movieId { get; set; }
     private Order order;
     private User user;
@@ -142,16 +144,9 @@ else
 
     private string? _priceValue;
     private double priceMovie;
-    private string _backdropImage => string.IsNullOrEmpty(_movie?.backdrop_path)
-        ? null
-        : $"{ImageBaseUrl}{_movie.backdrop_path}";
+    private string _backdropImage => string.IsNullOrEmpty(_movie?.backdrop_path) ? null : $"{ImageBaseUrl}{_movie.backdrop_path}";
     
     private List<MovieSummary> _similarMovies;
-
-    public class MovieListResponse
-    {
-        public List<MovieSummary> Results { get; set; }
-    }
 
     public class MovieSummary
     {
@@ -160,215 +155,35 @@ else
         public string PosterPath { get; set; }
     }
 
-    private async Task LoadSimilarMovies()
-    {
-        try
-        {
-            var response = await Http.GetFromJsonAsync<MovieListResponse>($"{BaseUrl}/movie/{movieId}/similar?api_key={ApiKey}");
-            _similarMovies = response?.Results?.Take(20).ToList();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Erro ao carregar filmes semelhantes: {ex.Message}");
-            _similarMovies = new();
-        }
-    }
+    // public class MovieListResponse
+    // {
+    //     public List<MovieSummary> Results { get; set; }
+    // }
+    // private async Task LoadSimilarMovies()
+    // {
+    //     try
+    //     {
+    //         var response = await Http.GetFromJsonAsync<MovieListResponse>($"{BaseUrl}/movie/{movieId}/similar?api_key={ApiKey}");
+    //         _similarMovies = response?.Results?.Take(20).ToList();
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         Console.WriteLine($"Erro ao carregar filmes semelhantes: {ex.Message}");
+    //         _similarMovies = new();
+    //     }
+    // }
+    
 
-    public enum PurchaseType
-    {
-        Aluga,
-        Forever
-    }
-   
     private void Rent()
     {
-        AddMovietoDb();
-        try
-        {
-            if (userId == Guid.Empty) return;
-            user = GetUser();
-
-            if (user?.Addresses == null || user.Addresses.Count == 0)
-            {
-                Console.WriteLine("Tem que inserir morada primeiro");
-                Navigation.NavigateTo("/perfilAdmin");
-                return;
-            }
-            
-            var existingOrder = GetOrder();
-            var movieDb = GetMovie();
-            
-            var newItem = new RentalMovie()
-            {
-                MovieId = movieDb.Id,
-                Quantity = 1,
-                Price = priceMovie* 0.25,
-                Discount = number_discount,
-            };
-
-            if (existingOrder != null)
-            {
-                var ExistingItem = _unitOfWork.GetRepository<RentalMovie>().GetWithQuery(q => q
-                    .Where(i => i.MovieId == movieDb.Id && i.OrderId == existingOrder.Id)).FirstOrDefault();
-                
-                if (ExistingItem != null)
-                {
-                    ExistingItem.Quantity++;
-                }
-                else
-                {
-                    existingOrder.Items.Add(newItem);
-                }
-                
-                _unitOfWork.GetRepository<Order>().Update(existingOrder);
-            }
-            else
-            {
-                var address = GetUsersAddress(user);
-                var newOrder = CreateNewOrderWithAddressAndItem(newItem, address); 
-                _unitOfWork.GetRepository<Order>().Add(newOrder);
-            }
-
-            _unitOfWork.Commit();
-            Navigation.NavigateTo("/basket");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Erro em Rent: {ex.Message}");
-        }  
+        addItemService.AddRentalMovie(movieId, userId, priceMovie, number_discount);
     }
 
     private void Buy()
     {
-        AddMovietoDb();
-        try
-        {
-            if (userId == Guid.Empty) return;
-            user = GetUser();
-
-            if (user?.Addresses == null || user.Addresses.Count == 0)
-            {
-                Console.WriteLine("Tem que inserir morada primeiro");
-                Navigation.NavigateTo("/perfilAdmin");
-                return;
-            }
-            
-            var existingOrder = GetOrder();
-            var movieDb = GetMovie();
-            
-            var newItem = new DigitalMovie()
-            {
-                MovieId = movieDb.Id,
-                Quantity = 1,
-                Price = priceMovie,
-                Discount = number_discount,
-            };
-
-            if (existingOrder != null)
-            {
-                var ExistingItem = _unitOfWork.GetRepository<DigitalMovie>().GetWithQuery(q => q
-                    .Where(i => i.MovieId == movieDb.Id && i.OrderId == existingOrder.Id)).FirstOrDefault();
-                if (ExistingItem != null)
-                {
-                    ExistingItem.Quantity++;
-                }
-                else
-                {
-                    existingOrder.Items.Add(newItem);
-                }
-                
-                _unitOfWork.GetRepository<Order>().Update(existingOrder);
-            }
-            else
-            {
-                var address = GetUsersAddress(user);
-                var newOrder = CreateNewOrderWithAddressAndItem(newItem, address); 
-                _unitOfWork.GetRepository<Order>().Add(newOrder);
-            }
-
-            _unitOfWork.Commit();
-            Navigation.NavigateTo("/basket");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Erro em Buy: {ex.Message}");
-        }
-    }
-
-    private void AddMovietoDb()
-    {
-        bool isInDb = _unitOfWork.GetRepository<Movie>().GetWithQuery(q =>
-                        q.Where(m => m.ApiId == movieId)
-                    ).Any();
-        
-        if (!isInDb)
-        {
-            Movie movie = new Movie
-            {
-                ApiId = movieId,
-                MovieTitle = _movie.Title,
-                MoviePosterUrl = _backdropImage,
-            };
-            _unitOfWork.GetRepository<Movie>().Add(movie);
-            _unitOfWork.Commit();
-        }
+        addItemService.AddDigitalMovie(movieId, userId, priceMovie, number_discount);
     }
     
-    private User GetUser()
-    {
-        user = _unitOfWork.GetRepository<User>().GetWithQuery(
-            q => q
-                .Where(u => u.Id == userId)
-                .Include(i => i.Addresses)
-        ).FirstOrDefault();
-        return user;
-    }
-    
-    private Order GetOrder()
-    {
-        var existingOrder = _unitOfWork.GetRepository<Order>().GetWithQuery(
-            q => q
-                .Where(o => o.UserId == userId && o.Status == OrderStatus.Pending)
-                .Include(o => o.Items)
-                .ThenInclude((BasketItem i) => i.Movie)
-        ).FirstOrDefault();
-        return existingOrder;
-    }
-    
-    private Movie GetMovie()
-    {
-        var movieDb = _unitOfWork.GetRepository<Movie>().GetWithQuery(
-                q => q.Where(m => m.ApiId == movieId)
-            ).FirstOrDefault();
-        return movieDb;
-    }
-
-    private Order CreateNewOrderWithAddressAndItem(BasketItem newItem, Address address)
-    {
-        var orderBuilder = new OrderBuilder()
-            .WithUserId(userId)
-            .WithDate(DateTime.UtcNow)
-            .WithShippingAddress(address)
-            .WithItems(new List<BasketItem>())
-            .AddItem(newItem);
-        
-        return orderBuilder.Build();
-    }
-
-    private Address GetUsersAddress(User user)
-    {
-        var shippingAddress = user.Addresses.FirstOrDefault(a => a.IstheOne);
-        var address = new AddressBuilder()
-            .WithStreet(shippingAddress.Street)
-            .WithNumber(shippingAddress.Number)
-            .WithCity(shippingAddress.City)
-            .WithState(shippingAddress.State)
-            .WithZipCode(shippingAddress.ZipCode)
-            .WithCountry(shippingAddress.Country)
-            .WithUser(user)
-            .Build();
-        return address;
-    }
     
     protected override async Task OnInitializedAsync()
     {
@@ -379,6 +194,7 @@ else
             await LoadCredits();
             await LoadKeywords();
             await LoadTrailer();
+            AddMovieToDb(movieId);
             
             var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
             var query = QueryHelpers.ParseQuery(uri.Query);
@@ -427,6 +243,7 @@ else
             ResetValues();
         }
     }
+    
 
     private void ResetValues()
     {
@@ -502,8 +319,22 @@ else
         return $"{baseUrl}{posterPath}";
     }
 
-    public void Dispose()
+    private void AddMovieToDb(int movieId)
     {
-        // Cleanup resources if needed
+        bool isInDb = _unitOfWork.GetRepository<Movie>().GetWithQuery(q =>
+            q.Where(m => m.ApiId == movieId)
+        ).Any();
+
+        if (!isInDb && _movie != null) 
+        {
+            Movie movie = new Movie
+            {
+                ApiId = movieId,
+                MovieTitle = _movie.Title,
+                MoviePosterUrl = _backdropImage
+            };
+            _unitOfWork.GetRepository<Movie>().Add(movie);
+            _unitOfWork.Commit();
+        }
     }
 }

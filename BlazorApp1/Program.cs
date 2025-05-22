@@ -1,8 +1,10 @@
 using BlazorApp1.Components;
+using BlazorApp1.Services;
 using BlazorApp1.Services.DataBase;
 using BlazorApp1.Services.DataBase.OrderState;
 using BlazorApp1.Services.DataBase.Repository;
 using BlazorApp1.Services.Movies;
+using BlazorApp1.Services.PageServices;
 using BlazorApp1.Services.RegLogin;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -65,13 +67,14 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<VerificationService>();
-builder.Services.AddScoped<EmailService>();  // Registrar o EmailService
+builder.Services.AddScoped<EmailService>(); 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CustomAuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(sp => 
     sp.GetRequiredService<CustomAuthStateProvider>());
 builder.Services.AddHttpClient();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IAddItemService, AddItemService>();
 
 // 5. Configuração do Blazor
 builder.Services.AddRazorComponents()
@@ -79,6 +82,7 @@ builder.Services.AddRazorComponents()
 builder.Services.AddScoped<IRepositoryFactory, RepositoryFactory>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IStateFactory, StateFactory>(); 
+
 // 6. Configuração do Kestrel
 builder.WebHost.UseUrls("https://localhost:7193", "http://localhost:5212");
 builder.WebHost.ConfigureKestrel(serverOptions =>
