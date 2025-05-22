@@ -17,5 +17,6 @@ namespace BlazorApp1.Services.DataBase
 
             return new ApplicationDbContext(optionsBuilder.Options);
         }
+
     }
 }
