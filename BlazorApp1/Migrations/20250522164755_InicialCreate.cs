@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace BlazorApp1.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InicialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -204,7 +204,8 @@ namespace BlazorApp1.Migrations
                     Price = table.Column<double>(type: "REAL", nullable: false),
                     Discount = table.Column<int>(type: "INTEGER", nullable: false),
                     ViewingDate = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    Seat = table.Column<string>(type: "TEXT", nullable: false)
+                    Seat = table.Column<string>(type: "TEXT", nullable: false),
+                    Cinema = table.Column<string>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
