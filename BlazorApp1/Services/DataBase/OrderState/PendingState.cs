@@ -18,7 +18,6 @@ public class PendingState : IOrderState
 
     public void Pay(double price, PaymentMethod method)
     {
-        // Procesar pago
         var wallet = _unitOfWork
             .GetRepository<WalletUser>()
             .GetWithQuery(q => q.Include(w => w.User).Where(w => w.User.Id == Order.UserId))

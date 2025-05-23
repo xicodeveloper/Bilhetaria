@@ -25,7 +25,7 @@ namespace BlazorApp1.Services.DataBase
         {
             
             modelBuilder.Entity<BasketItem>().UseTpcMappingStrategy();
-
+            
             modelBuilder.Entity<TicketMovie>().ToTable("movie_Tickets");
             modelBuilder.Entity<RentalMovie>().ToTable("rental_movies");
             modelBuilder.Entity<PhysicalMovie>().ToTable("physical_movies");
@@ -47,7 +47,10 @@ namespace BlazorApp1.Services.DataBase
             // Configurar o nome das tabelas
             modelBuilder.Entity<User>().ToTable("users");
             
-
+            modelBuilder.Entity<Movie>()
+                .HasMany(m => m.Genres)
+                .WithMany()
+                .UsingEntity(j => j.ToTable("movie_has_genres"));
 
             modelBuilder.Entity<TicketMovie>().ToTable("ticket_movies");
             modelBuilder.Entity<RentalMovie>().ToTable("rental_movies");
