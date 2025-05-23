@@ -55,7 +55,9 @@
 
                 <div class="time-relevance">
                     <span>@FormatRuntime(_movie.Runtime)</span>
-                    <span class="relevance">@((_movie.VoteAverage * 10).ToString("0"))% relevância</span>
+                    <span class="relevance @GetRelevanceClass(Relevance)">
+                        @Relevance% relevância
+                    </span>
                 </div>
                 @if (!string.IsNullOrEmpty(_trailerUrl))
                 {
@@ -82,7 +84,11 @@
                     <p>@_movie.Overview</p>
                 </div>
 
-                <button class="btn-favorite">FAVORITE</button>
+                <!-- Favorites -->
+                @* <button class="btn-favorite">FAVORITE</button> *@
+                <button class="btn-favorite @(isFavorite ? "filled" : "")" @onclick="ToggleFavorite">
+                    Favorite <i class="star-icon @(isFavorite ? "filled" : "")">&#9733;</i>
+                </button>
 
                 @if (_credits?.Cast != null)
                 {
@@ -147,12 +153,158 @@
     private string? discount;
     private int number_discount;
     private int desconto;
-
+    private int Relevance;
     private string? _priceValue;
     private double priceMovie;
     private string _backdropImage => string.IsNullOrEmpty(_movie?.backdrop_path) ? null : $"{ImageBaseUrl}{_movie.backdrop_path}";
     
+    private List<MovieSummary> _similarMovies;
 
+    public class MovieListResponse
+    {
+        public List<MovieSummary> Results { get; set; }
+    }
+
+    public class MovieSummary
+    {
+        public int Id { get; set; }
+        public string Title { get; set; }
+        public string PosterPath { get; set; }
+    }
+
+    private bool isFavorite = false;
+
+    private void ToggleFavorite()
+    {
+        isFavorite = !isFavorite;
+        // backend (?) 
+    }
+    private async Task LoadSimilarMovies()
+    {
+        try
+        {
+            var response = await Http.GetFromJsonAsync<MovieListResponse>($"{BaseUrl}/movie/{Id}/similar?api_key={ApiKey}");
+            _similarMovies = response?.Results?.Take(20).ToList(); // limita a 10 filmes semelhantes
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao carregar filmes semelhantes: {ex.Message}");
+            _similarMovies = new();
+        }
+    }
+        public enum PurchaseType
+        {
+            Aluga,
+            Forever
+        }
+    private async Task BuyAsync(PurchaseType type)
+    {
+        try
+        {
+            if (!int.TryParse(userId, out var userIdInt)) return;
+            
+            user = await _unitOfWork.Users.GetByIdAsync(userIdInt);
+            if (user?.Addresses == null || user.Addresses.Count == 0)
+            {
+                Console.WriteLine("Tem que inserir morada primeiro");
+                Navigation.NavigateTo("/perfilAdmin");
+                return;
+            }
+
+            // Obter morada principal
+            var shippingAddress = user.Addresses.FirstOrDefault(a => a.IstheOne);
+            if (shippingAddress == null)
+            {
+                Console.WriteLine("Nenhum endereço principal encontrado.");
+                return;
+            }
+
+            // Parâmetros específicos do tipo de compra
+            var (price, screeningDate, ticketType) = type switch
+            {
+                PurchaseType.Aluga => (priceMovie * 0.25, DateTime.UtcNow.AddDays(7), TicketType.Rental),
+                PurchaseType.Forever => (priceMovie, DateTime.UtcNow, TicketType.Digital),
+                _ => throw new ArgumentException("Tipo de compra inválido")
+            };
+
+            // Verificar encomenda existente
+            var existingOrder = await _unitOfWork.Orders.GetActiveOrderWithItemsAsync(userIdInt);
+
+            var title = _movie?.Title ?? "Sem Título";
+            var posterUrl = _backdropImage ?? "Poster não definido";
+
+            if (existingOrder != null)
+            {
+                BasketItem item = existingOrder.Basket.Items.FirstOrDefault(i => i.MovieId == Id && i.Type == ticketType);
+                if (item != null)
+                {
+                    item.Quantity++;
+                }
+                else
+                {
+                    // Adicionar item à encomenda existente
+                    existingOrder.Basket.Items.Add(new BasketItem
+                    {
+                    MovieId = Id,
+                    MovieTitle = title,
+                    MoviePosterUrl = posterUrl,
+                    Quantity = 1,
+                    ScreeningDate = screeningDate,
+                    Price = priceMovie,
+                    Discount = number_discount,
+                    Type = ticketType,
+                    });
+                }
+                
+                await _unitOfWork.Orders.UpdateAsync(existingOrder);
+            }
+            else
+            {
+                // Criar nova encomenda
+                var orderBuilder = new OrderBuilder()
+                    .WithUserId(userIdInt)
+                    .WithNumber(type == PurchaseType.Aluga ? Id.ToString() : Guid.NewGuid().ToString())
+                    .WithDate(DateTime.UtcNow)
+                    .WithShippingAddress(a => a
+                        .WithStreet(shippingAddress.Street)
+                        .WithNumber(shippingAddress.Number)
+                        .WithCity(shippingAddress.City)
+                        .WithState(shippingAddress.State)
+                        .WithZipCode(shippingAddress.ZipCode)
+                        .WithCountry(shippingAddress.Country)
+                        .WithUser(user))
+                    .WithBasket(b => b
+                        .WithDigitalTicket(
+                            movieId: Id,
+                            title: title,
+                            posterUrl: posterUrl,
+                            quantity: 1,
+                            screeningDate: screeningDate,
+                            price: priceMovie,
+                            discount: number_discount));
+
+                if (type == PurchaseType.Forever)
+                {
+                    orderBuilder.WithOrderStatus(OrderStatus.Pending);
+                }
+
+                await _unitOfWork.Orders.AddAsync(orderBuilder.Build());
+            }
+
+            await _unitOfWork.CommitAsync();
+            Navigation.NavigateTo("/basket");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro em BuyAsync: {ex.Message}");
+        }
+    }
+
+    private void GenerateRandomRelevance()
+    {
+        var rng = new Random();
+        Relevance = rng.Next(0, 101); // Número entre 0 e 100
+    }
     private void Rent()
     {
         addItemService.AddRentalMovie(movieId, userId, priceMovie, number_discount);
@@ -215,6 +367,7 @@
             {
                 ResetValues();
             }
+            GenerateRandomRelevance();
         }
         catch (Exception ex)
         {

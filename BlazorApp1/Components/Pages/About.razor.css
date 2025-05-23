@@ -1,39 +1,54 @@
+
 body {
-    background: linear-gradient(135deg, #0a192f 0%, #0a0a0a 100%);
-    color: #e6f1ff;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    color: #333333;
+    font-family: 'Poppins', sans-serif;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
+    padding: 20px;
+    position: relative; /* Adicione isso para criar um contexto de empilhamento */
+    min-height: 100vh;
+}
+
+.popcorn {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: -1; /* Mude para -1 para ficar ATRÁS de tudo */
 }
 
 div {
     max-width: 900px;
     margin: 40px auto;
-    padding: 20px;
-    background: rgba(255, 255, 255, 0.1);
+    padding: 30px;
+    background: #ffffff;
     border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    position: relative; /* Isso garante que o conteúdo fique na frente */
+    z-index: 1; /* Qualquer valor maior que 0 colocará na frente do background */
 }
 
 h1 {
     font-size: 2.5em;
     text-align: center;
-    color: #64ffda;
+    color: #0a192f; /* tom azul escuro */
     text-transform: uppercase;
-    margin-bottom: 20px;
+    margin-bottom: 25px;
 }
 
 h2 {
     font-size: 1.8em;
-    color: #00b4d8;
-    border-bottom: 2px solid #ff6600;
+    color: #ff6600; /* laranja vibrante */
+    border-bottom: 2px solid #0a192f; /* azul escuro */
     padding-bottom: 5px;
     margin-top: 30px;
 }
 
 p, li {
     font-size: 1.2em;
+    color: #444444;
     line-height: 1.6;
 }
 
@@ -44,7 +59,7 @@ ul {
 
 li::before {
     content: '★';
-    color: #ffcc00;
+    color: #ffcc00; /* amarelo para estrelas */
     margin-right: 10px;
 }
 
@@ -52,7 +67,7 @@ li::before {
     div {
         max-width: 85%;
         margin: 30px auto;
-        padding: 18px;
+        padding: 25px;
     }
     h1 {
         font-size: 2.2em;
@@ -68,8 +83,8 @@ li::before {
 @media (max-width: 768px) {
     div {
         max-width: 90%;
-        margin: 20px;
-        padding: 15px;
+        margin: 20px auto;
+        padding: 20px;
     }
     h1 {
         font-size: 2em;
@@ -85,7 +100,7 @@ li::before {
 @media (max-width: 480px) {
     div {
         max-width: 95%;
-        padding: 12px;
+        padding: 15px;
     }
     h1 {
         font-size: 1.8em;

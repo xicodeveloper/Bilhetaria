@@ -53,8 +53,10 @@
                               stroke-linecap="round" 
                               stroke-linejoin="round"/>
                     </svg>
-                    <h2><a style="text-decoration: none; color: inherit; " href="/perfilAdmin">@currentUser.Username</a></h2>
-                    <span class="profile-label">Perfil</span>
+                    <div class="user-info"  onclick="window.location.href='/perfilAdmin'" style="cursor: pointer;">
+                        <h2><a style="text-decoration: none; color: inherit; ">@currentUser.Username</a></h2>
+                        <span class="profile-label" href="/perfilAdmin">Perfil</span>
+                    </div>
                 </div>
 
                 <div class="discounts">
