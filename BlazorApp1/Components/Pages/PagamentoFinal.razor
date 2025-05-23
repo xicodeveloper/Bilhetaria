@@ -313,8 +313,7 @@
             
             var user =  _UnitOfWork.GetRepository<User>()
                 .GetById(UserId);
-
-    
+ 
             if (user != null && !string.IsNullOrEmpty(user.Email))
             {
                 await EmailService.SendOrderConfirmationAsync(order, user.Email, 5.20);
