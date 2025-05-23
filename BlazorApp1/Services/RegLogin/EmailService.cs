@@ -52,7 +52,7 @@ namespace BlazorApp1.Services.RegLogin
                 }
             }
         }
-     public async Task SendOrderConfirmationAsync(Order order, string email)
+     public async Task SendOrderConfirmationAsync(Order order, string email, double shippingCost)
 {
     var message = new MimeMessage();
     message.From.Add(new MailboxAddress("CinUma", _smtpUser));
@@ -61,11 +61,8 @@ namespace BlazorApp1.Services.RegLogin
 
     var bodyBuilder = new BodyBuilder();
     
-    // Parte em HTML
-    bodyBuilder.HtmlBody = BuildOrderHtml(order);
-    
-    // Parte em texto simples como fallback
-    bodyBuilder.TextBody = BuildOrderText(order);
+    bodyBuilder.HtmlBody = BuildOrderHtml(order, shippingCost);
+    bodyBuilder.TextBody = BuildOrderText(order, shippingCost);
 
     message.Body = bodyBuilder.ToMessageBody();
 
@@ -92,7 +89,7 @@ namespace BlazorApp1.Services.RegLogin
     }
 }
 
-private string BuildOrderHtml(Order order)
+private string BuildOrderHtml(Order order, double shippingCost)
 {
     var sb = new StringBuilder();
     sb.AppendLine("<html><body>");
@@ -122,17 +119,20 @@ private string BuildOrderHtml(Order order)
         sb.AppendLine($"<td style='padding: 10px; text-align: right;'>{item.TotalPrice:0.00}€</td>");
         sb.AppendLine("</tr>");
     }
-
+    sb.AppendLine("<tr style='border-bottom: 1px solid #dee2e6;'>");
+    sb.AppendLine("<td style='padding: 10px; text-align: right;'>Custos de Envio:</td>");
+    sb.AppendLine($"<td style='padding: 10px; text-align: right;'>{shippingCost:0.00}€</td>");
+    sb.AppendLine("</tr>");
     sb.AppendLine("<tr style='font-weight: bold;'>");
     sb.AppendLine("<td colspan='2' style='padding: 10px; text-align: right;'>Total:</td>");
-    sb.AppendLine($"<td style='padding: 10px; text-align: right;'>{order.Items.Sum(i => i.TotalPrice):0.00}€</td>");
+    sb.AppendLine($"<td style='padding: 10px; text-align: right;'>{order.Items.Sum(i => i.TotalPrice)+ shippingCost:0.00}€</td>");
     sb.AppendLine("</tr></table>");
     sb.AppendLine("</body></html>");
 
     return sb.ToString();
 }
 
-private string BuildOrderText(Order order)
+private string BuildOrderText(Order order, double shippingCost)
 {
     var sb = new StringBuilder();
     sb.AppendLine("Recibo de Compra");
@@ -152,7 +152,9 @@ private string BuildOrderText(Order order)
         sb.AppendLine($"{item.Movie.MovieTitle} - {item.Quantity}x {item.TotalPrice:0.00}€");
     }
 
-    sb.AppendLine($"\nTotal: {order.Items.Sum(i => i.TotalPrice):0.00}€");
+    sb.AppendLine($"Subtotal: {order.Items.Sum(i => i.TotalPrice):0.00}€");
+    sb.AppendLine($"Custos de Envio: {shippingCost:0.00}€");
+    sb.AppendLine($"\nTotal: {order.Items.Sum(i => i.TotalPrice) +shippingCost:0.00}€");
     return sb.ToString();
 }
 

@@ -320,7 +320,7 @@
             // Enviar email de confirmação
             if (user != null && !string.IsNullOrEmpty(user.Email))
             {
-                await EmailService.SendOrderConfirmationAsync(order, user.Email);
+                await EmailService.SendOrderConfirmationAsync(order, user.Email, 5.20);
             }
             // Redirigir a página principal con estado de éxito
             NavigationManager.NavigateTo("/", new NavigationOptions 
@@ -331,7 +331,7 @@
         catch (Exception ex)
         {
             Console.WriteLine($"Error en el pago: {ex.Message}");
-            // Mostrar error al usuario (opcional)
+
         }
     }
 
