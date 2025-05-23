@@ -61,9 +61,7 @@ public class AddItemService : IAddItemService
                 _navigation.NavigateTo("/perfilAdmin");
                 return;
             }
-
-            AddMovieToDb(movieId);
-
+            
             var existingOrder = GetOrder(userId);
             var movieDb = GetMovie(movieId);
 
@@ -109,26 +107,7 @@ public class AddItemService : IAddItemService
             Console.WriteLine($"Error in AddMovieToBasket: {ex.Message}");
         }
     }
-
-    private void AddMovieToDb(int movieId)
-    {
-        bool isInDb = _unitOfWork.GetRepository<Movie>().GetWithQuery(q =>
-            q.Where(m => m.ApiId == movieId)
-        ).Any();
-
-        if (!isInDb)
-        {
-            Movie movie = new Movie
-            {
-                ApiId = movieId,
-                MovieTitle = "", // Debes establecer estos valores
-                MoviePosterUrl = "", // Debes establecer estos valores
-            };
-            _unitOfWork.GetRepository<Movie>().Add(movie);
-            _unitOfWork.Commit();
-        }
-    }
-
+    
     private User GetUser(Guid userId)
     {
         return _unitOfWork.GetRepository<User>().GetWithQuery(

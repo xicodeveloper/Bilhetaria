@@ -1,6 +1,4 @@
-
 using Newtonsoft.Json;
-using BlazorApp1.Services.Movies;
 namespace BlazorApp1.Services.Movies;
 
 public class Film

@@ -1,12 +1,8 @@
 @page "/cinemas"
 @layout MainLayout
 @using BlazorApp1.Components.Layout
-@using BlazorApp1.Services.RegLogin
 @using System.Globalization
 @using Microsoft.AspNetCore.Authorization
-@inject IAuthService AuthService
-@inject IHttpContextAccessor HttpContextAccessor
-@inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
 @attribute [Authorize]
 

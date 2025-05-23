@@ -6,8 +6,6 @@ using Microsoft.Data.Sqlite;
 namespace BlazorApp1.Services.RegLogin;
 public class EditModel
 {
-    public int Id { get; set; }
-
     [Required(ErrorMessage = "Nome de utilizador obrigatório")]
     [StringLength(20, MinimumLength = 3)]
     public string Username { get; set; } = string.Empty;

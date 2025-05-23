@@ -1,4 +1,3 @@
-// Services/RegLogin/AuthService.cs
 using System.Security.Claims;
 using BlazorApp1.Services.DataBase;
 using BlazorApp1.Services.DataBase.DBEntities;

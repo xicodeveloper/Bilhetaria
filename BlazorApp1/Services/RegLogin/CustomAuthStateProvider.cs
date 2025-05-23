@@ -10,15 +10,6 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
     {
         _httpContextAccessor = httpContextAccessor;
     }
-    public async Task RefreshAuthenticationStateAsync()
-    {
-        var context = _httpContextAccessor.HttpContext;
-        if (context != null)
-        {
-            await context.AuthenticateAsync(); 
-            NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
-        }
-    }
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
         var principal = new ClaimsPrincipal();

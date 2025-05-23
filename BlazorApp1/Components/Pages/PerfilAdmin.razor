@@ -1,419 +1,374 @@
 @page "/perfilAdmin"
-@layout MainLayout
-@using BlazorApp1.Components.Layout
-@using BlazorApp1.Services.RegLogin
-@using System.Globalization
-@using System.Security.Claims
-@using BlazorApp1.Services
-@using BlazorApp1.Services.DataBase
-@using BlazorApp1.Services.DataBase.DBEntities
-@using BlazorApp1.Services.DataBase.DBEntities.Enum
-@using Microsoft.AspNetCore.Authorization
-@using Microsoft.AspNetCore.Components.Authorization
-@using Microsoft.EntityFrameworkCore
+ @layout MainLayout
+ @using BlazorApp1.Components.Layout
+ @using System.Globalization
+ @using System.Security.Claims
+ @using BlazorApp1.Services
+ @using BlazorApp1.Services.DataBase
+ @using BlazorApp1.Services.DataBase.DBEntities
+ @using BlazorApp1.Services.DataBase.DBEntities.Enum
+ @using Microsoft.AspNetCore.Authorization
+ @using Microsoft.AspNetCore.Components.Authorization
+ @using Microsoft.EntityFrameworkCore
+ 
+ @inherits LayoutComponentBase 
+ @attribute [Authorize]
+ @inject AuthenticationStateProvider AuthStateProvider
+ @inject IUnitOfWork _unitOfWork
+ @inject ApplicationDbContext _context
+ @inject IJSRuntime JS
+ @rendermode InteractiveServer
+ 
+ <div class="page-container">
+     <div class="grid-container">
+         <!-- LADO ESQUERDO -->
+         <div class="vertical" style="display: flex; flex-direction: column; gap: 2rem">
+             <!-- Vistos este mês -->
+             <div class="grid-item vertical">
+                 Visto este mês:
+                 <div class="movie-grid">
+                     @if (uniqueMovies.Any())
+                     {
+                         @foreach (var movie in uniqueMovies)
+                         {
+                             <div class="movie-poster">
+                                 <h1>@movie.MovieTitle</h1>
+                                 <img src="@movie.MoviePosterUrl" alt="@movie.MovieTitle"/>
+                             </div>
+                         }
+                     }
+                     else
+                     {
+                         <div class="no-movies">Nenhum filme visualizado este mês</div>
+                     }
+                 </div>
+             </div>
+ 
+             <!-- As tuas moradas -->
+             <div class="grid-item">
+                 As tuas moradas:
+                 <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px; overflow: auto; width: 500px; height: 500px;">
+                     @if (userEntity == null || userEntity.Addresses == null || userEntity.Addresses.Count == 0)
+                     {
+                         <div style="text-align: center; font-style: italic;">Nenhuma morada encontrada.</div>
+                     }
+                     else
+                     {
+                         @foreach (var address in userEntity.Addresses)
+                         {
+                             bool isSelected = moradaSelecionada == address;
+                             <div style="display: flex; align-items: center; gap: 10px;">
+                                 <!-- Botón estilo radio -->
+                                 <button @onclick="@(() => SelecionarMorada(address))"
+                                         style="
+                                             width: 20px;
+                                             height: 20px;
+                                             border-radius: 50%;
+                                             border: 2px solid #2196F3;
+                                             background-color: @(isSelected ? "#2196F3" : "transparent");
+                                             cursor: pointer;
+                                             display: inline-block;">
+                                 </button>
+                                 <!-- Tarjeta de morada -->
+                                 <div style="
+                                     flex-grow: 1;
+                                     border: 2px solid @(isSelected ? "#2196F3" : "#ccc");
+                                     border-radius: 8px;
+                                     padding: 10px;
+                                     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                                     background-color: @(isSelected ? "#e3f2fd" : "white");
+                                 ">
+                                     <div><strong>País:</strong> @address.Country</div>
+                                     <div><strong>Cidade:</strong> @address.City</div>
+                                     <div><strong>Numero:</strong> @address.Number</div>
+                                     <div><strong>Rua:</strong> @address.Street</div>
+                                     <div><strong>Distrito:</strong> @address.State</div>
+                                     <div><strong>Zip-Code:</strong> @address.ZipCode</div>
+                                 </div>
+                             </div>
+                         }
+                     }
+                 </div>
+             </div>
+ 
+             <!-- Minhas ordens -->
+             <div class="grid-item" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px; width: 500px; height: 500px;">
+                 <h3>Minhas Ordens</h3>
+                 @if (userOrders.Any())
+                 {
+                     <div class="customer-card" style="overflow: auto;">
+                         <div class="order-list">
+                             @foreach (var order in userOrders)
+                             {
+                                 @if (order.Status == OrderStatus.Completed)
+                                 {
+                                     <div class="order-item">
+                                         <div class="order-header">
+                                             <span>Ordem #@order.Id</span>
+                                             <span>@order.Date.ToString("dd/MM/yyyy HH:mm")</span>
+                                             <span>Status: @order.Status</span>
+                                             <span>Total: @CalculateOrderTotal(order)</span>
+                                         </div>
+                                         @if (order.Items?.Any() == true)
+                                         {
+                                             <div class="basket-items">
+                                                 <h5>Itens do Pedido:</h5>
+                                                 @foreach (var item in order.Items)
+                                                 {
+                                                     <div class="basket-item">
+                                                         <div class="item-poster">
+                                                             <img src="@item.Movie.MoviePosterUrl" alt="@item.Movie.MovieTitle" />
+                                                         </div>
+                                                         <div class="item-details">
+                                                             <div><strong>@item.Movie.MovieTitle</strong></div>
+                                                             <div>Quantidade: @item.Quantity</div>
+                                                             <div>Preço Unitário: @item.Price.ToString("C2", CultureInfo.CreateSpecificCulture("pt-PT"))</div>
+                                                             <div>Total Item: @((item.Price * item.Quantity).ToString("C2", CultureInfo.CreateSpecificCulture("pt-PT")))</div>
+                                                         </div>
+                                                     </div>
+                                                 }
+                                             </div>
+                                         }
+                                         else
+                                         {
+                                             <div class="no-items">Nenhum item encontrado neste pedido</div>
+                                         }
+                                     </div>
+                                 }
+                             }
+                         </div>
+                     </div>
+                 }
+                 else
+                 {
+                     <div>Nenhuma ordem encontrada @userEntity?.Username !</div>
+                 }
+             </div>
+         </div>
+ 
+         <!-- LADO DIREITO -->
+         <div class="vertical" style="display: flex; flex-direction: column; gap: 2rem">
+             <!-- Valor total em compra -->
+             <div class="grid-item horizontal">
+                 <div class="vertical" style="display: flex; gap: 10px; width: 100%; justify-content: space-between">
+                     Valor total em compra:
+                     <h3>@totalPay</h3>
+                 </div>
+                 <img src="/img/logo_2.png" alt="Logo"/>
+             </div>
+ 
+             <!-- Géneros -->
+             <div class="grid-item vertical">
+                 Géneros:
+                 <div class="chart-container">
+                     <canvas id="genreChart" @ref="chartCanvas"></canvas>
+                 </div>
+             </div>
+ 
+             <!-- Formulário: Rua, Número, etc -->
+             <div class="grid-item">
+                 <EditForm Model="Model" OnValidSubmit="AddAddress" FormName="address-form" class="Addressform">
+                     <DataAnnotationsValidator />
+                     <ValidationSummary />
+                     <div class="form-group">
+                         <label>Rua</label>
+                         <InputText @bind-Value="Model!.Street" class="form-control" placeholder="Rua" />
+                     </div>
+                     <div class="form-group">
+                         <label>Número</label>
+                         <InputText @bind-Value="Model!.Number" class="form-control" placeholder="Número" />
+                     </div>
+                     <div class="form-group">
+                         <label>Código Postal</label>
+                         <InputText @bind-Value="Model!.ZipCode" class="form-control" placeholder="0000-000" />
+                     </div>
+                     <div class="form-group">
+                         <label>Cidade</label>
+                         <InputText @bind-Value="Model!.City" class="form-control" placeholder="Cidade" />
+                     </div>
+                     <div class="form-group">
+                         <label>Estado/Distrito</label>
+                         <InputText @bind-Value="Model!.State" class="form-control" placeholder="Estado ou distrito" />
+                     </div>
+                     <div class="form-group">
+                         <label>País</label>
+                         <InputText @bind-Value="Model!.Country" class="form-control" placeholder="País" />
+                     </div>
+                     <div class="submit-button">
+                         <button type="submit" class="moradasub">Guardar</button>
+                     </div>
+                 </EditForm>
+             </div>
+         </div>
+     </div>
+ </div>
+ 
+ @code {
+     // --- Propriedades ---
+     [SupplyParameterFromForm] 
+     private AddressModel? Model { get; set; } = new();
+ 
+     private string userId { get; set; } = string.Empty;
+     private List<Claim> claims = new();
+     private User userEntity { get; set; }
+     public Address moradaSelecionada;
+     private List<Order> userOrders = new();
+     private List<Movie> uniqueMovies = new();
+     private double totalPayValue;
+     private string totalPay => totalPayValue.ToString("C2", CultureInfo.CreateSpecificCulture("pt-PT"));
+     private int totalMinutes;
+     private ElementReference chartCanvas;
+     private IJSObjectReference? chartModule;
+     private IJSObjectReference? chartInstance;
+     private Dictionary<string, int> genreCounts;
+     private bool chartLoaded = false;
+     
+     
+     protected override async Task OnInitializedAsync()
+     {
+         await LoadClaims();
+         if (userEntity != null)
+         {
+             userOrders = GetPurchasedOrders();
+             totalPayValue = CalculateTotalPaid();
+             uniqueMovies = GetUniquePurchasedMovies();
+             genreCounts = uniqueMovies
+                 .SelectMany(m => m.Genres)
+                 .GroupBy(g => g.Name)
+                 .ToDictionary(g => g.Key, g => g.Count());
+         }
+         StateHasChanged();
+     }
+ 
+     protected override async Task OnAfterRenderAsync(bool firstRender)
+     {
+         if (firstRender && userEntity != null && !chartLoaded)
+         {
+             chartLoaded = true;
+             await LoadChartAsync();
+         }
+     }
+     
+     private List<Order> GetPurchasedOrders()
+     {
+         return _unitOfWork.GetRepository<Order>()
+             .GetWithQuery(q => q
+                 .Where(o => o.UserId == userEntity.Id && o.Status == OrderStatus.Completed)
+                 .Include(o => o.Items)
+                     .ThenInclude(i => i.Movie)
+                         .ThenInclude(m => m.Genres)
+             ).ToList();
+     }
+ 
+     private double CalculateTotalPaid()
+     {
+         return userOrders.SelectMany(o => o.Items)
+             .Sum(i => i.Price * i.Quantity);
+     }
+ 
+     private List<Movie> GetUniquePurchasedMovies()
+     {
+         return userOrders
+             .SelectMany(o => o.Items)
+             .Select(i => i.Movie)
+             .Distinct()
+             .ToList();
+     }
+ 
+     private string CalculateOrderTotal(Order order)
+     {
+         return order.Items.Sum(i => i.Price * i.Quantity)
+             .ToString("C2", CultureInfo.CreateSpecificCulture("pt-PT"));
+     }
+     
+     private string GetUserId()
+     {
+         return claims.FirstOrDefault(c =>
+             c.Type == ClaimTypes.NameIdentifier || c.Type == "sub")?.Value;
+     }
+ 
 
-@inherits LayoutComponentBase 
-@inject IAuthService AuthService
-@inject IHttpContextAccessor HttpContextAccessor
-@attribute [Authorize]
-@inject AuthenticationStateProvider AuthStateProvider
-@inject IUnitOfWork _unitOfWork
-@rendermode InteractiveServer
-@inject ApplicationDbContext _context
-@inject IJSRuntime JS
+     private async Task LoadClaims()
+     {
+         try
+         {
+             var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+             claims = authState.User.Claims.ToList();
+             userId = GetUserId();
+ 
+             if (!Guid.TryParse(userId, out var userIdGuid)) return;
 
-<div class="page-container">
-    <div class="grid-container">
-    <!-- LADO ESQUERDO -->
-    <div class="vertical" style="display: flex; flex-direction: column; gap: 2rem">
-        
-        <!-- Total visto -->
-        <div class="grid-item horizontal" style="position: relative; overflow: hidden;">
-            <div class="vertical" style="display: flex; gap: 10px; width: 100%">
-                Total visto: <br/>
-                <div class="horizontal" style="display: flex; gap: 10px; margin-top: auto; align-items: center;">
-                    <h3>@totalVisto</h3>
-                    <p>minutos</p>
-                </div>
-            </div>
-            <img src="/img/logo.png" alt="Logo"/>
-        </div>
-
-
-
-        <!-- Método de Pagamento -->
-        <div class="grid-item horizontal">
-            <div class="vertical" style="display: flex; gap: 10px; width: 100%; justify-content: space-between">
-                Metodo de Pagamento:
-                <h3>@paymentMethod</h3>
-            </div>
-            <img src="/img/logo.png" alt="Logo"/>
-        </div>
-
-        <!-- Vistos este mês -->
-        <div class="grid-item vertical">
-            Visto este mês:
-            <div class="movie-grid">
-                @if (uniqueMovies.Any())
-                {
-                    @foreach (var movie in uniqueMovies)
-                    {
-                        <div class="movie-poster">
-                            <h1>@movie.MovieTitle</h1>
-                            <img src="@movie.MoviePosterUrl" alt="@movie.MovieTitle"/>
-                        </div>
-                    }
-                }
-                else
-                {
-                    <div class="no-movies">Nenhum filme visualizado este mês</div>
-                }
-            </div>
-        </div>
-
-        <!-- As tuas moradas -->
-        <div class="grid-item">
-            As tuas moradas:
-            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px; overflow: auto; width: 500px; height: 500px;">
-                @if (userEntity == null || userEntity.Addresses == null || userEntity.Addresses.Count == 0)
-                {
-                    <div style="text-align: center; font-style: italic;">Nenhuma morada encontrada.</div>
-                }else{
-                @foreach (var address in userEntity.Addresses)
-                {
-                    bool isSelected = moradaSelecionada == address;
-
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <!-- Botón estilo radio -->
-                        <button @onclick="@(() => SelecionarMorada(address))"
-                                style="
-                                    width: 20px;
-                                    height: 20px;
-                                    border-radius: 50%;
-                                    border: 2px solid #2196F3;
-                                    background-color: @(isSelected ? "#2196F3" : "transparent");
-                                cursor: pointer;
-                                display: inline-block;">
-                        </button>
-
-                        <!-- Tarjeta de morada -->
-                        <div style="
-                            flex-grow: 1;
-                            border: 2px solid @(isSelected ? "#2196F3" : "#ccc");
-                        border-radius: 8px;
-                        padding: 10px;
-                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                        background-color: @(isSelected ? "#e3f2fd" : "white");
-                        ">
-
-                            <div><strong>País:</strong> @address.Country</div>
-                            <div><strong>Cidade:</strong> @address.City</div>
-                            <div><strong>Numero:</strong> @address.Number</div>
-                            <div><strong>Rua:</strong> @address.Street</div>
-                            <div><strong>Distrito:</strong> @address.State</div>
-                            <div><strong>Zip-Code:</strong> @address.ZipCode</div>
-
-                            }
-
-                        </div>
-                    </div>
-                }
-                }
-            </div>
-        </div>
-
-        <!-- Minhas ordens -->
-        <div class="grid-item" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;  width: 500px; height: 500px;">
-            <h3>Minhas Ordens</h3>
-            @if (userOrders.Any())
-            {
-                <div class="customer-card"style="overflow: auto;">
-                    <div class="order-list">
-                        @foreach (var order in userOrders)
-                        {
-                            @if (order.Status == OrderStatus.Completed)
-                            {
-                                <div class="order-item">
-                                    <div class="order-header">
-                                        <span>Ordem #@order.Id</span>
-                                        <span>@order.Date.ToString("dd/MM/yyyy HH:mm")</span>
-                                        <span>Status: @order.Status</span>
-                                        <span>Total: @CalculateOrderTotal(order)</span>
-                                    </div>
-
-                                    @if (order.Items?.Any() == true)
-                                    {
-                                        <div class="basket-items">
-                                            <h5>Itens do Pedido:</h5>
-                                            @foreach (var item in order.Items)
-                                            {
-                                                <div class="basket-item">
-                                                    <div class="item-poster">
-                                                        <img src="@item.Movie.MoviePosterUrl" alt="@item.Movie.MovieTitle" />
-                                                    </div>
-                                                    <div class="item-details">
-                                                        <div><strong>@item.Movie.MovieTitle</strong></div>
-                                                        <div>Quantidade: @item.Quantity</div>
-                                                        <div>Preço Unitário: @item.Price.ToString("C2", CultureInfo.CreateSpecificCulture("pt-PT"))</div>
-                                                        <div>Total Item: @((item.Price * item.Quantity).ToString("C2", CultureInfo.CreateSpecificCulture("pt-PT")))</div>
-                                                    </div>
-                                                </div>
-                                            }
-                                        </div>
-                                    }
-                                    else
-                                    {
-                                        <div class="no-items">Nenhum item encontrado neste pedido</div>
-                                    }
-                                </div>
-                            }
-                        }
-                    </div>
-                </div>
-            }
-            else
-            {
-                <div>Nenhuma ordem encontrada @userEntity?.Username !</div>
-            }
-        </div>
-    </div>
-
-    <!-- LADO DIREITO -->
-    <div class="vertical" style="display: flex; flex-direction: column; gap: 2rem">
-        
-        <!-- Valor total em compra -->
-        <div class="grid-item horizontal">
-            <div class="vertical" style="display: flex; gap: 10px; width: 100%; justify-content: space-between">
-                Valor total em compra:
-                <h3>@totalPay€</h3>
-            </div>
-            <img src="/img/logo_2.png" alt="Logo"/>
-        </div>
-
-        <!-- Géneros -->
-        <div class="grid-item vertical">
-            Géneros:
-             
-            @foreach(var movie in uniqueMovies)
-            {
-                <div>
-                    <div> @movie.MovieTitle:</div>
-                    <ul>
-                        @foreach (var genre in movie.Genres)
-                        {
-                            <li>@genre.Name</li>
-                        }
-                    </ul>
-                </div>
-            }
-            
-            
-            <!-- Gráfico de géneros
-            <div class="chart-container">
-                @* <canvas id="genreChart" @ref="chartCanvas"></canvas> *@
-                <img src="/img/chart_generos.png" alt="Chart"/>
-            </div>
-             -->
-        </div>
-
-        <!-- Formulário: Rua, Número, etc -->
-        <div class="grid-item">
-            <EditForm Model="Model" OnValidSubmit="AddAddress" FormName="address-form" class="Addressform">
-                <DataAnnotationsValidator />
-                <ValidationSummary />
-
-                <div class="form-group">
-                    <label>Rua</label>
-                    <InputText @bind-Value="Model!.Street" class="form-control" placeholder="Rua" />
-                </div>
-                <div class="form-group">
-                    <label>Número</label>
-                    <InputText @bind-Value="Model!.Number" class="form-control" placeholder="Número" />
-                </div>
-                <div class="form-group">
-                    <label>Código Postal</label>
-                    <InputText @bind-Value="Model!.ZipCode" class="form-control" placeholder="0000-000" />
-                </div>
-                <div class="form-group">
-                    <label>Cidade</label>
-                    <InputText @bind-Value="Model!.City" class="form-control" placeholder="Cidade" />
-                </div>
-                <div class="form-group">
-                    <label>Estado/Distrito</label>
-                    <InputText @bind-Value="Model!.State" class="form-control" placeholder="Estado ou distrito" />
-                </div>
-                <div class="form-group">
-                    <label>País</label>
-                    <InputText @bind-Value="Model!.Country" class="form-control" placeholder="País" />
-                </div>
-                <div class="submit-button">
-                <button type="submit" class="moradasub">Guardar</button>
-                </div>
-            </EditForm>
-        </div>
-    </div>
-</div>
-
-</div>
-
-@code {
-
-    [SupplyParameterFromForm] 
-    private AddressModel? Model { get; set; } = new();
-   
-    private string userId { get; set; } = string.Empty;
-    public string totalVisto = "525.678";
-    public string paymentMethod = "MBWay";
-    
-    
-    private List<Claim> claims = new();
-    private User userEntity { get; set; }
-    public Address moradaSelecionada;
-    
-    private List<Order> userOrders = new();
-    private List<Movie> uniqueMovies = new();
-    private double totalPayValue;
-    private string totalPay => totalPayValue.ToString("C2", CultureInfo.CreateSpecificCulture("pt-PT"));
-    private int totalMinutes;
-    private ElementReference chartCanvas;
-    private IJSObjectReference? chartModule;
-    private IJSObjectReference? chartInstance;
-    private Dictionary<string, int> genreCounts;
-
-    protected override async Task OnInitializedAsync()
-    {
-
-        await LoadClaims();
-        if (userEntity != null)
-        {
-            userOrders = GetPurchasedOrders();
-            totalPayValue = CalculateTotalPaid();
-            uniqueMovies = GetUniquePurchasedMovies();
-        }
-        StateHasChanged();
-        
-    }
-
-    private List<Order> GetPurchasedOrders()
-    {
-        var purchasedOrders= _unitOfWork.GetRepository<Order>()
-            .GetWithQuery(q => q
-                .Where(o=> o.UserId == userEntity.Id && o.Status == OrderStatus.Completed)
-                .Include(o=> o.Items)
-                    .ThenInclude(i => i.Movie)
-                        .ThenInclude(m=> m.Genres)
-                )
-            .ToList();
-        return purchasedOrders;
-    }
-    
-    private double CalculateTotalPaid()
-    {
-        var totalPaid = userOrders.
-            SelectMany(o => o.Items)
-            .Sum(i => i.Price * i.Quantity);
-        return totalPaid;
-    }
-    
-    private List<Movie> GetUniquePurchasedMovies()
-    {
-        var uniqueMovies = userOrders
-            .SelectMany(o => o.Items)
-            .Select(i => i.Movie)
-            .Distinct()
-            .ToList();
-        return uniqueMovies;
-    }
-    
-    private string CalculateOrderTotal(Order order)
-    {
-        return order.Items.Sum(i => i.Price * i.Quantity)
-            .ToString("C2", CultureInfo.CreateSpecificCulture("pt-PT"));
-    }
-    
-    private string GetUserId()
-    {
-        return claims.FirstOrDefault(c =>
-            c.Type == ClaimTypes.NameIdentifier || c.Type == "sub")?.Value;
-    }
-    
-    private async Task LoadClaims()
-    {
-        try
-        {
-            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-            claims = authState.User.Claims.ToList();
-            userId = GetUserId();
-
-            if (!Guid.TryParse(userId, out var userIdGuid)) return;
-
-            userEntity = _unitOfWork.GetRepository<User>().GetById(userIdGuid);
-                //Users.GetByIdAsync(userIdInt);
-        
-            // Carregamento explícito se necessário
-            if (userEntity != null && userEntity.Addresses == null)
-            {
-                await _context.Entry(userEntity)
-                    .Collection(u => u.Addresses)
-                    .LoadAsync();
-            }
-
-            // Carrega a morada ativa
-            moradaSelecionada = userEntity?.Addresses?.FirstOrDefault(a => a.IstheOne);
-        
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Erro: {ex.Message}");
-        }
-    }
-    
-   private async Task SelecionarMorada(Address address)
-    {
-        try
-        {
-            foreach (var addr in userEntity.Addresses)
-            {
-                addr.IstheOne = false;
-            }
-            
-            address.IstheOne = true;
-            moradaSelecionada = address;
-
-            _unitOfWork.Commit(); 
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Erro: {ex.Message}");
-        }
-    }
-    private async Task AddAddress()
-    {
-        try
-        {
-            var newAddress = new Address 
-            {
-                Street = Model.Street,
-                Number = Model.Number,
-                ZipCode = Model.ZipCode,
-                City = Model.City,
-                State = Model.State,
-                Country = Model.Country,
-                UserId = userEntity.Id,
-                IstheOne = userEntity.Addresses.Count == 0
-            };
-
-            userEntity.Addresses.Add(newAddress);
-            _unitOfWork.GetRepository<Address>().Add(newAddress);
-            _unitOfWork.Commit();
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Erro: {ex.Message}");
-        }
-    }
-
-}
+             userEntity = _unitOfWork.GetRepository<User>().GetWithQuery( q=>q
+                 .Where(u => u.Id == userIdGuid)
+                 .Include(u => u.Addresses)
+             ).FirstOrDefault();
+ 
+             moradaSelecionada = userEntity?.Addresses?.FirstOrDefault(a => a.IstheOne);
+             StateHasChanged();
+         }
+         catch (Exception ex)
+         {
+             Console.WriteLine($"Erro: {ex.Message}");
+         }
+     }
+ 
+     private async Task SelecionarMorada(Address address)
+     {
+         try
+         {
+             foreach (var addr in userEntity.Addresses)
+             {
+                 addr.IstheOne = false;
+             }
+             address.IstheOne = true;
+             moradaSelecionada = address;
+             _unitOfWork.Commit(); 
+             StateHasChanged();
+         }
+         catch (Exception ex)
+         {
+             Console.WriteLine($"Erro: {ex.Message}");
+         }
+     }
+ 
+     private async Task AddAddress()
+     {
+         try
+         {
+             var newAddress = new Address 
+             {
+                 Street = Model.Street,
+                 Number = Model.Number,
+                 ZipCode = Model.ZipCode,
+                 City = Model.City,
+                 State = Model.State,
+                 Country = Model.Country,
+                 UserId = userEntity.Id,
+                 IstheOne = userEntity.Addresses.Count == 0
+             };
+ 
+             userEntity.Addresses.Add(newAddress);
+             _unitOfWork.GetRepository<Address>().Add(newAddress);
+             _unitOfWork.Commit();
+             StateHasChanged();
+         }
+         catch (Exception ex)
+         {
+             Console.WriteLine($"Erro: {ex.Message}");
+         }
+     }
+ 
+     private async Task LoadChartAsync()
+     {
+         if (chartModule == null)
+         {
+             chartModule = await JS.InvokeAsync<IJSObjectReference>("import", "/chartHelper.js");
+         }
+         if (genreCounts?.Any() == true)
+         {
+             var labels = genreCounts.Keys.ToArray();
+             var values = genreCounts.Values.ToArray();
+             await chartModule.InvokeVoidAsync("renderPieChart", "genreChart", labels, values);
+         }
+     }
+ }

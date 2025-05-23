@@ -1,8 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
 public class LoginModel
-
-
 {
     [Required(ErrorMessage = "Nome de utilizador é obrigatório")]
     public string Username { get; set; } = string.Empty;
