@@ -2,13 +2,17 @@
 @layout EmptyLayout
 @page "/login"
 @attribute [AllowAnonymous]
+@using System.Security.Claims
 @using BlazorApp1.Components.Layout
+@using BlazorApp1.Services.DataBase
+@using BlazorApp1.Services.DataBase.DBEntities
 @using BlazorApp1.Services.RegLogin
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
 @inject IAuthService AuthService
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IHttpContextAccessor HttpContextAccessor
+@inject IUnitOfWork _UnitOfWork
 <div class="page-container">
     <img src="/img/popcorn.png" class="popcorn" alt="CinUMa Logo">
 <div class="login-container">
@@ -56,6 +60,8 @@
     private string errorMessage = string.Empty;
     private string errorDetails = string.Empty;
     private bool showDetails = false;
+    
+    private Guid UserId;
 
     protected override async Task OnInitializedAsync()
     {
@@ -66,19 +72,41 @@
         }
     }
 
+
     private async Task HandleValidSubmit()
     {
         try
         {
             var result = await AuthService.LoginAsync(Model!.Username, Model.Password);
+            var userId = _UnitOfWork.GetRepository<User>()?
+                .GetWithQuery(q => q.Where(u => u.Username == Model!.Username))
+                .Select(u => u.Id)
+                .FirstOrDefault();
 
-            // Adicione verificação de null
+            if (userId == null)
+            {
+                errorMessage = "Utilizador não encontrado.";
+                return;
+            }
+
+            var user = _UnitOfWork.GetRepository<User>()?.GetById(userId.Value);
+
+            if (user != null && user.IsSucess == false)
+            {
+                errorMessage = "Necessário Confirmar seu email";
+                StateHasChanged();
+                await Task.Delay(3000);
+                HttpContextAccessor.HttpContext.Response.Redirect($"/confirmar-email?email={user.Email}");
+                return;
+            }
+
+           
             if (result == null)
             {
                 errorMessage = "Erro na resposta do servidor";
                 return;
             }
-
+            
             if (!result.Success || result.ClaimsPrincipal == null)
             {
                 errorMessage = "Credenciais inválidas!";
