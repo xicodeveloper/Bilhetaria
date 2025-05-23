@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BlazorApp1.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250523141708_initialCreate")]
-    partial class initialCreate
+    [Migration("20250523160834_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -123,16 +123,11 @@ namespace BlazorApp1.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid?>("MovieId")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("MovieId");
 
                     b.ToTable("MovieGenres");
                 });
@@ -220,6 +215,21 @@ namespace BlazorApp1.Migrations
                     b.ToTable("wallet_users", (string)null);
                 });
 
+            modelBuilder.Entity("MovieMovieGenre", b =>
+                {
+                    b.Property<Guid>("GenresId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("MovieId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("GenresId", "MovieId");
+
+                    b.HasIndex("MovieId");
+
+                    b.ToTable("movie_has_genres", (string)null);
+                });
+
             modelBuilder.Entity("BlazorApp1.Services.DataBase.DBEntities.BasketItems.DigitalMovie", b =>
                 {
                     b.HasBaseType("BlazorApp1.Services.DataBase.DBEntities.BasketItem");
@@ -295,13 +305,6 @@ namespace BlazorApp1.Migrations
                     b.Navigation("Order");
                 });
 
-            modelBuilder.Entity("BlazorApp1.Services.DataBase.DBEntities.MovieGenre", b =>
-                {
-                    b.HasOne("BlazorApp1.Services.DataBase.DBEntities.Movie", null)
-                        .WithMany("Genres")
-                        .HasForeignKey("MovieId");
-                });
-
             modelBuilder.Entity("BlazorApp1.Services.DataBase.DBEntities.Order", b =>
                 {
                     b.HasOne("BlazorApp1.Services.DataBase.DBEntities.Address", "ShippingAddress")
@@ -324,9 +327,19 @@ namespace BlazorApp1.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("BlazorApp1.Services.DataBase.DBEntities.Movie", b =>
+            modelBuilder.Entity("MovieMovieGenre", b =>
                 {
-                    b.Navigation("Genres");
+                    b.HasOne("BlazorApp1.Services.DataBase.DBEntities.MovieGenre", null)
+                        .WithMany()
+                        .HasForeignKey("GenresId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BlazorApp1.Services.DataBase.DBEntities.Movie", null)
+                        .WithMany()
+                        .HasForeignKey("MovieId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("BlazorApp1.Services.DataBase.DBEntities.Order", b =>

@@ -6,11 +6,23 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace BlazorApp1.Migrations
 {
     /// <inheritdoc />
-    public partial class initialCreate : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "MovieGenres",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MovieGenres", x => x.Id);
+                });
+
             migrationBuilder.CreateTable(
                 name: "Movies",
                 columns: table => new
@@ -41,21 +53,27 @@ namespace BlazorApp1.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "MovieGenres",
+                name: "movie_has_genres",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    Name = table.Column<string>(type: "TEXT", nullable: false),
-                    MovieId = table.Column<Guid>(type: "TEXT", nullable: true)
+                    GenresId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    MovieId = table.Column<Guid>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_MovieGenres", x => x.Id);
+                    table.PrimaryKey("PK_movie_has_genres", x => new { x.GenresId, x.MovieId });
                     table.ForeignKey(
-                        name: "FK_MovieGenres_Movies_MovieId",
+                        name: "FK_movie_has_genres_MovieGenres_GenresId",
+                        column: x => x.GenresId,
+                        principalTable: "MovieGenres",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_movie_has_genres_Movies_MovieId",
                         column: x => x.MovieId,
                         principalTable: "Movies",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -258,8 +276,8 @@ namespace BlazorApp1.Migrations
                 column: "OrderId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_MovieGenres_MovieId",
-                table: "MovieGenres",
+                name: "IX_movie_has_genres_MovieId",
+                table: "movie_has_genres",
                 column: "MovieId");
 
             migrationBuilder.CreateIndex(
@@ -311,7 +329,7 @@ namespace BlazorApp1.Migrations
                 name: "digital_movies");
 
             migrationBuilder.DropTable(
-                name: "MovieGenres");
+                name: "movie_has_genres");
 
             migrationBuilder.DropTable(
                 name: "physical_movies");
@@ -324,6 +342,9 @@ namespace BlazorApp1.Migrations
 
             migrationBuilder.DropTable(
                 name: "wallet_users");
+
+            migrationBuilder.DropTable(
+                name: "MovieGenres");
 
             migrationBuilder.DropTable(
                 name: "Movies");

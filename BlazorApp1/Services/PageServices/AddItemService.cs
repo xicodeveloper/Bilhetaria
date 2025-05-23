@@ -169,14 +169,6 @@ public class AddItemService : IAddItemService
     private Address GetUsersAddress(User user)
     {
         var shippingAddress = user.Addresses.FirstOrDefault(a => a.IstheOne);
-        return new AddressBuilder()
-            .WithStreet(shippingAddress.Street)
-            .WithNumber(shippingAddress.Number)
-            .WithCity(shippingAddress.City)
-            .WithState(shippingAddress.State)
-            .WithZipCode(shippingAddress.ZipCode)
-            .WithCountry(shippingAddress.Country)
-            .WithUser(user)
-            .Build();
+        return shippingAddress;
     }
 }
