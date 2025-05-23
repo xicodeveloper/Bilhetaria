@@ -12,15 +12,17 @@
 @using BlazorApp1.Services.DataBase.DBEntities.Builders
 @using BlazorApp1.Services.DataBase.DBEntities.Enum
 @using BlazorApp1.Services.Models
+@using BlazorApp1.Services.Models.Keywords
 @using Microsoft.AspNetCore.WebUtilities
 @using Microsoft.EntityFrameworkCore
+@using KeywordsResponse = BlazorApp1.Services.Models.Keywords.KeywordsResponse
 
 @inject IConfiguration Configuration
 @inject HttpClient Http
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IUnitOfWork _unitOfWork
-@inject IAddItemService addItemService 
+@inject IAddItemService addItemService
 
 @rendermode InteractiveServer
 
@@ -39,14 +41,12 @@
     }
     else
     {
-        
         <div class="movie-details-layout">
             <div class="left-column">
                 <img class="movie-poster" src="@($"{ImageBaseUrl}{_movie.poster_path}")" alt="Capa do filme" />
                 @if (!string.IsNullOrEmpty(_trailerUrl))
                 {
                     <a href="@_trailerUrl" target="_blank" class="btn-trailer">Ver Trailer</a>
-                    
                 }
             </div>
 
@@ -57,24 +57,21 @@
                     <span>@FormatRuntime(_movie.Runtime)</span>
                     <span class="relevance">@((_movie.VoteAverage * 10).ToString("0"))% relevância</span>
                 </div>
-                <div class="social-sharing">
-                    <span class="share-label">Compartilhar:</span>
-                    <a class="share-icon facebook-icon"
-                       href="https://www.facebook.com/sharer/sharer.php?u=@Uri.EscapeDataString(_trailerUrl)"
-                       target="_blank">
-                        <i class="fab fa-facebook"></i>
-                    </a>
-                    <a class="share-icon twitter-icon"
-                       href="https://twitter.com/intent/tweet?url=@Uri.EscapeDataString(_trailerUrl)&text=Confira%20o%20trailer%20de%20@Uri.EscapeDataString(_movie.Title)"
-                       target="_blank">
-                        <i class="fab fa-twitter"></i>
-                    </a>
-                    <a class="share-icon instagram-icon"
-                       href="https://www.instagram.com/?url=@Uri.EscapeDataString(_trailerUrl)"
-                       target="_blank">
-                        <i class="fab fa-instagram"></i>
-                    </a>
-                </div>
+                @if (!string.IsNullOrEmpty(_trailerUrl))
+                {
+                    <div class="social-sharing">
+                        <span class="share-label">Compartilhar:</span>
+                        <a class="share-icon facebook-icon" href="https://www.facebook.com/sharer/sharer.php?u=@Uri.EscapeDataString(_trailerUrl)" target="_blank">
+                            <i class="fab fa-facebook"></i>
+                        </a>
+                        <a class="share-icon twitter-icon" href="https://twitter.com/intent/tweet?url=@Uri.EscapeDataString(_trailerUrl)&text=Confira%20o%20trailer%20de%20@Uri.EscapeDataString(_movie.Title)" target="_blank">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a class="share-icon instagram-icon" href="https://www.instagram.com/?url=@Uri.EscapeDataString(_trailerUrl)" target="_blank">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                    </div>
+                }
                 <div class="purchase-buttons">
                     <button class="btn-rent" @onclick="Rent">ALUGAR</button>
                     <button class="btn-buy" @onclick="Buy">COMPRAR</button>
@@ -87,74 +84,47 @@
 
                 <button class="btn-favorite">FAVORITE</button>
 
-               
-                    @if (_credits?.Cast != null)
-                    {
-                        <div class="cast-genre">
-                            <h3>Elenco:</h3>
-                            <ul>
-                                @foreach (var member in _credits.Cast.OrderBy(c => c.Order).Take(5))
-                                {
-                                    <li>
-                                        <a href="/actor/@member.PersonId">@member.Name</a>
-                                        <span class="character">(@member.Character)</span>
-                                    </li>
-                                }
-                            </ul>
-                        </div>
-                    }
-                    <p><strong>Género:</strong> @string.Join(", ", _movie.Genres.Select(g => g.Name))</p>
-               
-            </div>
-        </div>
+                @if (_credits?.Cast != null)
+                {
+                    <div class="cast-genre">
+                        <h3>Elenco:</h3>
+                        <ul>
+                            @foreach (var member in _credits.Cast.OrderBy(c => c.Order).Take(5))
+                            {
+                                <li>
+                                    <a href="/actor/@member.PersonId">@member.Name</a>
+                                    <span class="character">(@member.Character)</span>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                }
+                <p><strong>Género:</strong> @string.Join(", ", _movie.Genres.Select(g => g.Name))</p>
+            </div> 
+        </div> 
 
-        @if (_similarMovies != null && _similarMovies.Any())
+        @foreach (var keyword in _keywords.Keywords.Take(10))
         {
-            <div class="similar-movies">
-                <h2>Filmes Semelhantes</h2>
-                <div class="similar-movie-list">
-                    @foreach (var movie in _similarMovies)
-                    {
-                        <div class="similar-movie-card">
-                            <a href="/movie/@movie.Id">
-                                <img class="movie-poster" src="@GetPosterUrl(movie.PosterPath)" alt="@movie.Title" />
-                            </a>
-                        </div>
-                    }
-                </div>
-            </div>
+            <a href="#" @onclick="async () => await NavigateToMovieByName(keyword.Name)" class="keyword-tag">
+                @keyword.Name.ToUpper()
+            </a>
+            <br>
         }
 
-        @if (_keywords?.Keywords != null && _keywords.Keywords.Any())
+        @if (!string.IsNullOrEmpty(discount))
         {
-            <div class="keywords-section">
-                <h3>Filmes Relacionados</h3>
-                <div class="keywords">
-                    @foreach (var keyword in _keywords.Keywords.Take(15))
-                    {
-                        <a href="/search?query=@keyword.Name" class="keyword-link">
-                            @keyword.Name.ToUpper()
-                        </a>
-                    }
-                </div>
+            <div class="discount-banner">
+                Promoção Ativa: @discount
             </div>
+            <p>Numero : @number_discount</p>
+            <p>Preco: @priceMovie %</p>
+        }
+        else
+        {
+            <p>Não houve desconto</p>
         }
     }
-</div>
-
-@if (!string.IsNullOrEmpty(discount))
-{
-    <div class="discount-banner">
-        Promoção Ativa: @discount
-    </div>
-    <p>Numero : @number_discount ! Ola</p>
-    <p>Preco: @priceMovie %</p>
-}
-else
-{
-    <p>Não houve desconto</p>
-}
-
+</div> 
 @code {
     
     [Parameter] public int movieId { get; set; }
@@ -167,12 +137,12 @@ else
     private string LinkImage => Configuration["TmdbApi:ImageBaseUrl"] ?? string.Empty;
     private string BaseUrl => Configuration["TmdbApi:BaseUrl"];
     private string ImageBaseUrl => Configuration["TmdbApi:ImageBaseUrl"];
-
+    private KeywordsResponse _keywords;
     private List<Claim> claims = new();
 
     private MovieDetails _movie;
     private CreditsResponse _credits;
-    private KeywordsResponse _keywords;
+
     private string _trailerUrl;
     private string? discount;
     private int number_discount;
@@ -181,33 +151,6 @@ else
     private string? _priceValue;
     private double priceMovie;
     private string _backdropImage => string.IsNullOrEmpty(_movie?.backdrop_path) ? null : $"{ImageBaseUrl}{_movie.backdrop_path}";
-    
-    private List<MovieSummary> _similarMovies;
-
-    public class MovieSummary
-    {
-        public int Id { get; set; }
-        public string Title { get; set; }
-        public string PosterPath { get; set; }
-    }
-
-    // public class MovieListResponse
-    // {
-    //     public List<MovieSummary> Results { get; set; }
-    // }
-    // private async Task LoadSimilarMovies()
-    // {
-    //     try
-    //     {
-    //         var response = await Http.GetFromJsonAsync<MovieListResponse>($"{BaseUrl}/movie/{movieId}/similar?api_key={ApiKey}");
-    //         _similarMovies = response?.Results?.Take(20).ToList();
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         Console.WriteLine($"Erro ao carregar filmes semelhantes: {ex.Message}");
-    //         _similarMovies = new();
-    //     }
-    // }
     
 
     private void Rent()
@@ -290,12 +233,55 @@ else
     {
         _movie = await Http.GetFromJsonAsync<MovieDetails>($"{BaseUrl}/movie/{movieId}?api_key={ApiKey}");
     }
+    private async Task UpdateKeywordIdsAsync()
+    {
+        if (_keywords?.Keywords == null || !_keywords.Keywords.Any()) return;
 
+        foreach (var keyword in _keywords.Keywords)
+        {
+            var keywordId = await GetMovieIdByNameAsync(keyword.Name);
+            if (keywordId.HasValue)
+            {
+                keyword.Id = keywordId.Value;
+            }
+        }
+    }
+    private async Task<int?> GetMovieIdByNameAsync(string movieName)
+    {
+        if (string.IsNullOrWhiteSpace(movieName)) return null;
 
+        try
+        {
+            var encodedName = Uri.EscapeDataString(movieName);
+            var url = $"{BaseUrl}/search/movie?api_key={ApiKey}&query={encodedName}";
 
+            var response = await Http.GetFromJsonAsync<MovieSearchResponse>(url);
+            var movie = response?.Results?.FirstOrDefault();
+
+            return movie?.Id;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao buscar ID do filme '{movieName}': {ex.Message}");
+            return null;
+        }
+    }
+    private async Task NavigateToMovieByName(string keywordName)
+    {
+        var movieId = await GetMovieIdByNameAsync(keywordName);
+        if (movieId.HasValue)
+        {
+            Navigation.NavigateTo($"/movie/{movieId.Value}");
+        }
+        else
+        {
+            Console.WriteLine("Filme não encontrado para a palavra-chave.");
+        }
+    }
     private async Task LoadKeywords()
     {
         _keywords = await Http.GetFromJsonAsync<KeywordsResponse>($"{BaseUrl}/movie/{movieId}/keywords?api_key={ApiKey}");
+        await UpdateKeywordIdsAsync();
     }
     private async Task LoadCredits()
     {
