@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BlazorApp1.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250522164755_InicialCreate")]
-    partial class InicialCreate
+    [Migration("20250523141708_initialCreate")]
+    partial class initialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -115,6 +115,26 @@ namespace BlazorApp1.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Movies");
+                });
+
+            modelBuilder.Entity("BlazorApp1.Services.DataBase.DBEntities.MovieGenre", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("MovieId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MovieId");
+
+                    b.ToTable("MovieGenres");
                 });
 
             modelBuilder.Entity("BlazorApp1.Services.DataBase.DBEntities.Order", b =>
@@ -275,6 +295,13 @@ namespace BlazorApp1.Migrations
                     b.Navigation("Order");
                 });
 
+            modelBuilder.Entity("BlazorApp1.Services.DataBase.DBEntities.MovieGenre", b =>
+                {
+                    b.HasOne("BlazorApp1.Services.DataBase.DBEntities.Movie", null)
+                        .WithMany("Genres")
+                        .HasForeignKey("MovieId");
+                });
+
             modelBuilder.Entity("BlazorApp1.Services.DataBase.DBEntities.Order", b =>
                 {
                     b.HasOne("BlazorApp1.Services.DataBase.DBEntities.Address", "ShippingAddress")
@@ -295,6 +322,11 @@ namespace BlazorApp1.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("BlazorApp1.Services.DataBase.DBEntities.Movie", b =>
+                {
+                    b.Navigation("Genres");
                 });
 
             modelBuilder.Entity("BlazorApp1.Services.DataBase.DBEntities.Order", b =>

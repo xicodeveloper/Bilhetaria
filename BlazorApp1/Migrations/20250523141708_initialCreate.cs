@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace BlazorApp1.Migrations
 {
     /// <inheritdoc />
-    public partial class InicialCreate : Migration
+    public partial class initialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -38,6 +38,24 @@ namespace BlazorApp1.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_users", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "MovieGenres",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
+                    MovieId = table.Column<Guid>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MovieGenres", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_MovieGenres_Movies_MovieId",
+                        column: x => x.MovieId,
+                        principalTable: "Movies",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -240,6 +258,11 @@ namespace BlazorApp1.Migrations
                 column: "OrderId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_MovieGenres_MovieId",
+                table: "MovieGenres",
+                column: "MovieId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_orders_ShippingAddressId",
                 table: "orders",
                 column: "ShippingAddressId");
@@ -286,6 +309,9 @@ namespace BlazorApp1.Migrations
         {
             migrationBuilder.DropTable(
                 name: "digital_movies");
+
+            migrationBuilder.DropTable(
+                name: "MovieGenres");
 
             migrationBuilder.DropTable(
                 name: "physical_movies");

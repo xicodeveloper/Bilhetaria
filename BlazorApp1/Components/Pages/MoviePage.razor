@@ -349,13 +349,21 @@
             q.Where(m => m.ApiId == movieId)
         ).Any();
 
-        if (!isInDb && _movie != null) 
+        if (!isInDb && _movie != null)
         {
+            var newMovieGenre = new List<MovieGenre>();
+            foreach (var genre in _movie.Genres)
+            {
+                var movieGenre = new MovieGenre(genre.Name);
+                newMovieGenre.Add(movieGenre);
+            }
+            
             Movie movie = new Movie
             {
                 ApiId = movieId,
                 MovieTitle = _movie.Title,
-                MoviePosterUrl = _backdropImage
+                MoviePosterUrl = _backdropImage,
+                Genres = newMovieGenre
             };
             _unitOfWork.GetRepository<Movie>().Add(movie);
             _unitOfWork.Commit();

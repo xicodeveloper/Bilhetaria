@@ -18,7 +18,8 @@ namespace BlazorApp1.Services.DataBase
         public DbSet<PhysicalMovie> PhysicalMovies { get; set; }
         public DbSet<DigitalMovie> DigitalMovies { get; set; }
         public DbSet<WalletUser> WalletUser { get; set; }
-        public DbSet<DBEntities.Address> Addresses { get; set; } 
+        public DbSet<Address> Addresses { get; set; } 
+        public DbSet<MovieGenre> MovieGenres { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -45,6 +46,8 @@ namespace BlazorApp1.Services.DataBase
             
             // Configurar o nome das tabelas
             modelBuilder.Entity<User>().ToTable("users");
+            
+
 
             modelBuilder.Entity<TicketMovie>().ToTable("ticket_movies");
             modelBuilder.Entity<RentalMovie>().ToTable("rental_movies");
