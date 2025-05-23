@@ -55,7 +55,7 @@ namespace BlazorApp1.Services.RegLogin
      public async Task SendOrderConfirmationAsync(Order order, string email)
 {
     var message = new MimeMessage();
-    message.From.Add(new MailboxAddress("Sua Loja", _smtpUser));
+    message.From.Add(new MailboxAddress("CinUma", _smtpUser));
     message.To.Add(new MailboxAddress("Cliente", email));
     message.Subject = $"Recibo da Compra #{order.Id}";
 
