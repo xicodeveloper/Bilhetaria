@@ -48,6 +48,24 @@
     margin-bottom: 0.5rem;
 }
 
+.relevance {
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.relevance.low {
+    color: red;
+}
+
+.relevance.medium {
+    color: orange;
+}
+
+.relevance.high {
+    color: green;
+}
+
+
 .time-relevance {
     font-size: 1rem;
     margin-bottom: 1rem;
@@ -94,7 +112,7 @@
     line-height: 1.6;
 }
 
-.btn-favorite {
+/* .btn-favorite {
     background: none;
     border: none;
     color: gold;
@@ -102,7 +120,34 @@
     font-size: 1.1rem;
     margin-top: 1rem;
     cursor: pointer;
+} */
+
+.btn-favorite {
+    font-family: poppins, sans-serif;
+    align-self: flex-start;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    margin-top: 1rem;
+    cursor: pointer;
+    padding: 0;
+    color: #ccc;
+    transition: color 0.3s ease;
 }
+
+.btn-favorite.filled {
+    color: gold;
+}
+
+.star-icon {
+    color: #ccc;
+    transition: color 0.3s ease;
+}
+
+.star-icon.filled {
+    color: gold;
+}
+
 
 .cast-genre p {
     margin-top: 0.5rem;
