@@ -1,20 +1,16 @@
-
 using MailKit.Net.Smtp;
 using MimeKit;
-using System;
 using System.Text;
-using System.Threading.Tasks;
 using BlazorApp1.Services.DataBase.DBEntities;
 
 namespace BlazorApp1.Services.RegLogin
 {
     public class EmailService
     {
-        // Valide estas configurações no seu provedor de email
         private readonly string _smtpServer = "smtp.gmail.com";
         private readonly int _smtpPort = 465;
         private readonly string _smtpUser = "forofrancisco4@gmail.com";
-        private readonly string _smtpPass = "yesn rvvj uqhd beep"; // Considere usar Secret Manager
+        private readonly string _smtpPass = "yesn rvvj uqhd beep"; 
         public async Task SendVerificationCodeAsync(string email, string code)
         {
             var message = new MimeMessage();

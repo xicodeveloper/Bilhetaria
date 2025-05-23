@@ -3,8 +3,6 @@
 @using BlazorApp1.Services
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
-@inject IConfiguration Configuration
-@inject IJSRuntime JS
 @inject IAddItemService addItemService 
 @inject AuthenticationStateProvider AuthStateProvider
 @attribute [Authorize]
@@ -13,8 +11,7 @@
 <div class="bilhetes-container">
 
     <h2 class="page-title">Bilhetes</h2>
-
-    @* nem aparece ???*@
+    
     <div class="texto">Seleciona os teus lugares</div>
 
     <div class="screen">TELA</div>
@@ -280,6 +277,4 @@
         return claims.FirstOrDefault(c =>
             c.Type == ClaimTypes.NameIdentifier || c.Type == "sub")?.Value;
     }
-
-    
 }

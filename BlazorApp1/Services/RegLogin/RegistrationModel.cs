@@ -1,12 +1,8 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using Microsoft.Data.Sqlite;
 
 public class RegistrationModel
 {
-    public int id { get; set; } // Não deve ser manual!
-
+    
     [Required(ErrorMessage = "Username é obrigatório")]
     [StringLength(20, MinimumLength = 3, ErrorMessage = "Username deve ter entre 3-20 caracteres")]
     public string Username { get; set; } = "";

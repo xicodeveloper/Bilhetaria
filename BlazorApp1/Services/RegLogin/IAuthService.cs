@@ -1,5 +1,3 @@
-
-using System.Security.Claims;
 using BlazorApp1.Services.DataBase.DBEntities;
 
 namespace BlazorApp1.Services.RegLogin
@@ -17,6 +15,5 @@ namespace BlazorApp1.Services.RegLogin
         Task<AuthResult> LoginAsync(string username, string password);
         bool VerifyUser(string email, string code);
         Task LogoutAsync();
-        Guid GetUserId();
     }
 }

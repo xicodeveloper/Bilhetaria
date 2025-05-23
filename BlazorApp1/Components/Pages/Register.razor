@@ -1,15 +1,17 @@
 @layout EmptyLayout
 @page "/register"
+
 @using BlazorApp1.Components.Layout
 @using BlazorApp1.Services.RegLogin
+
 @inject IAuthService AuthService
 @inject IHttpContextAccessor HttpContextAccessor
+
 <div class="page-container">
     <img src="/img/popcorn.png" class="popcorn" alt="CinUMa Logo">
     <div class="login-container">
         <h1 class="title-login">CinUMa</h1>
-        <span class="subtitle-login">Aluga, Compra ou Assiste no Cinema... 
- TUDO à distância de UM CLIQUE!</span>
+        <span class="subtitle-login">Aluga, Compra ou Assiste no Cinema... TUDO à distância de UM CLIQUE!</span>
 
         @if (!string.IsNullOrEmpty(errorMessage))
         {
@@ -50,7 +52,9 @@
         </div>
     </div>
 </div>
+
 @code {
+    
     [SupplyParameterFromForm]
     private RegistrationModel? Model { get; set; }
     private string errorMessage = string.Empty;
@@ -61,6 +65,7 @@
     {
         Model ??= new();
     }
+
     private async Task HandleValidSubmit()
     {
         errorMessage = string.Empty;
@@ -73,7 +78,7 @@
                 errorMessage = "Nome de utilizador já está em uso!";
                 return;
             }
-            if(AuthService.CheckEmailExists(Model!.Email))
+            if (AuthService.CheckEmailExists(Model!.Email))
             {
                 errorMessage = "Email já está em uso!";
                 return;
@@ -81,7 +86,6 @@
             await AuthService.CreateUser(Model!.Username, Model.Password, Model.Email);
             var encodedEmail = Uri.EscapeDataString(Model.Email);
             HttpContextAccessor.HttpContext.Response.Redirect($"/confirmar-email?email={encodedEmail}");
-
         }
         catch (Exception ex)
         {

@@ -3,11 +3,9 @@ using BlazorApp1.Services.DataBase.DBEntities;
 
 namespace BlazorApp1.Services;
 
-
 public class AddressModel : DbItem
 {
-    public int Id { get; set; }
-
+    
     [Required(ErrorMessage = "A rua é obrigatória.")]
     [StringLength(100, ErrorMessage = "A rua não pode ter mais de 100 caracteres.")]
     public string Street { get; set; }
@@ -31,6 +29,4 @@ public class AddressModel : DbItem
     [Required(ErrorMessage = "O país é obrigatório.")]
     [StringLength(50, ErrorMessage = "O país não pode ter mais de 50 caracteres.")]
     public string Country { get; set; }
-
-    public int UserId { get; set; }
 }

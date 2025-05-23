@@ -1,7 +1,4 @@
 using Newtonsoft.Json;
-using System;
-using System.Net.Http;
-using Microsoft.EntityFrameworkCore;
 namespace BlazorApp1.Services.Movies;
 
 public class MovieDeserializer :  IDisposable
@@ -10,7 +7,7 @@ public class MovieDeserializer :  IDisposable
 
     public MovieResponse FetchPopularMovies(string link)
     {
-        _httpClient = new HttpClient(); // Mantém uma instância reutilizável
+        _httpClient = new HttpClient();
         
         var apiKey = Environment.GetEnvironmentVariable("API_KEY");
         if (string.IsNullOrEmpty(apiKey))
