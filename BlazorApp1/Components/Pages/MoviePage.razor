@@ -326,23 +326,7 @@
         var minutes = runtime % 60;
         return $"{hours}h {minutes}m";
     }
-
-    string GetPosterUrl(string posterPath)
-    {
-        if (string.IsNullOrEmpty(posterPath))
-        {
-            return "https://via.placeholder.com/200x300?text=No+Image";
-        }
-
-        if (!posterPath.StartsWith("/"))
-        {
-            posterPath = "/" + posterPath;
-        }
-
-        var baseUrl = Configuration["TmdbApi:ImageBaseUrl"] ?? "https://image.tmdb.org/t/p/w500";
-        return $"{baseUrl}{posterPath}";
-    }
-
+    
     private void AddMovieToDb(int movieId)
     {
         bool isInDb = _unitOfWork.GetRepository<Movie>().GetWithQuery(q =>

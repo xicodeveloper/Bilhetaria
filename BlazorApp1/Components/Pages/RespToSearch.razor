@@ -1,9 +1,9 @@
 @page "/search/{query}"
-
 @using Newtonsoft.Json
 @inject NavigationManager NavigationManager
 @using BlazorApp1.Services.Movies
 @using Microsoft.AspNetCore.Authorization
+@rendermode InteractiveServer
 
 <header><br><br><div class="header"><h2>header</h2></div><br></header>
 <body><div class="search-header"><h2><b>Resultados para "@query"</b></h2></div></body>

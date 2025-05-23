@@ -22,34 +22,12 @@
 @inject ApplicationDbContext _context
 @inject IJSRuntime JS
 
+
 <div class="page-container">
     <div class="grid-container">
     <!-- LADO ESQUERDO -->
     <div class="vertical" style="display: flex; flex-direction: column; gap: 2rem">
         
-        <!-- Total visto -->
-        <div class="grid-item horizontal" style="position: relative; overflow: hidden;">
-            <div class="vertical" style="display: flex; gap: 10px; width: 100%">
-                Total visto: <br/>
-                <div class="horizontal" style="display: flex; gap: 10px; margin-top: auto; align-items: center;">
-                    <h3>@totalVisto</h3>
-                    <p>minutos</p>
-                </div>
-            </div>
-            <img src="/img/logo.png" alt="Logo"/>
-        </div>
-
-
-
-        <!-- Método de Pagamento -->
-        <div class="grid-item horizontal">
-            <div class="vertical" style="display: flex; gap: 10px; width: 100%; justify-content: space-between">
-                Metodo de Pagamento:
-                <h3>@paymentMethod</h3>
-            </div>
-            <img src="/img/logo.png" alt="Logo"/>
-        </div>
-
         <!-- Vistos este mês -->
         <div class="grid-item vertical">
             Visto este mês:
@@ -185,7 +163,7 @@
         <div class="grid-item horizontal">
             <div class="vertical" style="display: flex; gap: 10px; width: 100%; justify-content: space-between">
                 Valor total em compra:
-                <h3>@totalPay€</h3>
+                <h3>@totalPay</h3>
             </div>
             <img src="/img/logo_2.png" alt="Logo"/>
         </div>
@@ -193,27 +171,12 @@
         <!-- Géneros -->
         <div class="grid-item vertical">
             Géneros:
-             
-            @foreach(var movie in uniqueMovies)
-            {
-                <div>
-                    <div> @movie.MovieTitle:</div>
-                    <ul>
-                        @foreach (var genre in movie.Genres)
-                        {
-                            <li>@genre.Name</li>
-                        }
-                    </ul>
-                </div>
-            }
             
-            
-            <!-- Gráfico de géneros
+
             <div class="chart-container">
-                @* <canvas id="genreChart" @ref="chartCanvas"></canvas> *@
-                <img src="/img/chart_generos.png" alt="Chart"/>
+                <canvas id="genreChart" @ref="chartCanvas"></canvas>
             </div>
-             -->
+
         </div>
 
         <!-- Formulário: Rua, Número, etc -->
@@ -279,6 +242,7 @@
     private IJSObjectReference? chartModule;
     private IJSObjectReference? chartInstance;
     private Dictionary<string, int> genreCounts;
+    private bool chartLoaded = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -289,6 +253,11 @@
             userOrders = GetPurchasedOrders();
             totalPayValue = CalculateTotalPaid();
             uniqueMovies = GetUniquePurchasedMovies();
+            
+            genreCounts = uniqueMovies
+                .SelectMany(m => m.Genres)
+                .GroupBy(g => g.Name)
+                .ToDictionary(g => g.Key, g => g.Count());
         }
         StateHasChanged();
         
@@ -415,5 +384,29 @@
             Console.WriteLine($"Erro: {ex.Message}");
         }
     }
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && userEntity != null && !chartLoaded)
+        {
+            chartLoaded = true;
+            await LoadChartAsync();
+        }
+    }
 
+    private async Task LoadChartAsync()
+    {
+        if (chartModule == null)
+        {
+            chartModule = await JS.InvokeAsync<IJSObjectReference>("import", "/chartHelper.js");
+        }
+
+        if (genreCounts?.Any() == true)
+        {
+            var labels = genreCounts.Keys.ToArray();
+            var values = genreCounts.Values.ToArray();
+
+            await chartModule.InvokeVoidAsync("renderPieChart", "genreChart", labels, values);
+        }
+    } 
 }
