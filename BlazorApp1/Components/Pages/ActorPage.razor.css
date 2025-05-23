@@ -1,0 +1,91 @@
+
+.actor-details-layout {
+    margin-top: 70px;
+    display: flex;
+    gap: 3rem;
+    padding: 2rem;
+    flex-wrap: wrap;
+    color: white;
+}
+
+.left-column {
+    flex: 1 1 300px;
+    display: flex;
+    justify-content: center;
+}
+
+.profile-picture {
+    width: 100%;
+    max-width: 300px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.7);
+}
+
+.right-column {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+.actor-name {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+}
+
+.time-relevance {
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    gap: 1.5rem;
+}
+
+.biography h2, .known-for h2 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.biography p {
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+}
+
+.known-for ul {
+    list-style: none;
+    padding: 0;
+}
+
+.known-for li {
+    margin-bottom: 0.5rem;
+}
+
+.known-for a {
+    color: #1e88e5;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.actor-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    z-index: -2;
+    filter: blur(10px);
+    opacity: 0.3;
+}
+
+.actor-background-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.8), rgba(0,0,0,0.9));
+    z-index: -1;
+}

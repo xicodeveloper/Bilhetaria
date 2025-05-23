@@ -5,6 +5,7 @@
 @using Microsoft.AspNetCore.Components
 @using Microsoft.AspNetCore.Components.Authorization
 @using BlazorApp1.Services
+@using BlazorApp1.Services.Actor
 @using BlazorApp1.Services.DataBase
 @using BlazorApp1.Services.DataBase.DBEntities
 @using BlazorApp1.Services.DataBase.DBEntities.BasketItems
@@ -86,10 +87,24 @@
 
                 <button class="btn-favorite">FAVORITE</button>
 
-                <div class="cast-genre">
-                    <p><strong>Elenco:</strong> @string.Join(", ", _credits?.Cast?.Take(5).Select(c => c.Name) ?? Enumerable.Empty<string>())</p>
+               
+                    @if (_credits?.Cast != null)
+                    {
+                        <div class="cast-genre">
+                            <h3>Elenco:</h3>
+                            <ul>
+                                @foreach (var member in _credits.Cast.OrderBy(c => c.Order).Take(5))
+                                {
+                                    <li>
+                                        <a href="/actor/@member.PersonId">@member.Name</a>
+                                        <span class="character">(@member.Character)</span>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    }
                     <p><strong>Género:</strong> @string.Join(", ", _movie.Genres.Select(g => g.Name))</p>
-                </div>
+               
             </div>
         </div>
 
@@ -113,11 +128,13 @@
         @if (_keywords?.Keywords != null && _keywords.Keywords.Any())
         {
             <div class="keywords-section">
-                <h3>Palavras-chave</h3>
+                <h3>Filmes Relacionados</h3>
                 <div class="keywords">
                     @foreach (var keyword in _keywords.Keywords.Take(15))
                     {
-                        <span class="keyword-link">@keyword.Name.ToUpper()</span>
+                        <a href="/search?query=@keyword.Name" class="keyword-link">
+                            @keyword.Name.ToUpper()
+                        </a>
                     }
                 </div>
             </div>
@@ -274,16 +291,18 @@ else
         _movie = await Http.GetFromJsonAsync<MovieDetails>($"{BaseUrl}/movie/{movieId}?api_key={ApiKey}");
     }
 
-    private async Task LoadCredits()
-    {
-        _credits = await Http.GetFromJsonAsync<CreditsResponse>($"{BaseUrl}/movie/{movieId}/credits?api_key={ApiKey}");
-    }
+
 
     private async Task LoadKeywords()
     {
         _keywords = await Http.GetFromJsonAsync<KeywordsResponse>($"{BaseUrl}/movie/{movieId}/keywords?api_key={ApiKey}");
     }
+    private async Task LoadCredits()
+    {
 
+        var url = $"{BaseUrl}/movie/{movieId}/credits?api_key={ApiKey}";
+        _credits = await Http.GetFromJsonAsync<CreditsResponse>(url);
+    }
     private async Task LoadTrailer()
     {
         var videos = await Http.GetFromJsonAsync<VideosResponse>($"{BaseUrl}/movie/{movieId}/videos?api_key={ApiKey}");
