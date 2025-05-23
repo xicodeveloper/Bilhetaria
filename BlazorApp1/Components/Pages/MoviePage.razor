@@ -38,12 +38,14 @@
     }
     else
     {
+        
         <div class="movie-details-layout">
             <div class="left-column">
                 <img class="movie-poster" src="@($"{ImageBaseUrl}{_movie.poster_path}")" alt="Capa do filme" />
                 @if (!string.IsNullOrEmpty(_trailerUrl))
                 {
                     <a href="@_trailerUrl" target="_blank" class="btn-trailer">Ver Trailer</a>
+                    
                 }
             </div>
 
@@ -54,7 +56,24 @@
                     <span>@FormatRuntime(_movie.Runtime)</span>
                     <span class="relevance">@((_movie.VoteAverage * 10).ToString("0"))% relevância</span>
                 </div>
-
+                <div class="social-sharing">
+                    <span class="share-label">Compartilhar:</span>
+                    <a class="share-icon facebook-icon"
+                       href="https://www.facebook.com/sharer/sharer.php?u=@Uri.EscapeDataString(_trailerUrl)"
+                       target="_blank">
+                        <i class="fab fa-facebook"></i>
+                    </a>
+                    <a class="share-icon twitter-icon"
+                       href="https://twitter.com/intent/tweet?url=@Uri.EscapeDataString(_trailerUrl)&text=Confira%20o%20trailer%20de%20@Uri.EscapeDataString(_movie.Title)"
+                       target="_blank">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                    <a class="share-icon instagram-icon"
+                       href="https://www.instagram.com/?url=@Uri.EscapeDataString(_trailerUrl)"
+                       target="_blank">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                </div>
                 <div class="purchase-buttons">
                     <button class="btn-rent" @onclick="Rent">ALUGAR</button>
                     <button class="btn-buy" @onclick="Buy">COMPRAR</button>

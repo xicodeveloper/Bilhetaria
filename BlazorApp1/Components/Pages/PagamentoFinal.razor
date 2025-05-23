@@ -308,21 +308,18 @@
         try
         {
             if (order == null) return;
-
-           
-
-            // Procesar el pago
+            
             order.Pay(total, metodoSelecionado, _StateFactory);
             
             var user =  _UnitOfWork.GetRepository<User>()
                 .GetById(UserId);
 
-            // Enviar email de confirmação
+    
             if (user != null && !string.IsNullOrEmpty(user.Email))
             {
                 await EmailService.SendOrderConfirmationAsync(order, user.Email, 5.20);
             }
-            // Redirigir a página principal con estado de éxito
+
             NavigationManager.NavigateTo("/", new NavigationOptions 
             {
                 HistoryEntryState = "payment-success"

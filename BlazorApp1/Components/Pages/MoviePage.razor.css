@@ -178,3 +178,33 @@
     font-size: 0.9rem;
     color: #ffffff;
 }
+.social-sharing {
+    margin-top: 20px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.share-label {
+    font-weight: bold;
+    color: #666;
+}
+
+.share-icon {
+    font-size: 24px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.facebook-icon:hover {
+    color: #3b5998;
+}
+
+.twitter-icon:hover {
+    color: #1da1f2;
+}
+
+.instagram-icon:hover {
+    color: #e1306c;
+}
