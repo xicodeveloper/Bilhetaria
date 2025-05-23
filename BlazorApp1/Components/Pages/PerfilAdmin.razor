@@ -128,7 +128,6 @@
             @if (userOrders.Any())
             {
                 <div class="customer-card"style="overflow: auto;">
-                    <h4>@userEntity?.Username (ID: @userEntity?.Id)</h4>
                     <div class="order-list">
                         @foreach (var order in userOrders)
                         {
@@ -194,10 +193,27 @@
         <!-- Géneros -->
         <div class="grid-item vertical">
             Géneros:
+             
+            @foreach(var movie in uniqueMovies)
+            {
+                <div>
+                    <div> @movie.MovieTitle:</div>
+                    <ul>
+                        @foreach (var genre in movie.Genres)
+                        {
+                            <li>@genre.Name</li>
+                        }
+                    </ul>
+                </div>
+            }
+            
+            
+            <!-- Gráfico de géneros
             <div class="chart-container">
                 @* <canvas id="genreChart" @ref="chartCanvas"></canvas> *@
                 <img src="/img/chart_generos.png" alt="Chart"/>
             </div>
+             -->
         </div>
 
         <!-- Formulário: Rua, Número, etc -->
@@ -284,7 +300,9 @@
             .GetWithQuery(q => q
                 .Where(o=> o.UserId == userEntity.Id && o.Status == OrderStatus.Completed)
                 .Include(o=> o.Items)
-                .ThenInclude(i => i.Movie))
+                    .ThenInclude(i => i.Movie)
+                        .ThenInclude(m=> m.Genres)
+                )
             .ToList();
         return purchasedOrders;
     }
